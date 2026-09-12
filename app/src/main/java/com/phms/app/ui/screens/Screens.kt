@@ -634,6 +634,8 @@ fun FeedScreen(viewModel: MainViewModel) {
             }
 
             1 -> { // FORMULATOR
+                var showCustomRatioInputs by remember { mutableStateOf(false) }
+
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     item {
                         Card(
@@ -643,7 +645,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text("Balanced Feed Formulation", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text("Select a formula preset or enter custom ratio inputs to balance a full meal.", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                Text("Select a formula preset and target batch weight. Calculations adjust automatically in kg and grams.", color = Color(0xFF8B949E), fontSize = 12.sp)
 
                                 Text("Formula Presets:", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -688,20 +690,28 @@ fun FeedScreen(viewModel: MainViewModel) {
                                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                                 )
 
-                                Text("Ingredient Ratios (%) — Total must equal 100%", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Box(Modifier.weight(1f)) { FormField("Maize Meal %", maizePct, { maizePct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                                    Box(Modifier.weight(1f)) { FormField("Wheat Bran %", wheatBranPct, { wheatBranPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Customize Ratio Percentages", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                    TextButton(onClick = { showCustomRatioInputs = !showCustomRatioInputs }) {
+                                        Text(if (showCustomRatioInputs) "Hide Custom Editor ▴" else "Edit Ratios ▾", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    }
                                 }
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Box(Modifier.weight(1f)) { FormField("Soybean %", soybeanPct, { soybeanPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                                    Box(Modifier.weight(1f)) { FormField("Fish Meal %", fishMealPct, { fishMealPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                                }
-                                FormField("Premix & Salt %", premixPct, { premixPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
 
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Total Mix Ratio:", color = Color.White, fontSize = 13.sp)
-                                    Text("${totalPct.toInt()}%", color = if (totalPct == 100.0) Color(0xFF4CAF50) else Color(0xFFFF5252), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                if (showCustomRatioInputs) {
+                                    Text("Ingredient Ratios (%) — Total must equal 100%", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Box(Modifier.weight(1f)) { FormField("Maize Meal %", maizePct, { maizePct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                                        Box(Modifier.weight(1f)) { FormField("Wheat Bran %", wheatBranPct, { wheatBranPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                                    }
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Box(Modifier.weight(1f)) { FormField("Soybean %", soybeanPct, { soybeanPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                                        Box(Modifier.weight(1f)) { FormField("Fish Meal %", fishMealPct, { fishMealPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                                    }
+                                    FormField("Premix & Salt %", premixPct, { premixPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
                                 }
                             }
                         }
@@ -717,8 +727,8 @@ fun FeedScreen(viewModel: MainViewModel) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     Column {
-                                        Text("Calculated Measurements (${batchKg.toInt()} kg Batch)", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        Text("Auto-computed ingredient weights (Uneditable / Read-Only)", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                        Text("Ingredient Rations List (${batchKg.toInt()} kg Batch)", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Text("Uneditable calculated measurements (${selectedPreset})", color = Color(0xFF8B949E), fontSize = 11.sp)
                                     }
                                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                         listOf("Both", "kg", "grams").forEach { unit ->
@@ -738,36 +748,17 @@ fun FeedScreen(viewModel: MainViewModel) {
                                 }
                                 HorizontalDivider(color = Color(0xFF2E7D32))
 
-                                UneditableMeasurementBox(
-                                    label = "Maize Meal (Energy)",
-                                    percentage = mPct,
-                                    calculatedKg = mPct / 100.0 * batchKg,
-                                    displayUnit = formulaDisplayUnit
-                                )
-                                UneditableMeasurementBox(
-                                    label = "Wheat Bran (Fiber)",
-                                    percentage = wPct,
-                                    calculatedKg = wPct / 100.0 * batchKg,
-                                    displayUnit = formulaDisplayUnit
-                                )
-                                UneditableMeasurementBox(
-                                    label = "Soybean Meal (Protein)",
-                                    percentage = sPct,
-                                    calculatedKg = sPct / 100.0 * batchKg,
-                                    displayUnit = formulaDisplayUnit
-                                )
-                                UneditableMeasurementBox(
-                                    label = "Fish Meal (Protein/Minerals)",
-                                    percentage = fPct,
-                                    calculatedKg = fPct / 100.0 * batchKg,
-                                    displayUnit = formulaDisplayUnit
-                                )
-                                UneditableMeasurementBox(
-                                    label = "Premix & Minerals",
-                                    percentage = pPct,
-                                    calculatedKg = pPct / 100.0 * batchKg,
-                                    displayUnit = formulaDisplayUnit
-                                )
+                                UneditableRationListItem("Maize Meal", "Energy source", mPct, mPct / 100.0 * batchKg, formulaDisplayUnit)
+                                UneditableRationListItem("Wheat Bran", "Fiber & digestion", wPct, wPct / 100.0 * batchKg, formulaDisplayUnit)
+                                UneditableRationListItem("Soybean Meal", "Plant protein", sPct, sPct / 100.0 * batchKg, formulaDisplayUnit)
+                                UneditableRationListItem("Fish Meal", "Animal protein & minerals", fPct, fPct / 100.0 * batchKg, formulaDisplayUnit)
+                                UneditableRationListItem("Premix & Salt", "Vitamins & minerals", pPct, pPct / 100.0 * batchKg, formulaDisplayUnit)
+
+                                HorizontalDivider(color = Color(0xFF2E7D32))
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Total Mix Ratio:", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("${totalPct.toInt()}% (${batchKg.toInt()} kg total output)", color = if (totalPct == 100.0) Color(0xFF4CAF50) else Color(0xFFFF5252), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
                             }
                         }
                     }
@@ -1038,6 +1029,58 @@ fun UneditableMeasurementBox(
             unfocusedContainerColor = Color(0xFF162316)
         )
     )
+}
+
+@Composable
+fun UneditableRationListItem(
+    name: String,
+    category: String,
+    percentage: Double,
+    calculatedKg: Double,
+    displayUnit: String
+) {
+    val grams = calculatedKg * 1000.0
+    val valueText = when (displayUnit) {
+        "grams" -> "${String.format("%,.0f", grams)} g"
+        "kg" -> "${String.format("%.2f", calculatedKg)} kg"
+        else -> "${String.format("%.2f", calculatedKg)} kg (${String.format("%,.0f", grams)} g)"
+    }
+
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = Color(0xFF162316),
+        border = BorderStroke(1.dp, Color(0xFF2E7D32)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF1B5E20)) {
+                        Text("${percentage.toInt()}%", color = Color(0xFF81C784), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    }
+                }
+                Text(category, color = Color(0xFF8B949E), fontSize = 11.sp)
+            }
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = Color(0xFF0E170E),
+                border = BorderStroke(1.dp, Color(0xFF1B5E20))
+            ) {
+                Text(
+                    valueText,
+                    color = Color(0xFF81C784),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+            }
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
