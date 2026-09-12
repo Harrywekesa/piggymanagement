@@ -1893,33 +1893,43 @@ fun SettingsScreen(viewModel: MainViewModel) {
 
         // About & Developer Details & Feedback
         item {
-            SectionCard("About & Feedback") {
+            val appVersionName = remember(context) {
+                try {
+                    context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0"
+                } catch (e: Exception) {
+                    "1.0"
+                }
+            }
+
+            SectionCard("About & Developer Info") {
                 Text("Pig Health & Management System (PHMS)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Text("Version 1.0.0 (Build 2026.09)", color = Color(0xFF8B949E), fontSize = 12.sp)
+                Text("App Version v$appVersionName", color = Color(0xFF81C784), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                 Spacer(Modifier.height(8.dp))
-                Text("Developed by Pi Farm Tech to empower commercial pig farmers with data-driven herd analytics, feed formulation, and reproduction tracking.", color = Color(0xFFC9D1D9), fontSize = 13.sp)
+                Text("Lead Developer: Harrison Wekesa", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                Text("Contact / WhatsApp: +254 791 496 057", color = Color(0xFF8B949E), fontSize = 12.sp)
+                Spacer(Modifier.height(8.dp))
+                Text("Developed by Harrison Wekesa to empower commercial pig farmers with data-driven herd analytics, feed formulation, and reproduction tracking.", color = Color(0xFFC9D1D9), fontSize = 12.sp, lineHeight = 18.sp)
                 Spacer(Modifier.height(14.dp))
 
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = {
-                            val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
-                                data = android.net.Uri.parse("mailto:support@pifarmtech.com")
-                                putExtra(android.content.Intent.EXTRA_SUBJECT, "PHMS App Feedback")
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                data = android.net.Uri.parse("https://wa.me/254791496057")
                             }
                             try {
                                 context.startActivity(intent)
                             } catch (e: Exception) {
-                                Toast.makeText(context, "Feedback email: support@pifarmtech.com", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, "WhatsApp: +254 791 496 057", Toast.LENGTH_LONG).show()
                             }
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Send Feedback", fontSize = 12.sp)
+                        Text("WhatsApp", fontSize = 12.sp)
                     }
 
                     Button(

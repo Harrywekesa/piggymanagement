@@ -393,7 +393,6 @@ fun GuidedTourOverlay(onDismiss: () -> Unit, navController: NavController) {
                         onClick = {
                             onDismiss()
                             navController.navigate("dashboard") {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                 launchSingleTop = true
                             }
                         },
