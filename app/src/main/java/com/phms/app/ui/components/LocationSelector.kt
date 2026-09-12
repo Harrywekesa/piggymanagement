@@ -132,3 +132,138 @@ fun LocationSelector(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LocationFilterSelector(
+    selectedCounty: String,
+    selectedSubCounty: String,
+    selectedWard: String,
+    onFilterChanged: (county: String, subCounty: String, ward: String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var countyExpanded by remember { mutableStateOf(false) }
+    var subCountyExpanded by remember { mutableStateOf(false) }
+    var wardExpanded by remember { mutableStateOf(false) }
+
+    val counties = listOf("All Counties") + KenyaLocations.getCountyNames()
+    val subCounties = if (selectedCounty.isNotBlank() && selectedCounty != "All Counties") {
+        listOf("All Sub-Counties") + KenyaLocations.getSubCountyNames(selectedCounty)
+    } else emptyList()
+    val wards = if (selectedCounty.isNotBlank() && selectedCounty != "All Counties" && selectedSubCounty.isNotBlank() && selectedSubCounty != "All Sub-Counties") {
+        listOf("All Wards") + KenyaLocations.getWardNames(selectedCounty, selectedSubCounty)
+    } else emptyList()
+
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // County Dropdown
+        ExposedDropdownMenuBox(
+            expanded = countyExpanded,
+            onExpandedChange = { countyExpanded = !countyExpanded }
+        ) {
+            OutlinedTextField(
+                value = if (selectedCounty.isBlank()) "All Counties" else selectedCounty,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Filter County (47 Counties)", fontSize = 11.sp) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = countyExpanded) },
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF4CAF50),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White
+                )
+            )
+            ExposedDropdownMenu(
+                expanded = countyExpanded,
+                onDismissRequest = { countyExpanded = false }
+            ) {
+                counties.forEach { county ->
+                    DropdownMenuItem(
+                        text = { Text(county) },
+                        onClick = {
+                            countyExpanded = false
+                            onFilterChanged(if (county == "All Counties") "All Counties" else county, "All Sub-Counties", "All Wards")
+                        }
+                    )
+                }
+            }
+        }
+
+        // Sub-County & Ward Row
+        if (selectedCounty.isNotBlank() && selectedCounty != "All Counties") {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Box(modifier = Modifier.weight(1f)) {
+                    ExposedDropdownMenuBox(
+                        expanded = subCountyExpanded,
+                        onExpandedChange = { subCountyExpanded = !subCountyExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = if (selectedSubCounty.isBlank()) "All Sub-Counties" else selectedSubCounty,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Sub-County", fontSize = 11.sp) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subCountyExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF4CAF50),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = subCountyExpanded,
+                            onDismissRequest = { subCountyExpanded = false }
+                        ) {
+                            subCounties.forEach { subCounty ->
+                                DropdownMenuItem(
+                                    text = { Text(subCounty) },
+                                    onClick = {
+                                        subCountyExpanded = false
+                                        onFilterChanged(selectedCounty, if (subCounty == "All Sub-Counties") "All Sub-Counties" else subCounty, "All Wards")
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (selectedSubCounty.isNotBlank() && selectedSubCounty != "All Sub-Counties") {
+                    Box(modifier = Modifier.weight(1f)) {
+                        ExposedDropdownMenuBox(
+                            expanded = wardExpanded,
+                            onExpandedChange = { wardExpanded = !wardExpanded }
+                        ) {
+                            OutlinedTextField(
+                                value = if (selectedWard.isBlank()) "All Wards" else selectedWard,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Ward", fontSize = 11.sp) },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = wardExpanded) },
+                                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color(0xFF4CAF50),
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White
+                                )
+                            )
+                            ExposedDropdownMenu(
+                                expanded = wardExpanded,
+                                onDismissRequest = { wardExpanded = false }
+                            ) {
+                                wards.forEach { ward ->
+                                    DropdownMenuItem(
+                                        text = { Text(ward) },
+                                        onClick = {
+                                            wardExpanded = false
+                                            onFilterChanged(selectedCounty, selectedSubCounty, if (ward == "All Wards") "All Wards" else ward)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

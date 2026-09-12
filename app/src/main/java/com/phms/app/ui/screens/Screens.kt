@@ -1936,12 +1936,18 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
     val marketPigs = pigs.filter { it.current_stage_id == 5L && it.status == "Active" }
     val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
     var selectedCountyFilter by remember { mutableStateOf("All Counties") }
+    var selectedSubCountyFilter by remember { mutableStateOf("All Sub-Counties") }
+    var selectedWardFilter by remember { mutableStateOf("All Wards") }
     var buyerSearchQuery by remember { mutableStateOf("") }
     var showAddBuyerDialog by remember { mutableStateOf(false) }
 
     val filteredBuyers = buyers.filter { buyer ->
-        (selectedCountyFilter == "All Counties" || buyer.county.equals(selectedCountyFilter, ignoreCase = true) || buyer.location?.contains(selectedCountyFilter, ignoreCase = true) == true) &&
-        (buyerSearchQuery.isBlank() || buyer.name.contains(buyerSearchQuery, ignoreCase = true) || buyer.phone.contains(buyerSearchQuery) || buyer.location?.contains(buyerSearchQuery, ignoreCase = true) == true)
+        val matchesCounty = selectedCountyFilter == "All Counties" || buyer.county.equals(selectedCountyFilter, ignoreCase = true) || buyer.location?.contains(selectedCountyFilter, ignoreCase = true) == true
+        val matchesSubCounty = selectedSubCountyFilter == "All Sub-Counties" || buyer.sub_county.equals(selectedSubCountyFilter, ignoreCase = true) || buyer.location?.contains(selectedSubCountyFilter, ignoreCase = true) == true
+        val matchesWard = selectedWardFilter == "All Wards" || buyer.ward.equals(selectedWardFilter, ignoreCase = true) || buyer.location?.contains(selectedWardFilter, ignoreCase = true) == true
+        val matchesQuery = buyerSearchQuery.isBlank() || buyer.name.contains(buyerSearchQuery, ignoreCase = true) || buyer.phone.contains(buyerSearchQuery) || buyer.location?.contains(buyerSearchQuery, ignoreCase = true) == true
+
+        matchesCounty && matchesSubCounty && matchesWard && matchesQuery
     }
 
     LazyColumn(
@@ -1951,29 +1957,6 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
     ) {
         item {
             Text("Market & Sales", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-        }
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = if (marketPigs.isNotEmpty()) Color(0xFF1B3A1B) else Color(0xFF161B22)),
-                border = BorderStroke(1.dp, if (marketPigs.isNotEmpty()) Color(0xFF4CAF50) else Color(0xFF30363D))
-            ) {
-                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Notifications, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(28.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            if (marketPigs.isNotEmpty()) "📣 MARKET ALERT: ${marketPigs.size} Finisher Pig(s) Market Ready!" else "Market Status Normal",
-                            color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp
-                        )
-                        Text(
-                            if (marketPigs.isNotEmpty()) "Pigs have reached ~90kg target weight. Ready for buyers & abattoir sales." else "No pigs currently at finisher market stage.",
-                            color = Color(0xFF8B949E), fontSize = 11.sp
-                        )
-                    }
-                }
-            }
         }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -2037,22 +2020,16 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                 )
-                Text("Filter by County:", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf("All Counties", "Mombasa", "Nakuru", "Nairobi", "Kiambu", "Uasin Gishu", "Kakamega", "Kisumu", "Kilifi").forEach { county ->
-                        FilterChip(
-                            selected = selectedCountyFilter == county,
-                            onClick = { selectedCountyFilter = county },
-                            label = { Text(county, fontSize = 11.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF1B5E20),
-                                selectedLabelColor = Color(0xFF4CAF50),
-                                containerColor = Color(0xFF21262D),
-                                labelColor = Color(0xFF8B949E)
-                            )
-                        )
+                com.phms.app.ui.components.LocationFilterSelector(
+                    selectedCounty = selectedCountyFilter,
+                    selectedSubCounty = selectedSubCountyFilter,
+                    selectedWard = selectedWardFilter,
+                    onFilterChanged = { county, subCounty, ward ->
+                        selectedCountyFilter = county
+                        selectedSubCountyFilter = subCounty
+                        selectedWardFilter = ward
                     }
-                }
+                )
             }
         }
 
