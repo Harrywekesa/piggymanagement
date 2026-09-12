@@ -1241,30 +1241,52 @@ fun BreedingScreen(viewModel: MainViewModel) {
 
     var showMatingDialog by remember { mutableStateOf(false) }
     var showFarrowingDialog by remember { mutableStateOf(false) }
+    var showGiltHeatDialog by remember { mutableStateOf(false) }
+    var showGiltServiceDialog by remember { mutableStateOf(false) }
     var selectedSowForMating by remember { mutableStateOf<PigEntity?>(null) }
     var selectedSowForFarrowing by remember { mutableStateOf<PigEntity?>(null) }
 
+    val femalePigs = pigs.filter { it.sex == "F" && it.status == "Active" }
     val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
     val now = System.currentTimeMillis()
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Column {
-                Text("Breeding & Reproduction", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("Gestation tracking, AI mating & farrowing logs", fontSize = 12.sp, color = Color(0xFF8B949E))
+        Column(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Text("Breeding & Reproduction", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Gestation tracking, AI mating & gilt heat alerts", fontSize = 12.sp, color = Color(0xFF8B949E))
+                }
             }
-            Button(
-                onClick = {
-                    selectedSowForMating = sows.firstOrNull()
-                    showMatingDialog = true
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
-                shape = RoundedCornerShape(8.dp),
-                enabled = sows.isNotEmpty()
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Record Mating", fontSize = 13.sp)
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { showGiltHeatDialog = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD81B60)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("🔥 Record Gilt Heat", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                Button(
+                    onClick = { showGiltServiceDialog = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("🐖 Record Gilt Served", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                Button(
+                    onClick = {
+                        selectedSowForMating = sows.firstOrNull()
+                        showMatingDialog = true
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = sows.isNotEmpty()
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Sow Mating", fontSize = 12.sp)
+                }
             }
         }
         Spacer(Modifier.height(14.dp))
@@ -1653,6 +1675,159 @@ fun BreedingScreen(viewModel: MainViewModel) {
             }
         )
     }
+
+    // RECORD GILT HEAT DIALOG
+    if (showGiltHeatDialog) {
+        var selectedGilt by remember { mutableStateOf(femalePigs.firstOrNull()) }
+        var standingHeat by remember { mutableStateOf(true) }
+        var symptoms by remember { mutableStateOf("Standing Reflex, Vulva Swelling") }
+        var notes by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { showGiltHeatDialog = false },
+            containerColor = Color(0xFF161B22),
+            title = { Text("🔥 Record Gilt Heat Observation", color = Color.White) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Select a female pig/gilt to record heat symptoms. The app will auto-alert you in 21 days for the next heat cycle if not served.", color = Color(0xFF8B949E), fontSize = 12.sp)
+
+                    DropdownSelector(
+                        label = "Select Female Pig / Gilt *",
+                        options = femalePigs.map { it.id to "Tag #${it.tag_number} (${it.breed})" },
+                        selectedId = selectedGilt?.id,
+                        onSelect = { id -> selectedGilt = femalePigs.find { it.id == id } }
+                    )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = standingHeat,
+                            onCheckedChange = { standingHeat = it },
+                            colors = CheckboxDefaults.colors(checkedColor = Color(0xFFD81B60))
+                        )
+                        Text("Standing Reflex Observed (Ready for Mating)", color = Color.White, fontSize = 13.sp)
+                    }
+
+                    OutlinedTextField(
+                        value = symptoms,
+                        onValueChange = { symptoms = it },
+                        label = { Text("Symptoms / Heat Signs") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                    )
+
+                    OutlinedTextField(
+                        value = notes,
+                        onValueChange = { notes = it },
+                        label = { Text("Notes / Observations") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val gilt = selectedGilt
+                        if (gilt != null) {
+                            viewModel.recordGiltHeat(gilt.id, standingHeat, symptoms, notes.ifBlank { null })
+                            showGiltHeatDialog = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD81B60)),
+                    enabled = selectedGilt != null
+                ) {
+                    Text("Save Heat & Set 21-Day Alert")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showGiltHeatDialog = false }) {
+                    Text("Cancel", color = Color(0xFF8B949E))
+                }
+            }
+        )
+    }
+
+    // RECORD GILT SERVED DIALOG
+    if (showGiltServiceDialog) {
+        var selectedGilt by remember { mutableStateOf(femalePigs.firstOrNull()) }
+        var selectedBoar by remember { mutableStateOf(boars.firstOrNull()) }
+        var serviceType by remember { mutableStateOf("Natural Service") }
+        var notes by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { showGiltServiceDialog = false },
+            containerColor = Color(0xFF161B22),
+            title = { Text("🐖 Record Gilt Served / Mating Event", color = Color.White) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Record mating event for a gilt. Starts 114-day gestation tracking and schedules Day 110 & Day 114 farrowing alerts.", color = Color(0xFF8B949E), fontSize = 12.sp)
+
+                    DropdownSelector(
+                        label = "Select Gilt / Female Pig *",
+                        options = femalePigs.map { it.id to "Tag #${it.tag_number} (${it.breed})" },
+                        selectedId = selectedGilt?.id,
+                        onSelect = { id -> selectedGilt = femalePigs.find { it.id == id } }
+                    )
+
+                    Text("Service Type", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = serviceType == "Natural Service",
+                            onClick = { serviceType = "Natural Service" },
+                            label = { Text("Natural") }
+                        )
+                        FilterChip(
+                            selected = serviceType == "Artificial Insemination (AI)",
+                            onClick = { serviceType = "Artificial Insemination (AI)" },
+                            label = { Text("AI Straw") }
+                        )
+                    }
+
+                    if (serviceType == "Natural Service" && boars.isNotEmpty()) {
+                        DropdownSelector(
+                            label = "Select Boar",
+                            options = boars.map { it.id to "Boar #${it.tag_number} (${it.breed})" },
+                            selectedId = selectedBoar?.id,
+                            onSelect = { id -> selectedBoar = boars.find { it.id == id } }
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = notes,
+                        onValueChange = { notes = it },
+                        label = { Text("AI Straw Batch / Notes") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val gilt = selectedGilt
+                        if (gilt != null) {
+                            viewModel.recordGiltService(
+                                pigId = gilt.id,
+                                boarId = if (serviceType == "Natural Service") selectedBoar?.id else null,
+                                serviceType = serviceType,
+                                notes = notes.ifBlank { null }
+                            )
+                            showGiltServiceDialog = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                    enabled = selectedGilt != null
+                ) {
+                    Text("Record Service & Start 114-Day Gestation")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showGiltServiceDialog = false }) {
+                    Text("Cancel", color = Color(0xFF8B949E))
+                }
+            }
+        )
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1666,6 +1841,13 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val marketPigs = pigs.filter { it.current_stage_id == 5L && it.status == "Active" }
     val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
+    var selectedCountyFilter by remember { mutableStateOf("All Counties") }
+    var buyerSearchQuery by remember { mutableStateOf("") }
+
+    val filteredBuyers = buyers.filter { buyer ->
+        (selectedCountyFilter == "All Counties" || buyer.county.equals(selectedCountyFilter, ignoreCase = true) || buyer.location?.contains(selectedCountyFilter, ignoreCase = true) == true) &&
+        (buyerSearchQuery.isBlank() || buyer.name.contains(buyerSearchQuery, ignoreCase = true) || buyer.phone.contains(buyerSearchQuery) || buyer.location?.contains(buyerSearchQuery, ignoreCase = true) == true)
+    }
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -1737,14 +1919,49 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
             }
         }
 
-        if (buyers.isNotEmpty()) {
-            item { Text("Registered Buyers (${buyers.size})", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White) }
-            items(buyers) { buyer ->
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Buyers Directory — Search by Location", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                OutlinedTextField(
+                    value = buyerSearchQuery,
+                    onValueChange = { buyerSearchQuery = it },
+                    placeholder = { Text("Search buyer name, location, phone...", fontSize = 12.sp) },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF8B949E)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                )
+                Text("Filter by County:", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("All Counties", "Mombasa", "Nakuru", "Nairobi", "Kiambu", "Uasin Gishu", "Kakamega", "Kisumu", "Kilifi").forEach { county ->
+                        FilterChip(
+                            selected = selectedCountyFilter == county,
+                            onClick = { selectedCountyFilter = county },
+                            label = { Text(county, fontSize = 11.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFF1B5E20),
+                                selectedLabelColor = Color(0xFF4CAF50),
+                                containerColor = Color(0xFF21262D),
+                                labelColor = Color(0xFF8B949E)
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+        if (filteredBuyers.isEmpty()) {
+            item {
+                Text("No buyers found matching location filter.", color = Color(0xFF6E7681), fontSize = 13.sp)
+            }
+        } else {
+            items(filteredBuyers) { buyer ->
                 Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
                             Text(buyer.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("${buyer.phone ?: "No phone"} • ${buyer.location ?: "N/A"}", color = Color(0xFF8B949E), fontSize = 12.sp)
+                            val locText = listOfNotNull(buyer.ward, buyer.sub_county, buyer.county ?: buyer.location).filter { it.isNotBlank() }.joinToString(", ")
+                            Text(if (locText.isNotBlank()) "📍 $locText" else "📍 Location N/A", color = Color(0xFF81C784), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Text("${buyer.type} • ${buyer.phone}", color = Color(0xFF8B949E), fontSize = 11.sp)
                         }
                         if (!buyer.phone.isNullOrBlank()) {
                             OutlinedButton(

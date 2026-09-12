@@ -42,9 +42,10 @@ class Converters {
         AlertEntity::class,
         BuyerEntity::class,
         SaleEntity::class,
-        ExpenseEntity::class
+        ExpenseEntity::class,
+        GiltHeatRecordEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

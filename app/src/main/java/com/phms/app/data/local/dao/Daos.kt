@@ -275,6 +275,16 @@ interface BreedingDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWeaningRecord(record: WeaningRecordEntity): Long
+
+    // Gilt Heat Records
+    @Query("SELECT * FROM gilt_heat_records ORDER BY heat_date DESC")
+    fun getAllGiltHeatRecords(): Flow<List<GiltHeatRecordEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGiltHeatRecord(record: GiltHeatRecordEntity): Long
+
+    @Query("UPDATE gilt_heat_records SET status = :status WHERE id = :id")
+    suspend fun updateGiltHeatStatus(id: Long, status: String)
 }
 
 @Dao

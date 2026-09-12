@@ -262,7 +262,23 @@ data class BuyerEntity(
     val phone: String,
     val email: String? = null,
     val location: String? = null,
+    val county: String? = null,
+    val sub_county: String? = null,
+    val ward: String? = null,
     val type: String, // "Wholesaler", "Retailer", "Butchery", "Slaughterhouse"
+    val notes: String? = null,
+    val is_synced: Boolean = false
+)
+
+@Entity(tableName = "gilt_heat_records")
+data class GiltHeatRecordEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val pig_id: Long,
+    val heat_date: Long,
+    val standing_heat_observed: Boolean,
+    val symptoms: String, // "Standing Reflex", "Vulva Swelling", "Mucus Discharge", "Restlessness"
+    val next_heat_alert_date: Long, // heat_date + 21 days
+    val status: String = "Active", // "Active", "Served", "Expired"
     val notes: String? = null
 )
 

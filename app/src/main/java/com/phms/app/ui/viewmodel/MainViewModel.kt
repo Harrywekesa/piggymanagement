@@ -296,9 +296,73 @@ class MainViewModel(
         }
     }
 
-    fun addBuyer(name: String, phone: String, email: String? = null, location: String? = null, type: String = "Wholesaler", notes: String = "") {
+    fun addBuyer(
+        name: String, phone: String, email: String? = null, location: String? = null,
+        county: String? = null, subCounty: String? = null, ward: String? = null,
+        type: String = "Wholesaler", notes: String = ""
+    ) {
         viewModelScope.launch {
-            repository.marketDao.insertBuyer(BuyerEntity(name = name, phone = phone, email = email, location = location, type = type, notes = notes))
+            repository.marketDao.insertBuyer(
+                BuyerEntity(
+                    name = name, phone = phone, email = email, location = location,
+                    county = county, sub_county = subCounty, ward = ward,
+                    type = type, notes = notes
+                )
+            )
+        }
+    }
+
+    val giltHeatRecords: StateFlow<List<GiltHeatRecordEntity>> = repository.breedingDao.getAllGiltHeatRecords()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun recordGiltHeat(pigId: Long, standingHeat: Boolean, symptoms: String, notes: String?) {
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            val nextHeatMs = now + (21L * 24 * 60 * 60 * 1000)
+            repository.breedingDao.insertGiltHeatRecord(
+                GiltHeatRecordEntity(
+                    pig_id = pigId,
+                    heat_date = now,
+                    standing_heat_observed = standingHeat,
+                    symptoms = symptoms,
+                    next_heat_alert_date = nextHeatMs,
+                    status = "Active",
+                    notes = notes
+                )
+            )
+            val pig = repository.pigDao.getPigById(pigId)
+            repository.alertDao.insertAlert(
+                AlertEntity(
+                    type = "Heat Check",
+                    priority = "High",
+                    related_pig_id = pigId,
+                    message = "Gilt #${pig?.tag_number ?: pigId} heat recorded. Next heat check due in 21 days.",
+                    created_date = now
+                )
+            )
+        }
+    }
+
+    fun recordGiltService(pigId: Long, boarId: Long?, serviceType: String, notes: String?) {
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            recordMating(pigId, boarId, serviceType, notes)
+            val pig = repository.pigDao.getPigById(pigId)
+            pig?.let {
+                if (it.sex == "F") {
+                    repository.pigDao.updatePig(it.copy(current_stage_id = 4)) // Promote to Breeding Sow stage
+                }
+            }
+            val farrowingDateMs = now + (114L * 24 * 60 * 60 * 1000)
+            repository.alertDao.insertAlert(
+                AlertEntity(
+                    type = "Farrowing",
+                    priority = "Critical",
+                    related_pig_id = pigId,
+                    message = "Gilt #${pig?.tag_number ?: pigId} served. Expected Farrowing on ${java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(farrowingDateMs))}. Prepare pen on Day 110.",
+                    created_date = now
+                )
+            )
         }
     }
 
