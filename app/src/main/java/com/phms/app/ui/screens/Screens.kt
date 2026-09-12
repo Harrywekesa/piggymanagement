@@ -806,14 +806,22 @@ fun FeedScreen(viewModel: MainViewModel) {
     if (showAddInventoryDialog) {
         var name by remember { mutableStateOf("") }
         var type by remember { mutableStateOf("Raw Ingredient") } // "Raw Ingredient" or "Commercial Premix"
+        var numBagsStr by remember { mutableStateOf("2") }
         var bagSizeStr by remember { mutableStateOf("70") }
         var bagPriceStr by remember { mutableStateOf("3200") }
-        var totalStockStr by remember { mutableStateOf("140") }
-        var costPerKgStr by remember { mutableStateOf("45") }
+        var rawStockStr by remember { mutableStateOf("100") }
+        var rawCostPerKgStr by remember { mutableStateOf("45") }
         var reorderLevelStr by remember { mutableStateOf("50") }
         var stageCategoryExpanded by remember { mutableStateOf(false) }
         var selectedStageCategory by remember { mutableStateOf("Grower") }
         val stageCategories = listOf("Creep/Starter", "Weaner", "Grower", "Finisher", "Sow/Gilt", "All Stages")
+
+        val numBags = numBagsStr.toIntOrNull() ?: 1
+        val bagSize = bagSizeStr.toDoubleOrNull() ?: 70.0
+        val bagPrice = bagPriceStr.toDoubleOrNull() ?: 3200.0
+
+        val computedStockKg = if (type == "Commercial Premix") numBags * bagSize else (rawStockStr.toDoubleOrNull() ?: 50.0)
+        val computedCostPerKg = if (type == "Commercial Premix") (if (bagSize > 0) bagPrice / bagSize else 0.0) else (rawCostPerKgStr.toDoubleOrNull() ?: 45.0)
 
         AlertDialog(
             onDismissRequest = { showAddInventoryDialog = false },
@@ -831,13 +839,40 @@ fun FeedScreen(viewModel: MainViewModel) {
                             )
                         }
                     }
-                    FormField("Feed / Brand Name *", name, { name = it }, placeholder = "e.g. Pembe Pig Finisher 70kg Bag")
+                    FormField("Feed / Brand Name *", name, { name = it }, placeholder = if (type == "Commercial Premix") "e.g. Pembe Pig Finisher 70kg Bag" else "e.g. Maize Meal")
                     if (type == "Commercial Premix") {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.weight(1f)) { FormField("Number of Bags", numBagsStr, { numBagsStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
                             Box(Modifier.weight(1f)) { FormField("Bag Size (kg)", bagSizeStr, { bagSizeStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                            Box(Modifier.weight(1f)) { FormField("Price / Bag (KSh)", bagPriceStr, { bagPriceStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
                         }
-                        // Stage category picker
+                        FormField("Price / Bag (KSh)", bagPriceStr, { bagPriceStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+
+                        // Auto-calculated read-only total stock & cost display
+                        OutlinedTextField(
+                            value = "${String.format("%.1f", computedStockKg)} kg (${numBags} bags × ${bagSize.toInt()}kg)",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Total Stock (🔒 Auto-Calculated)", color = Color(0xFF81C784), fontSize = 12.sp) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF2E7D32), unfocusedBorderColor = Color(0xFF2E7D32),
+                                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                                focusedContainerColor = Color(0xFF162316), unfocusedContainerColor = Color(0xFF162316)
+                            )
+                        )
+                        OutlinedTextField(
+                            value = "KSh ${String.format("%.2f", computedCostPerKg)} / kg",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Cost per kg (🔒 Auto-Calculated)", color = Color(0xFF81C784), fontSize = 12.sp) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF2E7D32), unfocusedBorderColor = Color(0xFF2E7D32),
+                                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                                focusedContainerColor = Color(0xFF162316), unfocusedContainerColor = Color(0xFF162316)
+                            )
+                        )
+
                         Text("Pig Stage Category", color = Color(0xFF8B949E), fontSize = 12.sp)
                         ExposedDropdownMenuBox(
                             expanded = stageCategoryExpanded,
@@ -850,10 +885,8 @@ fun FeedScreen(viewModel: MainViewModel) {
                                 modifier = Modifier.fillMaxWidth().menuAnchor(),
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = stageCategoryExpanded) },
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF4CAF50),
-                                    unfocusedBorderColor = Color(0xFF30363D),
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White
+                                    focusedBorderColor = Color(0xFF4CAF50), unfocusedBorderColor = Color(0xFF30363D),
+                                    focusedTextColor = Color.White, unfocusedTextColor = Color.White
                                 )
                             )
                             ExposedDropdownMenu(
@@ -869,30 +902,27 @@ fun FeedScreen(viewModel: MainViewModel) {
                             }
                         }
                     } else {
-                        FormField("Cost per kg (KSh)", costPerKgStr, { costPerKgStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.weight(1f)) { FormField("Cost per kg (KSh)", rawCostPerKgStr, { rawCostPerKgStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                            Box(Modifier.weight(1f)) { FormField("Total Stock (kg)", rawStockStr, { rawStockStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                        }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) { FormField("Total Stock (kg)", totalStockStr, { totalStockStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                        Box(Modifier.weight(1f)) { FormField("Reorder Level (kg)", reorderLevelStr, { reorderLevelStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                    }
+                    FormField("Reorder Alert Level (kg)", reorderLevelStr, { reorderLevelStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         if (name.isNotBlank()) {
-                            val bSize = bagSizeStr.toDoubleOrNull()
-                            val bPrice = bagPriceStr.toDoubleOrNull()
-                            val calculatedCostPerKg = if (type == "Commercial Premix" && bSize != null && bPrice != null && bSize > 0) bPrice / bSize else (costPerKgStr.toDoubleOrNull() ?: 45.0)
                             viewModel.addFeedIngredient(
                                 name = name,
-                                stockKg = totalStockStr.toDoubleOrNull() ?: 50.0,
-                                costPerKg = calculatedCostPerKg,
+                                stockKg = computedStockKg,
+                                costPerKg = computedCostPerKg,
                                 reorderLevel = reorderLevelStr.toDoubleOrNull() ?: 20.0,
                                 type = type,
                                 brandName = if (type == "Commercial Premix") name else null,
-                                bagSizeKg = if (type == "Commercial Premix") bSize else null,
-                                pricePerBag = if (type == "Commercial Premix") bPrice else null,
+                                bagSizeKg = if (type == "Commercial Premix") bagSize else null,
+                                pricePerBag = if (type == "Commercial Premix") bagPrice else null,
                                 stageCategory = if (type == "Commercial Premix") selectedStageCategory else null
                             )
                             showAddInventoryDialog = false
@@ -1109,17 +1139,31 @@ fun HealthScreen(viewModel: MainViewModel) {
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("Health & Veterinary", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Button(
-                onClick = {
-                    if (selectedPigId == null && pigs.isNotEmpty()) selectedPigId = pigs.first().id
-                    showGroupHealthDialog = true
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Icon(Icons.Default.MedicalServices, null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Log Event", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        eventType = "Gilt Heat Check"
+                        product = "Standing Heat Reflex Check"
+                        if (selectedPigId == null && pigs.isNotEmpty()) selectedPigId = pigs.first().id
+                        showGroupHealthDialog = true
+                    },
+                    border = BorderStroke(1.dp, Color(0xFFD81B60)),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("🔥 Gilt Heat", color = Color(0xFFD81B60), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                Button(
+                    onClick = {
+                        if (selectedPigId == null && pigs.isNotEmpty()) selectedPigId = pigs.first().id
+                        showGroupHealthDialog = true
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.MedicalServices, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Log Event", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -1146,10 +1190,12 @@ fun HealthScreen(viewModel: MainViewModel) {
     }
 
     if (showGroupHealthDialog) {
+        var standingHeatObserved by remember { mutableStateOf(true) }
+
         AlertDialog(
             onDismissRequest = { showGroupHealthDialog = false },
             containerColor = Color(0xFF161B22),
-            title = { Text("Log Health Event", color = Color.White, fontWeight = FontWeight.Bold) },
+            title = { Text("Log Health / Heat Event", color = Color.White, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Target Scope", color = Color(0xFF8B949E), fontSize = 12.sp)
@@ -1185,8 +1231,36 @@ fun HealthScreen(viewModel: MainViewModel) {
                             }
                         }
                     }
-                    FormField("Event Type (e.g. Deworming, Vaccine)", eventType, { eventType = it })
-                    FormField("Product / Medicine Name *", product, { product = it })
+
+                    Text("Event Preset Type:", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("Vaccination", "Deworming", "Treatment", "Checkup", "Gilt Heat Check").forEach { preset ->
+                            FilterChip(
+                                selected = eventType == preset,
+                                onClick = {
+                                    eventType = preset
+                                    if (preset == "Gilt Heat Check") product = "Standing Heat Reflex Check"
+                                },
+                                label = { Text(preset, fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF1B5E20), selectedLabelColor = Color(0xFF4CAF50))
+                            )
+                        }
+                    }
+
+                    FormField("Event Type", eventType, { eventType = it })
+                    FormField("Product / Description *", product, { product = it })
+
+                    if (eventType.contains("Heat", ignoreCase = true)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = standingHeatObserved,
+                                onCheckedChange = { standingHeatObserved = it },
+                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFFD81B60))
+                            )
+                            Text("Standing Heat Reflex (Auto-set 21-Day Alert)", color = Color.White, fontSize = 12.sp)
+                        }
+                    }
+
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) { FormField("Dosage", dosage, { dosage = it }, placeholder = "e.g. 2ml/pig") }
                         Box(Modifier.weight(1f)) { FormField("Withdrawal (Days)", withdrawalDaysStr, { withdrawalDaysStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
@@ -1213,11 +1287,15 @@ fun HealthScreen(viewModel: MainViewModel) {
                                 notes = notes,
                                 withdrawalDays = withdrawalDaysStr.toIntOrNull() ?: 0
                             )
+                            // If heat check event, also record gilt heat cycle
+                            if (eventType.contains("Heat", ignoreCase = true) && selectedPigId != null) {
+                                viewModel.recordGiltHeat(selectedPigId!!, standingHeatObserved, product, notes)
+                            }
                             showGroupHealthDialog = false
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                ) { Text("Save Health Log") }
+                ) { Text("Save Event") }
             },
             dismissButton = {
                 OutlinedButton(onClick = { showGroupHealthDialog = false }) { Text("Cancel", color = Color(0xFF8B949E)) }
