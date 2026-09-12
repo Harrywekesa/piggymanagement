@@ -498,6 +498,7 @@ fun FeedScreen(viewModel: MainViewModel) {
     var soybeanPct by remember { mutableStateOf("14") }
     var fishMealPct by remember { mutableStateOf("6") }
     var premixPct by remember { mutableStateOf("2") }
+    var formulaDisplayUnit by remember { mutableStateOf("Both") } // "Both", "kg", "grams"
 
     fun applyPreset(preset: String) {
         selectedPreset = preset
@@ -696,19 +697,71 @@ fun FeedScreen(viewModel: MainViewModel) {
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF1B281B)),
                             border = BorderStroke(1.dp, Color(0xFF2E7D32))
                         ) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("Quantities for ${batchKg.toInt()} kg Batch ($selectedPreset)", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Column {
+                                        Text("Calculated Measurements (${batchKg.toInt()} kg Batch)", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Text("Auto-computed ingredient weights (Uneditable / Read-Only)", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                    }
+                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        listOf("Both", "kg", "grams").forEach { unit ->
+                                            FilterChip(
+                                                selected = formulaDisplayUnit == unit,
+                                                onClick = { formulaDisplayUnit = unit },
+                                                label = { Text(if (unit == "Both") "kg & g" else unit, fontSize = 10.sp) },
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    selectedContainerColor = Color(0xFF2E7D32),
+                                                    selectedLabelColor = Color.White,
+                                                    containerColor = Color(0xFF161B22),
+                                                    labelColor = Color(0xFF8B949E)
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
                                 HorizontalDivider(color = Color(0xFF2E7D32))
-                                FormulaRow("Maize Meal (Energy)", "${String.format("%.1f", mPct / 100.0 * batchKg)} kg", "KSh ${String.format("%.0f", mPct / 100.0 * batchKg * 55)}")
-                                FormulaRow("Wheat Bran (Fiber)", "${String.format("%.1f", wPct / 100.0 * batchKg)} kg", "KSh ${String.format("%.0f", wPct / 100.0 * batchKg * 38)}")
-                                FormulaRow("Soybean Meal (Protein)", "${String.format("%.1f", sPct / 100.0 * batchKg)} kg", "KSh ${String.format("%.0f", sPct / 100.0 * batchKg * 95)}")
-                                FormulaRow("Fish Meal (Protein/Minerals)", "${String.format("%.1f", fPct / 100.0 * batchKg)} kg", "KSh ${String.format("%.0f", fPct / 100.0 * batchKg * 140)}")
-                                FormulaRow("Premix & Minerals", "${String.format("%.1f", pPct / 100.0 * batchKg)} kg", "KSh ${String.format("%.0f", pPct / 100.0 * batchKg * 220)}")
+
+                                UneditableMeasurementBox(
+                                    label = "Maize Meal (Energy)",
+                                    percentage = mPct,
+                                    calculatedKg = mPct / 100.0 * batchKg,
+                                    costKsh = mPct / 100.0 * batchKg * 55.0,
+                                    displayUnit = formulaDisplayUnit
+                                )
+                                UneditableMeasurementBox(
+                                    label = "Wheat Bran (Fiber)",
+                                    percentage = wPct,
+                                    calculatedKg = wPct / 100.0 * batchKg,
+                                    costKsh = wPct / 100.0 * batchKg * 38.0,
+                                    displayUnit = formulaDisplayUnit
+                                )
+                                UneditableMeasurementBox(
+                                    label = "Soybean Meal (Protein)",
+                                    percentage = sPct,
+                                    calculatedKg = sPct / 100.0 * batchKg,
+                                    costKsh = sPct / 100.0 * batchKg * 95.0,
+                                    displayUnit = formulaDisplayUnit
+                                )
+                                UneditableMeasurementBox(
+                                    label = "Fish Meal (Protein/Minerals)",
+                                    percentage = fPct,
+                                    calculatedKg = fPct / 100.0 * batchKg,
+                                    costKsh = fPct / 100.0 * batchKg * 140.0,
+                                    displayUnit = formulaDisplayUnit
+                                )
+                                UneditableMeasurementBox(
+                                    label = "Premix & Minerals",
+                                    percentage = pPct,
+                                    calculatedKg = pPct / 100.0 * batchKg,
+                                    costKsh = pPct / 100.0 * batchKg * 220.0,
+                                    displayUnit = formulaDisplayUnit
+                                )
+
                                 HorizontalDivider(color = Color(0xFF2E7D32))
                                 val estCost = (mPct/100*batchKg*55 + wPct/100*batchKg*38 + sPct/100*batchKg*95 + fPct/100*batchKg*140 + pPct/100*batchKg*220)
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Total Estimated Cost:", color = Color.White, fontWeight = FontWeight.Bold)
-                                    Text("KSh ${String.format("%.0f", estCost)} (${String.format("%.2f", estCost/batchKg)} / kg)", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Total Estimated Cost:", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("KSh ${String.format("%,.0f", estCost)} (${String.format("%.2f", estCost/batchKg)} / kg)", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 }
                             }
                         }
@@ -936,6 +989,48 @@ fun FormulaRow(label: String, kg: String, cost: String) {
         Text(label, color = Color(0xFFE6EDF3), fontSize = 13.sp)
         Text("$kg • $cost", color = Color(0xFF81C784), fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
+}
+
+@Composable
+fun UneditableMeasurementBox(
+    label: String,
+    percentage: Double,
+    calculatedKg: Double,
+    costKsh: Double,
+    displayUnit: String
+) {
+    val grams = calculatedKg * 1000.0
+    val valueText = when (displayUnit) {
+        "grams" -> "${String.format("%,.0f", grams)} g"
+        "kg" -> "${String.format("%.2f", calculatedKg)} kg"
+        else -> "${String.format("%.2f", calculatedKg)} kg   (${String.format("%,.0f", grams)} g)"
+    }
+
+    OutlinedTextField(
+        value = valueText,
+        onValueChange = {},
+        readOnly = true,
+        enabled = false,
+        label = { Text("$label (${percentage.toInt()}%)", color = Color(0xFF81C784), fontSize = 12.sp) },
+        trailingIcon = {
+            Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF1B5E20)) {
+                Text(
+                    "KSh ${String.format("%,.0f", costKsh)}",
+                    color = Color(0xFF81C784),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        colors = OutlinedTextFieldDefaults.colors(
+            disabledBorderColor = Color(0xFF2E7D32),
+            disabledTextColor = Color.White,
+            disabledLabelColor = Color(0xFF81C784),
+            disabledContainerColor = Color(0xFF162316)
+        )
+    )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
