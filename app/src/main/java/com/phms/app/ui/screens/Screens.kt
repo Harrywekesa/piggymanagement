@@ -51,7 +51,23 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
     ) {
         // KPI CARDS
         item {
-            Text("Farm Overview", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Farm Overview", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                OutlinedButton(
+                    onClick = { navController.navigate("help_center?autoTour=true") },
+                    border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Icon(Icons.Default.Help, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Help & Tour", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
         }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -852,7 +868,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                             value = "${String.format("%.1f", computedStockKg)} kg (${numBags} bags × ${bagSize.toInt()}kg)",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Total Stock (🔒 Auto-Calculated)", color = Color(0xFF81C784), fontSize = 12.sp) },
+                            label = { Text("Total Stock (kg)", color = Color(0xFF81C784), fontSize = 12.sp) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF2E7D32), unfocusedBorderColor = Color(0xFF2E7D32),
@@ -864,7 +880,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                             value = "KSh ${String.format("%.2f", computedCostPerKg)} / kg",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Cost per kg (🔒 Auto-Calculated)", color = Color(0xFF81C784), fontSize = 12.sp) },
+                            label = { Text("Cost per kg (KSh)", color = Color(0xFF81C784), fontSize = 12.sp) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF2E7D32), unfocusedBorderColor = Color(0xFF2E7D32),
