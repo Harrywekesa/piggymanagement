@@ -662,9 +662,26 @@ fun FeedScreen(viewModel: MainViewModel) {
                                     }
                                 }
 
+                                Text("Target Batch Output:", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    listOf("50", "100", "200", "500", "1000").forEach { weight ->
+                                        FilterChip(
+                                            selected = batchWeightKgStr == weight,
+                                            onClick = { batchWeightKgStr = weight },
+                                            label = { Text("${weight} kg", fontSize = 11.sp) },
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = Color(0xFF1B5E20),
+                                                selectedLabelColor = Color(0xFF4CAF50),
+                                                containerColor = Color(0xFF21262D),
+                                                labelColor = Color(0xFF8B949E)
+                                            )
+                                        )
+                                    }
+                                }
+
                                 OutlinedTextField(
                                     value = batchWeightKgStr,
-                                    onValueChange = { batchWeightKgStr = it },
+                                    onValueChange = { input -> batchWeightKgStr = input.filter { it.isDigit() || it == '.' } },
                                     label = { Text("Target Batch Output (kg)") },
                                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),
@@ -725,44 +742,32 @@ fun FeedScreen(viewModel: MainViewModel) {
                                     label = "Maize Meal (Energy)",
                                     percentage = mPct,
                                     calculatedKg = mPct / 100.0 * batchKg,
-                                    costKsh = mPct / 100.0 * batchKg * 55.0,
                                     displayUnit = formulaDisplayUnit
                                 )
                                 UneditableMeasurementBox(
                                     label = "Wheat Bran (Fiber)",
                                     percentage = wPct,
                                     calculatedKg = wPct / 100.0 * batchKg,
-                                    costKsh = wPct / 100.0 * batchKg * 38.0,
                                     displayUnit = formulaDisplayUnit
                                 )
                                 UneditableMeasurementBox(
                                     label = "Soybean Meal (Protein)",
                                     percentage = sPct,
                                     calculatedKg = sPct / 100.0 * batchKg,
-                                    costKsh = sPct / 100.0 * batchKg * 95.0,
                                     displayUnit = formulaDisplayUnit
                                 )
                                 UneditableMeasurementBox(
                                     label = "Fish Meal (Protein/Minerals)",
                                     percentage = fPct,
                                     calculatedKg = fPct / 100.0 * batchKg,
-                                    costKsh = fPct / 100.0 * batchKg * 140.0,
                                     displayUnit = formulaDisplayUnit
                                 )
                                 UneditableMeasurementBox(
                                     label = "Premix & Minerals",
                                     percentage = pPct,
                                     calculatedKg = pPct / 100.0 * batchKg,
-                                    costKsh = pPct / 100.0 * batchKg * 220.0,
                                     displayUnit = formulaDisplayUnit
                                 )
-
-                                HorizontalDivider(color = Color(0xFF2E7D32))
-                                val estCost = (mPct/100*batchKg*55 + wPct/100*batchKg*38 + sPct/100*batchKg*95 + fPct/100*batchKg*140 + pPct/100*batchKg*220)
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Total Estimated Cost:", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    Text("KSh ${String.format("%,.0f", estCost)} (${String.format("%.2f", estCost/batchKg)} / kg)", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                }
                             }
                         }
                     }
@@ -996,28 +1001,26 @@ fun UneditableMeasurementBox(
     label: String,
     percentage: Double,
     calculatedKg: Double,
-    costKsh: Double,
     displayUnit: String
 ) {
     val grams = calculatedKg * 1000.0
     val valueText = when (displayUnit) {
         "grams" -> "${String.format("%,.0f", grams)} g"
         "kg" -> "${String.format("%.2f", calculatedKg)} kg"
-        else -> "${String.format("%.2f", calculatedKg)} kg   (${String.format("%,.0f", grams)} g)"
+        else -> "${String.format("%.2f", calculatedKg)} kg   |   ${String.format("%,.0f", grams)} g"
     }
 
     OutlinedTextField(
         value = valueText,
         onValueChange = {},
         readOnly = true,
-        enabled = false,
-        label = { Text("$label (${percentage.toInt()}%)", color = Color(0xFF81C784), fontSize = 12.sp) },
+        label = { Text("$label (${percentage.toInt()}%)", color = Color(0xFF81C784), fontSize = 12.sp, fontWeight = FontWeight.Bold) },
         trailingIcon = {
             Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF1B5E20)) {
                 Text(
-                    "KSh ${String.format("%,.0f", costKsh)}",
+                    "🔒 Auto-Calc",
                     color = Color(0xFF81C784),
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                 )
@@ -1025,10 +1028,14 @@ fun UneditableMeasurementBox(
         },
         modifier = Modifier.fillMaxWidth(),
         colors = OutlinedTextFieldDefaults.colors(
-            disabledBorderColor = Color(0xFF2E7D32),
-            disabledTextColor = Color.White,
-            disabledLabelColor = Color(0xFF81C784),
-            disabledContainerColor = Color(0xFF162316)
+            focusedBorderColor = Color(0xFF2E7D32),
+            unfocusedBorderColor = Color(0xFF2E7D32),
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            focusedLabelColor = Color(0xFF81C784),
+            unfocusedLabelColor = Color(0xFF81C784),
+            focusedContainerColor = Color(0xFF162316),
+            unfocusedContainerColor = Color(0xFF162316)
         )
     )
 }
@@ -1613,6 +1620,7 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
     val pigs by viewModel.activePigs.collectAsState()
     val sales by viewModel.sales.collectAsState()
     val buyers by viewModel.buyers.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val marketPigs = pigs.filter { it.current_stage_id == 5L && it.status == "Active" }
     val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
 
@@ -1625,15 +1633,38 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
             Text("Market & Sales", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
         item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = if (marketPigs.isNotEmpty()) Color(0xFF1B3A1B) else Color(0xFF161B22)),
+                border = BorderStroke(1.dp, if (marketPigs.isNotEmpty()) Color(0xFF4CAF50) else Color(0xFF30363D))
+            ) {
+                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Notifications, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(28.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            if (marketPigs.isNotEmpty()) "📣 MARKET ALERT: ${marketPigs.size} Finisher Pig(s) Market Ready!" else "Market Status Normal",
+                            color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp
+                        )
+                        Text(
+                            if (marketPigs.isNotEmpty()) "Pigs have reached ~90kg target weight. Ready for buyers & abattoir sales." else "No pigs currently at finisher market stage.",
+                            color = Color(0xFF8B949E), fontSize = 11.sp
+                        )
+                    }
+                }
+            }
+        }
+        item {
             Button(
                 onClick = onStartSale,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
             ) {
                 Icon(Icons.Default.AddShoppingCart, null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Record New Sale", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text("Record New Sale to Buyer", fontSize = 15.sp, fontWeight = FontWeight.Bold)
             }
         }
         item { Text("Market-Ready Stock (${marketPigs.size})", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White) }
@@ -1662,6 +1693,35 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                 }
             }
         }
+
+        if (buyers.isNotEmpty()) {
+            item { Text("Registered Buyers (${buyers.size})", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White) }
+            items(buyers) { buyer ->
+                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f)) {
+                            Text(buyer.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("${buyer.phone ?: "No phone"} • ${buyer.location ?: "N/A"}", color = Color(0xFF8B949E), fontSize = 12.sp)
+                        }
+                        if (!buyer.phone.isNullOrBlank()) {
+                            OutlinedButton(
+                                onClick = {
+                                    try {
+                                        val intent = android.content.Intent(android.content.Intent.ACTION_DIAL, android.net.Uri.parse("tel:${buyer.phone}"))
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) { e.printStackTrace() }
+                                },
+                                border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text("Call Buyer", color = Color(0xFF4CAF50), fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (sales.isNotEmpty()) {
             item { Text("Recent Sales (${sales.size})", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White) }
             items(sales.take(10)) { sale ->
