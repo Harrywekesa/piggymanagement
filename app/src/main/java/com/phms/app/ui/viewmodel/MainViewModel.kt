@@ -231,6 +231,23 @@ class MainViewModel(
         viewModelScope.launch { repository.promotePig(pigId, newStageId, newPenId) }
     }
 
+    fun createPen(name: String, capacity: Int, notes: String? = null) {
+        viewModelScope.launch {
+            repository.penDao.insertPen(
+                PenEntity(name = name, capacity = capacity, notes = notes)
+            )
+        }
+    }
+
+    fun assignPigToPen(pigId: Long, penId: Long?) {
+        viewModelScope.launch {
+            val pig = repository.pigDao.getPigById(pigId)
+            if (pig != null) {
+                repository.pigDao.updatePig(pig.copy(pen_id = penId))
+            }
+        }
+    }
+
     fun markAlertDone(alertId: Long) {
         viewModelScope.launch { repository.alertDao.markAlertDone(alertId) }
     }
