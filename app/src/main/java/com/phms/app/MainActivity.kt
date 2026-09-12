@@ -328,7 +328,7 @@ fun MoreMenuSheet(onNavigate: (String) -> Unit) {
         Triple("health", Icons.Default.LocalHospital, "Health & Vet"),
         Triple("breeding", Icons.Default.Favorite, "Breeding"),
         Triple("market", Icons.Default.ShoppingCart, "Market & Sales"),
-        Triple("reports", Icons.Default.BarChart, "Financial Reports"),
+        Triple("reports", Icons.Default.BarChart, "Reports"),
         Triple("settings", Icons.Default.Settings, "Settings"),
         Triple("help_center", Icons.Default.HelpOutline, "Help Center & Tour 🧭")
     )

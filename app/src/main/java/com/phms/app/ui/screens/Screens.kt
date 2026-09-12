@@ -2521,69 +2521,61 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        // Header + Range Selector
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    Text("Farm Reports Hub", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Text("Multi-period analytics for all farm operations", fontSize = 12.sp, color = Color(0xFF8B949E))
-                }
-                OutlinedButton(
-                    onClick = { showCustomDatePicker = true },
-                    border = BorderStroke(1.dp, Color(0xFF4CAF50)),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.DateRange, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Custom Date", color = Color(0xFF4CAF50), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                }
-            }
+        // Header + Dropdown Selectors
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Farm Reports Hub", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Select report category & time range from the dropdowns below", fontSize = 12.sp, color = Color(0xFF8B949E))
 
-            Spacer(Modifier.height(10.dp))
-
-            // Range Preset Chips
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Today", "This Week", "This Month", "3 Months", "6 Months", "This Year", "All Time").forEach { range ->
-                    FilterChip(
-                        selected = selectedRange == range,
-                        onClick = { selectedRange = range },
-                        label = { Text(range, fontSize = 12.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFF1B5E20),
-                            selectedLabelColor = Color(0xFF4CAF50),
-                            containerColor = Color(0xFF161B22),
-                            labelColor = Color(0xFF8B949E)
-                        )
-                    )
+            // Dropdown 1: Date Range Filter
+            StringDropdownSelector(
+                label = "Date Range Period *",
+                options = listOf("Today", "This Week", "This Month", "3 Months", "6 Months", "This Year", "All Time", "Custom Date Range"),
+                selectedOption = selectedRange,
+                onSelect = { range ->
+                    if (range == "Custom Date Range") {
+                        showCustomDatePicker = true
+                    } else {
+                        selectedRange = range
+                    }
                 }
-            }
+            )
 
-            Spacer(Modifier.height(8.dp))
+            // Dropdown 2: Report Category Selector
+            StringDropdownSelector(
+                label = "Select Report Category *",
+                options = listOf(
+                    "💵 Financial Reports",
+                    "🐖 Herd & Count Reports",
+                    "🩺 Health & Mortality Reports",
+                    "🌾 Feed & FCR Growth Reports",
+                    "💕 Breeding & Reproduction Reports"
+                ),
+                selectedOption = when (selectedTab) {
+                    0 -> "💵 Financial Reports"
+                    1 -> "🐖 Herd & Count Reports"
+                    2 -> "🩺 Health & Mortality Reports"
+                    3 -> "🌾 Feed & FCR Growth Reports"
+                    else -> "💕 Breeding & Reproduction Reports"
+                },
+                onSelect = { category ->
+                    selectedTab = when (category) {
+                        "💵 Financial Reports" -> 0
+                        "🐖 Herd & Count Reports" -> 1
+                        "🩺 Health & Mortality Reports" -> 2
+                        "🌾 Feed & FCR Growth Reports" -> 3
+                        else -> 4
+                    }
+                }
+            )
 
             // Date Range Display Badge
             Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF161B22)) {
                 Text(
-                    text = "Period: ${if (startMs == 0L) "All Time Records" else "${dateFormat.format(Date(startMs))}  →  ${dateFormat.format(Date(endMs))}"}",
+                    text = "Active Period: ${if (startMs == 0L) "All Time Records" else "${dateFormat.format(Date(startMs))}  →  ${dateFormat.format(Date(endMs))}"}",
                     color = Color(0xFF4CAF50),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                )
-            }
-        }
-
-        // 5 Report Tabs
-        ScrollableTabRow(
-            selectedTabIndex = selectedTab,
-            containerColor = Color(0xFF161B22),
-            contentColor = Color(0xFF4CAF50),
-            edgePadding = 16.dp
-        ) {
-            listOf("💵 Financials", "🐖 Herd & Count", "🩺 Health & Mortality", "🌾 Feed & FCR", "💕 Breeding").forEachIndexed { i, title ->
-                Tab(
-                    selected = selectedTab == i,
-                    onClick = { selectedTab = i },
-                    text = { Text(title, fontSize = 12.sp, fontWeight = if (selectedTab == i) FontWeight.Bold else FontWeight.Normal, color = if (selectedTab == i) Color(0xFF4CAF50) else Color(0xFF8B949E)) }
                 )
             }
         }
@@ -3020,33 +3012,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
             }
         }
 
-        // Demo data
-        item {
-            SectionCard("Data Management") {
-                Text("Populate with realistic demo farm data for testing.", color = Color(0xFF8B949E), fontSize = 13.sp)
-                Spacer(Modifier.height(12.dp))
-                Button(
-                    onClick = {
-                        isSeeding = true
-                        viewModel.seedDemoData {
-                            isSeeding = false
-                            Toast.makeText(context, "Demo data seeded successfully!", Toast.LENGTH_LONG).show()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isSeeding,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF21262D)),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    if (isSeeding) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color(0xFF4CAF50), strokeWidth = 2.dp)
-                        Spacer(Modifier.width(8.dp))
-                    }
-                    Text(if (isSeeding) "Seeding..." else "Seed Demo Data", color = Color(0xFF4CAF50))
-                }
-                Spacer(Modifier.height(8.dp))
-            }
-        }
+
 
         // About & Developer Details & Feedback
         item {
