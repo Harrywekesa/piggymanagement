@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Roll-Up Banner - Digital Pig Farm Manager | Kitale ASK Show 2026</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    body {
+      background-color: #0f172a;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      color: #334155;
+    }
+    
+    /* Standard Roll-up Banner Aspect Ratio (850px x 2000px proportional) */
+    .banner-container {
+      width: 800px;
+      height: 1880px;
+      background: linear-gradient(180deg, #064e3b 0%, #022c22 15%, #0f172a 40%, #022c22 85%, #064e3b 100%);
+      border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      border: 4px solid #f59e0b;
+    }
+    
+    /* Header Section */
+    .header {
+      background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+      padding: 30px 40px 20px 40px;
+      text-align: center;
+      border-bottom: 3px solid #fbbf24;
+      position: relative;
+    }
+    
+    .institution-tag {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #fef08a;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    
+    .dept-tag {
+      font-size: 13px;
+      font-weight: 600;
+      color: #a7f3d0;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+    
+    .main-title {
+      font-size: 38px;
+      font-weight: 900;
+      color: #ffffff;
+      text-transform: uppercase;
+      line-height: 1.1;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    
+    .main-title span {
+      color: #fbbf24;
+    }
+    
+    .subtitle {
+      font-size: 16px;
+      font-weight: 500;
+      color: #e2e8f0;
+      margin-top: 10px;
+      background: rgba(0,0,0,0.25);
+      display: inline-block;
+      padding: 6px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(251, 191, 36, 0.4);
+    }
+    
+    /* Event Badge */
+    .event-badge {
+      background: linear-gradient(90deg, #d97706, #f59e0b);
+      color: #ffffff;
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    
+    /* System Modules / Explanations Container */
+    .modules-container {
+      padding: 30px 35px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .module-card {
+      background: rgba(30, 41, 59, 0.85);
+      border-left: 5px solid #10b981;
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .module-card:nth-child(even) {
+      border-left-color: #f59e0b;
+    }
+    
+    .module-icon {
+      width: 70px;
+      height: 70px;
+      min-width: 70px;
+      background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: #fbbf24;
+      border: 2px solid rgba(251, 191, 36, 0.3);
+    }
+    
+    .module-content h3 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .module-content h3 span.tag {
+      font-size: 10px;
+      background: #10b981;
+      color: #022c22;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    
+    .module-card:nth-child(even) .module-content h3 span.tag {
+      background: #f59e0b;
+      color: #451a03;
+    }
+    
+    .module-content p {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+    
+    .module-features {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    
+    .feature-pill {
+      font-size: 11px;
+      background: rgba(255,255,255,0.08);
+      color: #67e8f9;
+      padding: 3px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(103, 232, 249, 0.2);
+    }
+
+    /* Key Specs Highlight Grid */
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 5px;
+    }
+    
+    .spec-item {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    
+    .spec-val {
+      font-size: 22px;
+      font-weight: 900;
+      color: #fbbf24;
+    }
+    
+    .spec-lbl {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    
+    /* Footer Details */
+    .footer {
+      background: #022c22;
+      border-top: 3px solid #f59e0b;
+      padding: 22px 35px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .innovator-info h4 {
+      font-size: 11px;
+      color: #fef08a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    
+    .innovator-info p {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    
+    .innovator-info small {
+      font-size: 12px;
+      color: #a7f3d0;
+    }
+    
+    .theme-info {
+      text-align: right;
+      max-width: 340px;
+    }
+    
+    .theme-info h4 {
+      font-size: 11px;
+      color: #fef08a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    
+    .theme-info p {
+      font-size: 11.5px;
+      font-style: italic;
+      color: #e2e8f0;
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="banner-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="institution-tag">Kitale National Polytechnic</div>
+      <div class="dept-tag">Department of Computer Science & Information Technology</div>
+      <h1 class="main-title">Digital Pig <span>Farm Manager</span></h1>
+      <div class="subtitle">Offline-First Smart Swine Husbandry & Analytics System</div>
+    </div>
+    
+    <!-- Event Badge -->
+    <div class="event-badge">
+      Exhibition Stand: Kitale Agricultural Society of Kenya (ASK) Show 2026
+    </div>
+    
+    <!-- Modules Breakdown -->
+    <div class="modules-container">
+      
+      <!-- Module 1 -->
+      <div class="module-card">
+        <div class="module-icon">🐖</div>
+        <div class="module-content">
+          <h3>Herd & Lifecycle Registry <span class="tag">Stage History</span></h3>
+          <p>Tracks individual pig tag numbers, breeds, biological stages (piglets, weaners, growers, finishers, boars, sows), sow/boar lineage, birth dates, and weight gain timelines.</p>
+          <div class="module-features">
+            <span class="feature-pill">Tag Numbering</span>
+            <span class="feature-pill">Lineage Mapping</span>
+            <span class="feature-pill">Weight History Log</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Module 2 -->
+      <div class="module-card">
+        <div class="module-icon">💉</div>
+        <div class="module-content">
+          <h3>Vet & Health Event Logger <span class="tag">Gilt Service</span></h3>
+          <p>Flexible targeting for single pig, category (e.g. all weaners), or full herd. Records disease diagnoses, age in weeks, weight at event, treatment costs, and gilt servicing.</p>
+          <div class="module-features">
+            <span class="feature-pill">Single / Category / Herd Scope</span>
+            <span class="feature-pill">Disease Tracking</span>
+            <span class="feature-pill">Gilt Service Record</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Module 3 -->
+      <div class="module-card">
+        <div class="module-icon">🗺️</div>
+        <div class="module-content">
+          <h3>Kenya 47 Counties Engine <span class="tag">Location Mapping</span></h3>
+          <p>Complete built-in geographic hierarchy for all 47 Kenya Counties, Sub-Counties, and Wards. Enables precise farm registration and localized disease reporting.</p>
+          <div class="module-features">
+            <span class="feature-pill">47 Kenya Counties</span>
+            <span class="feature-pill">Sub-Counties & Wards</span>
+            <span class="feature-pill">Offline GIS Data</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Module 4 -->
+      <div class="module-card">
+        <div class="module-icon">⚖️</div>
+        <div class="module-content">
+          <h3>Least-Cost Feed Formulator <span class="tag">FCR & ADG</span></h3>
+          <p>Precision feed stock allocation, commercial premix integration, and automated calculations for Feed Conversion Ratio (FCR) and Average Daily Gain (ADG).</p>
+          <div class="module-features">
+            <span class="feature-pill">FCR Computation</span>
+            <span class="feature-pill">ADG (kg/day)</span>
+            <span class="feature-pill">Premix Rationing</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Module 5 -->
+      <div class="module-card">
+        <div class="module-icon">📊</div>
+        <div class="module-content">
+          <h3>Comprehensive Reports Hub <span class="tag">P&L Financials</span></h3>
+          <p>Dropdown date selectors (Today, Last 7 Days, Last 30 Days, YTD, All Time) generating Profit & Loss, Herd Production, Health/Mortality, and Breeding performance reports.</p>
+          <div class="module-features">
+            <span class="feature-pill">Financial P&L</span>
+            <span class="feature-pill">Mortality Rates</span>
+            <span class="feature-pill">Farrowing Efficiency</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Specs Grid -->
+      <div class="specs-grid">
+        <div class="spec-item">
+          <div class="spec-val">100%</div>
+          <div class="spec-lbl">Offline-First SQLite</div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-val">47</div>
+          <div class="spec-lbl">Kenya Counties Mapped</div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-val">Ksh 5K</div>
+          <div class="spec-lbl">Development Budget</div>
+        </div>
+      </div>
+
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <div class="innovator-info">
+        <h4>Innovator & Supervisor</h4>
+        <p>Anditi Andrew Awala</p>
+        <small>Reg: IT-DCSL/4451889/24 | Sup: Mr. Harrison Wekesa</small>
+      </div>
+      <div class="theme-info">
+        <h4>ASK Show Theme 2026</h4>
+        <p>"Promoting Climate-Smart Agriculture, Technological Innovation, and Trade Initiatives for Sustainable Economic Growth"</p>
+      </div>
+    </div>
+    
+  </div>
+
+</body>
+</html>
