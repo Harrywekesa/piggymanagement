@@ -116,7 +116,10 @@ class PHMSRepository(private val db: AppDatabase) {
         cost: Double,
         vetName: String,
         notes: String?,
-        withdrawalDays: Int = 0
+        withdrawalDays: Int = 0,
+        diseaseName: String? = null,
+        ageWeeks: Int? = null,
+        weightKg: Double? = null
     ) {
         val now = System.currentTimeMillis()
         when (targetScope) {
@@ -134,7 +137,10 @@ class PHMSRepository(private val db: AppDatabase) {
                             vet_name = vetName,
                             target_scope = "Single Pig",
                             cost = cost,
-                            notes = notes
+                            notes = notes,
+                            disease_name = diseaseName,
+                            age_weeks = ageWeeks,
+                            weight_kg = weightKg
                         )
                     )
                 }
@@ -163,7 +169,10 @@ class PHMSRepository(private val db: AppDatabase) {
                             target_scope = "Category",
                             target_category = targetCategory,
                             cost = if (targetPigs.isNotEmpty()) cost / targetPigs.size else cost,
-                            notes = notes
+                            notes = notes,
+                            disease_name = diseaseName,
+                            age_weeks = ageWeeks,
+                            weight_kg = weightKg
                         )
                     )
                 }
@@ -182,7 +191,10 @@ class PHMSRepository(private val db: AppDatabase) {
                             vet_name = vetName,
                             target_scope = "Herd",
                             cost = if (pigs.isNotEmpty()) cost / pigs.size else cost,
-                            notes = notes
+                            notes = notes,
+                            disease_name = diseaseName,
+                            age_weeks = ageWeeks,
+                            weight_kg = weightKg
                         )
                     )
                 }

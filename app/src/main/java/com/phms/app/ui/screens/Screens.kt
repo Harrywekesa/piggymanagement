@@ -1432,13 +1432,28 @@ fun HealthScreen(viewModel: MainViewModel) {
 
     if (showGroupHealthDialog) {
         var standingHeatObserved by remember { mutableStateOf(true) }
+        var diseaseName by remember { mutableStateOf("") }
+        var ageWeeksStr by remember { mutableStateOf("") }
+        var weightKgStr by remember { mutableStateOf("") }
+        var selectedBoarId by remember { mutableStateOf<Long?>(null) }
+        val boars = pigs.filter { it.sex.equals("M", true) }
+
+        // Pre-fill age if single pig selected
+        LaunchedEffect(selectedPigId) {
+            val selectedPig = pigs.find { it.id == selectedPigId }
+            if (selectedPig != null) {
+                val ageMs = System.currentTimeMillis() - selectedPig.birth_date
+                val weeks = (ageMs / (1000L * 60 * 60 * 24 * 7)).toInt()
+                if (ageWeeksStr.isBlank()) ageWeeksStr = maxOf(1, weeks).toString()
+            }
+        }
 
         AlertDialog(
             onDismissRequest = { showGroupHealthDialog = false },
             containerColor = Color(0xFF161B22),
-            title = { Text("Log Health / Heat Event", color = Color.White, fontWeight = FontWeight.Bold) },
+            title = { Text("Log Health / Vet Event", color = Color.White, fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Target Scope", color = Color(0xFF8B949E), fontSize = 12.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf("Single Pig", "Category", "Herd").forEach { scope ->
@@ -1454,7 +1469,7 @@ fun HealthScreen(viewModel: MainViewModel) {
                         Text("Select Animal *", color = Color(0xFF8B949E), fontSize = 12.sp)
                         DropdownSelector(
                             label = "Select Pig",
-                            options = pigs.map { it.id to "Tag #${it.tag_number} (${it.breed})" },
+                            options = pigs.map { it.id to "Tag #${it.tag_number} (${it.breed} • ${it.sex})" },
                             selectedId = selectedPigId ?: pigs.first().id,
                             onSelect = { selectedPigId = it }
                         )
@@ -1475,62 +1490,110 @@ fun HealthScreen(viewModel: MainViewModel) {
 
                     Text("Event Preset Type:", color = Color(0xFF8B949E), fontSize = 12.sp)
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("Vaccination", "Deworming", "Treatment", "Checkup", "Gilt Heat Check").forEach { preset ->
+                        listOf("Treatment", "Vaccination", "Deworming", "Checkup", "Gilt/Sow Serviced", "Mortality / Death").forEach { preset ->
                             FilterChip(
                                 selected = eventType == preset,
                                 onClick = {
                                     eventType = preset
-                                    if (preset == "Gilt Heat Check") product = "Standing Heat Reflex Check"
+                                    if (preset == "Gilt/Sow Serviced") {
+                                        product = "Breeding / Insemination"
+                                        diseaseName = "Reproduction"
+                                    } else if (preset == "Mortality / Death") {
+                                        product = "Death / Culling Record"
+                                        diseaseName = "African Swine Fever"
+                                    }
                                 },
                                 label = { Text(preset, fontSize = 11.sp) },
-                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF1B5E20), selectedLabelColor = Color(0xFF4CAF50))
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = if (preset.contains("Death")) Color(0xFF7B1F1F) else Color(0xFF1B5E20),
+                                    selectedLabelColor = if (preset.contains("Death")) Color(0xFFFF5252) else Color(0xFF4CAF50)
+                                )
                             )
                         }
                     }
 
                     FormField("Event Type", eventType, { eventType = it })
-                    FormField("Product / Description *", product, { product = it })
 
-                    if (eventType.contains("Heat", ignoreCase = true)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = standingHeatObserved,
-                                onCheckedChange = { standingHeatObserved = it },
-                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFFD81B60))
+                    // Disease / Diagnosis input with quick chips
+                    Text("Disease / Condition / Diagnosis", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("Diarrhea / Scours", "Pneumonia", "African Swine Fever", "Mange / Parasites", "MMA / Mastitis", "Foot Rot", "Routine Check", "Gilt Serviced").forEach { dChip ->
+                            FilterChip(
+                                selected = diseaseName == dChip,
+                                onClick = { diseaseName = dChip },
+                                label = { Text(dChip, fontSize = 10.sp) },
+                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF3E2723), selectedLabelColor = Color(0xFFFF8A65))
                             )
-                            Text("Standing Heat Reflex (Auto-set 21-Day Alert)", color = Color.White, fontSize = 12.sp)
                         }
+                    }
+                    FormField("Disease / Diagnosis Name", diseaseName, { diseaseName = it }, placeholder = "e.g. Swine Fever, Pneumonia")
+
+                    FormField("Product / Medication Description *", product, { product = it }, placeholder = "e.g. Oxytetracycline 20%")
+
+                    if (eventType == "Gilt/Sow Serviced" && boars.isNotEmpty()) {
+                        Text("Servicing Boar (Optional for AI)", color = Color(0xFF8B949E), fontSize = 12.sp)
+                        DropdownSelector(
+                            label = "Select Boar",
+                            options = listOf(-1L to "Artificial Insemination (AI)") + boars.map { it.id to "Boar Tag #${it.tag_number}" },
+                            selectedId = selectedBoarId ?: -1L,
+                            onSelect = { selectedBoarId = if (it == -1L) null else it }
+                        )
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(Modifier.weight(1f)) { FormField("Age when Affected (Wks)", ageWeeksStr, { ageWeeksStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                        Box(Modifier.weight(1f)) { FormField("Weight (kg)", weightKgStr, { weightKgStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) { FormField("Dosage", dosage, { dosage = it }, placeholder = "e.g. 2ml/pig") }
                         Box(Modifier.weight(1f)) { FormField("Withdrawal (Days)", withdrawalDaysStr, { withdrawalDaysStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
                     }
+
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) { FormField("Total Cost (KSh)", costStr, { costStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
                         Box(Modifier.weight(1f)) { FormField("Vet / Operator", vetName, { vetName = it }) }
                     }
+
+                    FormField("Notes / Clinical Symptoms", notes, { notes = it }, placeholder = "Additional clinical notes...")
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         if (product.isNotBlank()) {
-                            viewModel.logGroupHealthEvent(
-                                targetScope = targetScope,
-                                targetPigId = if (targetScope == "Single Pig") selectedPigId else null,
-                                targetCategory = if (targetScope == "Category") targetCategory else null,
-                                type = eventType,
-                                product = product,
-                                dosage = dosage,
-                                cost = costStr.toDoubleOrNull() ?: 0.0,
-                                vetName = vetName,
-                                notes = notes,
-                                withdrawalDays = withdrawalDaysStr.toIntOrNull() ?: 0
-                            )
-                            // If heat check event, also record gilt heat cycle
-                            if (eventType.contains("Heat", ignoreCase = true) && selectedPigId != null) {
-                                viewModel.recordGiltHeat(selectedPigId!!, standingHeatObserved, product, notes)
+                            val targetPig = if (targetScope == "Single Pig") selectedPigId else null
+                            if (eventType == "Gilt/Sow Serviced" && targetPig != null) {
+                                viewModel.logGiltServiceFromHealth(
+                                    sowId = targetPig,
+                                    boarId = selectedBoarId,
+                                    notes = notes
+                                )
+                            } else if (eventType == "Mortality / Death" && targetPig != null) {
+                                viewModel.logMortalityEvent(
+                                    pigId = targetPig,
+                                    diseaseName = diseaseName.ifBlank { "Unspecified Disease" },
+                                    ageWeeks = ageWeeksStr.toIntOrNull(),
+                                    weightKg = weightKgStr.toDoubleOrNull(),
+                                    notes = notes,
+                                    cost = costStr.toDoubleOrNull() ?: 0.0
+                                )
+                            } else {
+                                viewModel.logGroupHealthEvent(
+                                    targetScope = targetScope,
+                                    targetPigId = targetPig,
+                                    targetCategory = if (targetScope == "Category") targetCategory else null,
+                                    type = eventType,
+                                    product = product,
+                                    dosage = dosage,
+                                    cost = costStr.toDoubleOrNull() ?: 0.0,
+                                    vetName = vetName,
+                                    notes = notes,
+                                    withdrawalDays = withdrawalDaysStr.toIntOrNull() ?: 0,
+                                    diseaseName = diseaseName.ifBlank { null },
+                                    ageWeeks = ageWeeksStr.toIntOrNull(),
+                                    weightKg = weightKgStr.toDoubleOrNull()
+                                )
                             }
                             showGroupHealthDialog = false
                         }
@@ -2422,40 +2485,70 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun ReportsHubScreen(viewModel: MainViewModel) {
-    val pnl by viewModel.pnlSummary.collectAsState()
+    val report by viewModel.comprehensiveReport.collectAsState()
     val sales by viewModel.sales.collectAsState()
     val buyers by viewModel.buyers.collectAsState()
     val context = LocalContext.current
+
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedRange by remember { mutableStateOf("This Month") }
     var searchQuery by remember { mutableStateOf("") }
+    var showCustomDatePicker by remember { mutableStateOf(false) }
+
+    val now = System.currentTimeMillis()
+    var startMs by remember { mutableStateOf(now - TimeUnit.DAYS.toMillis(30)) }
+    var endMs by remember { mutableStateOf(now) }
+
     val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
 
-    // Date range filter
-    val now = System.currentTimeMillis()
-    val startMs = when (selectedRange) {
-        "This Month" -> now - TimeUnit.DAYS.toMillis(30)
-        "3 Months" -> now - TimeUnit.DAYS.toMillis(90)
-        "6 Months" -> now - TimeUnit.DAYS.toMillis(180)
-        else -> 0L
+    // Update range startMs based on preset selection
+    LaunchedEffect(selectedRange) {
+        val currentNow = System.currentTimeMillis()
+        endMs = currentNow
+        startMs = when (selectedRange) {
+            "Today" -> currentNow - TimeUnit.DAYS.toMillis(1)
+            "This Week" -> currentNow - TimeUnit.DAYS.toMillis(7)
+            "This Month" -> currentNow - TimeUnit.DAYS.toMillis(30)
+            "3 Months" -> currentNow - TimeUnit.DAYS.toMillis(90)
+            "6 Months" -> currentNow - TimeUnit.DAYS.toMillis(180)
+            "This Year" -> currentNow - TimeUnit.DAYS.toMillis(365)
+            "All Time" -> 0L
+            else -> startMs
+        }
+        viewModel.loadComprehensiveReport(startMs, endMs, selectedRange)
     }
 
-    LaunchedEffect(startMs) { viewModel.loadPnL(startMs) }
-
     val filteredSales = sales.filter { s ->
-        s.date >= startMs && (searchQuery.isEmpty() ||
+        s.date in startMs..endMs && (searchQuery.isEmpty() ||
                 buyers.find { it.id == s.buyer_id }?.name?.contains(searchQuery, ignoreCase = true) == true ||
                 s.total_amount.toString().contains(searchQuery) ||
                 dateFormat.format(Date(s.date)).contains(searchQuery, ignoreCase = true))
     }
 
     Column(Modifier.fillMaxSize()) {
-        // Header + Filters
+        // Header + Range Selector
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Text("Financial Reports", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Text("Farm Reports Hub", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Multi-period analytics for all farm operations", fontSize = 12.sp, color = Color(0xFF8B949E))
+                }
+                OutlinedButton(
+                    onClick = { showCustomDatePicker = true },
+                    border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.DateRange, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Custom Date", color = Color(0xFF4CAF50), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Range Preset Chips
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("This Month", "3 Months", "6 Months", "All Time").forEach { range ->
+                listOf("Today", "This Week", "This Month", "3 Months", "6 Months", "This Year", "All Time").forEach { range ->
                     FilterChip(
                         selected = selectedRange == range,
                         onClick = { selectedRange = range },
@@ -2469,65 +2562,56 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                     )
                 }
             }
+
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("Search by buyer, date, amount...", color = Color(0xFF6E7681)) },
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF6E7681)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(10.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF4CAF50),
-                    unfocusedBorderColor = Color(0xFF30363D),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    unfocusedContainerColor = Color(0xFF161B22),
-                    focusedContainerColor = Color(0xFF161B22)
+
+            // Date Range Display Badge
+            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF161B22)) {
+                Text(
+                    text = "Period: ${if (startMs == 0L) "All Time Records" else "${dateFormat.format(Date(startMs))}  →  ${dateFormat.format(Date(endMs))}"}",
+                    color = Color(0xFF4CAF50),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                 )
-            )
+            }
         }
 
-        // Tabs
-        TabRow(
+        // 5 Report Tabs
+        ScrollableTabRow(
             selectedTabIndex = selectedTab,
             containerColor = Color(0xFF161B22),
             contentColor = Color(0xFF4CAF50),
-            indicator = { tabPositions ->
-                if (selectedTab < tabPositions.size) {
-                    TabRowDefaults.SecondaryIndicator(
-                        Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = Color(0xFF4CAF50)
-                    )
-                }
-            }
+            edgePadding = 16.dp
         ) {
-            listOf("P&L Summary", "Sales Ledger").forEachIndexed { i, title ->
-                Tab(selected = selectedTab == i, onClick = { selectedTab = i }, text = {
-                    Text(title, fontSize = 13.sp, color = if (selectedTab == i) Color(0xFF4CAF50) else Color(0xFF8B949E))
-                })
+            listOf("💵 Financials", "🐖 Herd & Count", "🩺 Health & Mortality", "🌾 Feed & FCR", "💕 Breeding").forEachIndexed { i, title ->
+                Tab(
+                    selected = selectedTab == i,
+                    onClick = { selectedTab = i },
+                    text = { Text(title, fontSize = 12.sp, fontWeight = if (selectedTab == i) FontWeight.Bold else FontWeight.Normal, color = if (selectedTab == i) Color(0xFF4CAF50) else Color(0xFF8B949E)) }
+                )
             }
         }
 
-        LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        val r = report
+        LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             when (selectedTab) {
-                0 -> {
+                0 -> { // Financials
                     item {
                         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("Profit & Loss — $selectedRange", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text("Profit & Loss Statement (${r?.periodLabel ?: selectedRange})", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 HorizontalDivider(color = Color(0xFF21262D))
-                                PnLRow("Sales Revenue", "KSh ${pnl?.totalRevenue?.toInt() ?: 0}", positive = true)
-                                PnLRow("Feed Expenses", "– KSh ${pnl?.feedCost?.toInt() ?: 0}", positive = false)
-                                PnLRow("Health & Vet", "– KSh ${pnl?.healthCost?.toInt() ?: 0}", positive = false)
-                                PnLRow("Labor (Est.)", "– KSh ${pnl?.estimatedLaborCost?.toInt() ?: 0}", positive = false)
+                                PnLRow("Sales Revenue", "KSh ${r?.pnl?.totalRevenue?.toInt() ?: 0}", positive = true)
+                                PnLRow("Feed Expenses", "– KSh ${r?.pnl?.feedCost?.toInt() ?: 0}", positive = false)
+                                PnLRow("Health & Vet Expenses", "– KSh ${r?.pnl?.healthCost?.toInt() ?: 0}", positive = false)
+                                PnLRow("Labor & Utilities (Est.)", "– KSh ${r?.pnl?.estimatedLaborCost?.toInt() ?: 0}", positive = false)
                                 HorizontalDivider(color = Color(0xFF30363D))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("NET PROFIT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text("NET PROFIT / LOSS", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                     Text(
-                                        "KSh ${pnl?.netProfit?.toInt() ?: 0}",
-                                        color = if ((pnl?.netProfit ?: 0.0) >= 0) Color(0xFF4CAF50) else Color(0xFFFF5252),
+                                        "KSh ${r?.pnl?.netProfit?.toInt() ?: 0}",
+                                        color = if ((r?.pnl?.netProfit ?: 0.0) >= 0) Color(0xFF4CAF50) else Color(0xFFFF5252),
                                         fontWeight = FontWeight.Bold, fontSize = 18.sp
                                     )
                                 }
@@ -2535,61 +2619,197 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                         }
                     }
                     item {
-                        Button(
-                            onClick = {
-                                val pnlVal = pnl
-                                if (pnlVal != null) {
-                                    val file = com.phms.app.domain.reporting.PdfReportGenerator.generatePnLReportPdf(context, pnlVal)
-                                    if (file != null) {
-                                        Toast.makeText(context, "PDF saved: ${file.name}", Toast.LENGTH_LONG).show()
-                                    } else {
-                                        Toast.makeText(context, "Failed to export PDF", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().height(50.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF21262D))
-                        ) {
-                            Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFFFF5252), modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Export as PDF", color = Color.White)
-                        }
+                        Text("Sales Ledger in Selected Period (${filteredSales.size})", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
-                }
-                1 -> {
                     if (filteredSales.isEmpty()) {
-                        item { Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { Text("No sales in this period.", color = Color(0xFF6E7681)) } }
+                        item { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { Text("No sales recorded in this period.", color = Color(0xFF6E7681)) } }
                     } else {
                         items(filteredSales) { sale ->
                             val buyer = buyers.find { it.id == sale.buyer_id }
-                            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Box(Modifier.size(38.dp).clip(CircleShape).background(Color(0xFF1B5E20)), contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Default.AttachMoney, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
-                                    }
-                                    Spacer(Modifier.width(12.dp))
                                     Column(Modifier.weight(1f)) {
-                                        Text(buyer?.name ?: "Unknown", color = Color.White, fontWeight = FontWeight.SemiBold)
-                                        Text("${sale.total_weight}kg • KSh ${sale.price_per_kg}/kg", color = Color(0xFF8B949E), fontSize = 12.sp)
-                                        Text(dateFormat.format(Date(sale.date)), color = Color(0xFF6E7681), fontSize = 11.sp)
+                                        Text(buyer?.name ?: "Unknown Buyer", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                        Text("${sale.total_weight}kg • KSh ${sale.price_per_kg}/kg", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                        Text(dateFormat.format(Date(sale.date)), color = Color(0xFF6E7681), fontSize = 10.sp)
                                     }
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text("KSh ${String.format("%,.0f", sale.total_amount)}", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                        val statusColor = when (sale.payment_status) {
-                                            "Paid" -> Color(0xFF4CAF50)
-                                            "Partial" -> Color(0xFFFFB300)
-                                            else -> Color(0xFFFF5252)
+                                    Text("KSh ${sale.total_amount.toInt()}", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+                1 -> { // Herd & Counts
+                    item {
+                        Text("Active Herd Inventory Breakdown", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) { MetricCard("Total Active Pigs", "${r?.herd?.totalActivePigs ?: 0}", Icons.Default.Pets, Color(0xFF4CAF50)) }
+                            Box(Modifier.weight(1f)) { MetricCard("Weaners", "${r?.herd?.weanersCount ?: 0}", Icons.Default.Category, Color(0xFF2196F3)) }
+                        }
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) { MetricCard("Finishers", "${r?.herd?.finishersCount ?: 0}", Icons.Default.LocalShipping, Color(0xFFFF9800)) }
+                            Box(Modifier.weight(1f)) { MetricCard("Piglets", "${r?.herd?.pigletsCount ?: 0}", Icons.Default.ChildCare, Color(0xFFE91E63)) }
+                        }
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) { MetricCard("Sows & Gilts", "${(r?.herd?.sowsCount ?: 0) + (r?.herd?.giltsCount ?: 0)}", Icons.Default.Female, Color(0xFF9C27B0)) }
+                            Box(Modifier.weight(1f)) { MetricCard("Breeding Boars", "${r?.herd?.boarsCount ?: 0}", Icons.Default.Male, Color(0xFF00BCD4)) }
+                        }
+                    }
+                    item {
+                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Reproductive Output in Selected Period", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                HorizontalDivider(color = Color(0xFF21262D))
+                                PnLRow("Piglets Born Alive", "${r?.herd?.totalBornAliveInPeriod ?: 0}", positive = true)
+                                PnLRow("Stillborn Piglets", "${r?.herd?.totalStillbornInPeriod ?: 0}", positive = false)
+                                PnLRow("Piglets Weaned", "${r?.herd?.totalWeanedInPeriod ?: 0}", positive = true)
+                            }
+                        }
+                    }
+                }
+                2 -> { // Health & Mortality
+                    item {
+                        Text("Health & Disease Analytics", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) { MetricCard("Total Health Events", "${r?.health?.totalEventsCount ?: 0}", Icons.Default.MedicalServices, Color(0xFF2196F3)) }
+                            Box(Modifier.weight(1f)) { MetricCard("Deaths / Mortality", "${r?.health?.totalDeathsCount ?: 0}", Icons.Default.Warning, Color(0xFFFF5252)) }
+                        }
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) { MetricCard("Mortality Rate %", String.format(Locale.getDefault(), "%.1f%%", r?.health?.mortalityRatePct ?: 0.0), Icons.Default.TrendingDown, Color(0xFFFF9800)) }
+                            Box(Modifier.weight(1f)) { MetricCard("Active Withdrawals", "${r?.health?.activeWithdrawalCount ?: 0}", Icons.Default.Block, Color(0xFFE91E63)) }
+                        }
+                    }
+                    item {
+                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Disease Prevalence Breakdown", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                HorizontalDivider(color = Color(0xFF21262D))
+                                val breakdown = r?.health?.diseaseBreakdown ?: emptyMap()
+                                if (breakdown.isEmpty()) {
+                                    Text("No disease cases recorded in this period.", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                } else {
+                                    breakdown.forEach { (disease, count) ->
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(disease, color = Color.White, fontSize = 13.sp)
+                                            Text("$count cases", color = Color(0xFFFF8A65), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                         }
-                                        Text(sale.payment_status, color = statusColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
                         }
                     }
                 }
+                3 -> { // Feed & FCR
+                    item {
+                        Text("Feed Conversion & Growth Efficiency", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) { MetricCard("Feed Conversion Ratio (FCR)", String.format(Locale.getDefault(), "%.2f", r?.feedGrowth?.feedConversionRatio ?: 2.8), Icons.Default.Speed, Color(0xFF4CAF50)) }
+                            Box(Modifier.weight(1f)) { MetricCard("Avg Daily Gain (ADG)", String.format(Locale.getDefault(), "%.2f kg/day", r?.feedGrowth?.avgDailyGainKg ?: 0.45), Icons.Default.TrendingUp, Color(0xFF00BCD4)) }
+                        }
+                    }
+                    item {
+                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Feed Consumption Summary", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                HorizontalDivider(color = Color(0xFF21262D))
+                                PnLRow("Total Feed Consumed", String.format(Locale.getDefault(), "%.1f kg", r?.feedGrowth?.totalFeedConsumedKg ?: 0.0), positive = false)
+                                PnLRow("Est. Total Herd Weight Gain", String.format(Locale.getDefault(), "%.1f kg", r?.feedGrowth?.totalWeightGainedKg ?: 0.0), positive = true)
+                                PnLRow("Total Feed Cost", "KSh ${r?.feedGrowth?.feedCostTotal?.toInt() ?: 0}", positive = false)
+                            }
+                        }
+                    }
+                }
+                4 -> { // Breeding
+                    item {
+                        Text("Breeding & Reproduction Performance", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) { MetricCard("Gilts/Sows Serviced", "${r?.breeding?.servicedCount ?: 0}", Icons.Default.Favorite, Color(0xFFE91E63)) }
+                            Box(Modifier.weight(1f)) { MetricCard("Active Pregnancies", "${r?.breeding?.activePregnanciesCount ?: 0}", Icons.Default.ChildFriendly, Color(0xFF9C27B0)) }
+                        }
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) { MetricCard("Heat Checks Logged", "${r?.breeding?.heatChecksCount ?: 0}", Icons.Default.Whatshot, Color(0xFFFF9800)) }
+                            Box(Modifier.weight(1f)) { MetricCard("Farrowings Expected", "${r?.breeding?.expectedFarrowingsInPeriodCount ?: 0}", Icons.Default.Event, Color(0xFF4CAF50)) }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = {
+                        val pnlVal = r?.pnl
+                        if (pnlVal != null) {
+                            val file = com.phms.app.domain.reporting.PdfReportGenerator.generatePnLReportPdf(context, pnlVal)
+                            if (file != null) {
+                                Toast.makeText(context, "Full PDF report saved to downloads: ${file.name}", Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(context, "Failed to export PDF", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF21262D))
+                ) {
+                    Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFFFF5252), modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Export Comprehensive Report as PDF", color = Color.White, fontSize = 13.sp)
+                }
             }
         }
+    }
+
+    if (showCustomDatePicker) {
+        var startDaysAgoStr by remember { mutableStateOf("30") }
+        var endDaysAgoStr by remember { mutableStateOf("0") }
+
+        AlertDialog(
+            onDismissRequest = { showCustomDatePicker = false },
+            containerColor = Color(0xFF161B22),
+            title = { Text("Select Custom Date Range", color = Color.White, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Specify how many days ago the period starts & ends:", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    FormField("Days Ago (Start Date)", startDaysAgoStr, { startDaysAgoStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                    FormField("Days Ago (End Date)", endDaysAgoStr, { endDaysAgoStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val startDays = startDaysAgoStr.toLongOrNull() ?: 30L
+                        val endDays = endDaysAgoStr.toLongOrNull() ?: 0L
+                        val currentNow = System.currentTimeMillis()
+                        startMs = currentNow - TimeUnit.DAYS.toMillis(startDays)
+                        endMs = currentNow - TimeUnit.DAYS.toMillis(endDays)
+                        selectedRange = "Custom ($startDays d to $endDays d)"
+                        viewModel.loadComprehensiveReport(startMs, endMs, selectedRange)
+                        showCustomDatePicker = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                ) { Text("Apply Filter") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showCustomDatePicker = false }) { Text("Cancel", color = Color(0xFF8B949E)) }
+            }
+        )
     }
 }
 
@@ -2598,6 +2818,28 @@ fun PnLRow(label: String, value: String, positive: Boolean) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, color = Color(0xFF8B949E), fontSize = 14.sp)
         Text(value, color = if (positive) Color(0xFF4CAF50) else Color(0xFFFF5252), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+fun MetricCard(title: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, accentColor: Color) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(
+                    modifier = Modifier.size(26.dp).clip(CircleShape).background(accentColor.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, null, tint = accentColor, modifier = Modifier.size(15.dp))
+                }
+                Text(title, color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+            }
+            Text(value, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
 

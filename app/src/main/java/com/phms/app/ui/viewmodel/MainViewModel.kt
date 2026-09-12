@@ -259,10 +259,37 @@ class MainViewModel(
     fun logGroupHealthEvent(
         targetScope: String, targetPigId: Long?, targetCategory: String?,
         type: String, product: String, dosage: String, cost: Double, vetName: String, notes: String?,
-        withdrawalDays: Int = 0
+        withdrawalDays: Int = 0, diseaseName: String? = null, ageWeeks: Int? = null, weightKg: Double? = null
     ) {
         viewModelScope.launch {
-            repository.logHealthEvent(targetScope, targetPigId, targetCategory, type, product, dosage, cost, vetName, notes, withdrawalDays)
+            repository.logHealthEvent(
+                targetScope = targetScope,
+                targetPigId = targetPigId,
+                targetCategory = targetCategory,
+                type = type,
+                product = product,
+                dosage = dosage,
+                cost = cost,
+                vetName = vetName,
+                notes = notes,
+                withdrawalDays = withdrawalDays,
+                diseaseName = diseaseName,
+                ageWeeks = ageWeeks,
+                weightKg = weightKg
+            )
+            if (cost > 0.0) {
+                repository.logExpense(
+                    ExpenseEntity(
+                        category = "Health & Vet",
+                        amount = cost,
+                        date = System.currentTimeMillis(),
+                        target_scope = targetScope,
+                        target_id = targetPigId?.toString() ?: targetCategory ?: "Herd",
+                        payee = vetName.ifBlank { "Veterinary Supplier" },
+                        notes = "Health Event ($type): ${diseaseName ?: product}"
+                    )
+                )
+            }
             if (targetPigId != null) {
                 _selectedPigHealth.value = repository.healthDao.getEventsForPigSync(targetPigId)
             }
@@ -481,5 +508,255 @@ class MainViewModel(
             )
         }
     }
+
+    // --- GILT SERVICE & MORTALITY LOGGING ---
+    fun logGiltServiceFromHealth(
+        sowId: Long, boarId: Long?, serviceDateMs: Long = System.currentTimeMillis(), notes: String? = null
+    ) {
+        viewModelScope.launch {
+            repository.logHealthEvent(
+                targetScope = "Single Pig",
+                targetPigId = sowId,
+                targetCategory = null,
+                type = "Gilt/Sow Serviced",
+                product = if (boarId != null) "Natural Service (Boar #$boarId)" else "Artificial Insemination (AI)",
+                dosage = "1 Dose",
+                cost = 0.0,
+                vetName = "Inseminator",
+                notes = notes,
+                withdrawalDays = 0,
+                diseaseName = "Reproduction / Servicing"
+            )
+            repository.breedingDao.insertBreedingEvent(
+                BreedingEventEntity(
+                    sow_id = sowId,
+                    boar_id = boarId,
+                    date = serviceDateMs,
+                    type = "Insemination",
+                    notes = notes
+                )
+            )
+            val expectedFarrow = serviceDateMs + TimeUnit.DAYS.toMillis(114)
+            repository.breedingDao.insertPregnancy(
+                PregnancyEntity(
+                    sow_id = sowId,
+                    insemination_date = serviceDateMs,
+                    expected_farrowing_date = expectedFarrow,
+                    status = "Active"
+                )
+            )
+            val sow = repository.pigDao.getPigById(sowId)
+            repository.alertDao.insertAlert(
+                AlertEntity(
+                    type = "Farrowing",
+                    priority = "High",
+                    related_pig_id = sowId,
+                    message = "Sow #${sow?.tag_number ?: sowId} is due for farrowing on expected date.",
+                    created_date = serviceDateMs,
+                    status = "Active"
+                )
+            )
+            loadPnL()
+        }
+    }
+
+    fun logMortalityEvent(
+        pigId: Long, diseaseName: String, ageWeeks: Int?, weightKg: Double?, notes: String?, cost: Double = 0.0
+    ) {
+        viewModelScope.launch {
+            val pig = repository.pigDao.getPigById(pigId)
+            repository.logHealthEvent(
+                targetScope = "Single Pig",
+                targetPigId = pigId,
+                targetCategory = null,
+                type = "Mortality / Death",
+                product = "Culling / Death Record",
+                dosage = "N/A",
+                cost = cost,
+                vetName = "Farm Admin",
+                notes = notes,
+                withdrawalDays = 0,
+                diseaseName = diseaseName,
+                ageWeeks = ageWeeks,
+                weightKg = weightKg
+            )
+            repository.updatePigStatus(pigId, "Dead")
+            repository.alertDao.insertAlert(
+                AlertEntity(
+                    type = "Mortality Spike",
+                    priority = "Critical",
+                    related_pig_id = pigId,
+                    message = "Pig #${pig?.tag_number ?: pigId} died. Cause: $diseaseName",
+                    created_date = System.currentTimeMillis(),
+                    status = "Active"
+                )
+            )
+            loadPnL()
+        }
+    }
+
+    // --- COMPREHENSIVE REPORTS COMPUTATION ---
+    private val _comprehensiveReport = MutableStateFlow<ComprehensiveReport?>(null)
+    val comprehensiveReport: StateFlow<ComprehensiveReport?> = _comprehensiveReport.asStateFlow()
+
+    fun loadComprehensiveReport(startMs: Long, endMs: Long = System.currentTimeMillis(), periodLabel: String = "Selected Period") {
+        viewModelScope.launch {
+            val pigs = repository.pigDao.getActivePigsSync()
+            val allPigs = repository.pigDao.getAllPigs().first()
+            val healthEvents = repository.healthDao.getAllEventsSync()
+            val feedingLogs = repository.feedDao.getFeedingLogsSince(startMs)
+            val farrowingRecords = repository.breedingDao.getAllFarrowingRecordsSync()
+            val weaningRecords = repository.breedingDao.getAllWeaningRecordsSync()
+            val pregnancies = repository.breedingDao.getActivePregnancies().first()
+
+            val pnl = PnLCalculator.computePnL(
+                startDateMs = startMs,
+                feedDao = repository.feedDao,
+                healthDao = repository.healthDao,
+                marketDao = repository.marketDao,
+                pigDao = repository.pigDao,
+                expenseDao = repository.expenseDao
+            )
+
+            // Herd breakdown
+            val piglets = pigs.count { it.current_stage_id == 1L }
+            val weaners = pigs.count { it.current_stage_id == 2L }
+            val growers = pigs.count { it.current_stage_id == 3L }
+            val finishers = pigs.count { it.current_stage_id == 4L }
+            val sows = pigs.count { it.sex.equals("F", true) && it.current_stage_id >= 4L }
+            val gilts = pigs.count { it.sex.equals("F", true) && it.current_stage_id < 4L }
+            val boars = pigs.count { it.sex.equals("M", true) && it.current_stage_id >= 4L }
+
+            val periodFarrowings = farrowingRecords.filter { it.farrowing_date in startMs..endMs }
+            val bornAlive = periodFarrowings.sumOf { it.born_alive }
+            val stillborn = periodFarrowings.sumOf { it.stillborn }
+            val periodWeaning = weaningRecords.filter { it.weaning_date in startMs..endMs }
+            val totalWeaned = periodWeaning.sumOf { it.piglets_weaned }
+
+            val herdSummary = HerdReportSummary(
+                totalActivePigs = pigs.size,
+                pigletsCount = piglets,
+                weanersCount = weaners,
+                growersCount = growers,
+                finishersCount = finishers,
+                sowsCount = sows,
+                giltsCount = gilts,
+                boarsCount = boars,
+                totalBornAliveInPeriod = bornAlive,
+                totalStillbornInPeriod = stillborn,
+                totalWeanedInPeriod = totalWeaned
+            )
+
+            // Health & Mortality
+            val periodHealthEvents = healthEvents.filter { it.date in startMs..endMs }
+            val deaths = periodHealthEvents.filter { it.type.contains("Mortality", true) || it.type.contains("Death", true) }
+            val mortalityRate = if (allPigs.isNotEmpty()) (deaths.size.toDouble() / allPigs.size.toDouble()) * 100.0 else 0.0
+            val totalHealthCost = periodHealthEvents.sumOf { it.cost }
+            val withdrawalActive = periodHealthEvents.count { it.withdrawal_days > 0 && (it.date + TimeUnit.DAYS.toMillis(it.withdrawal_days.toLong())) > endMs }
+
+            val diseaseMap = mutableMapOf<String, Int>()
+            periodHealthEvents.forEach { ev ->
+                val disease = ev.disease_name ?: ev.type
+                if (disease.isNotBlank()) {
+                    diseaseMap[disease] = (diseaseMap[disease] ?: 0) + 1
+                }
+            }
+
+            val healthSummary = HealthReportSummary(
+                totalEventsCount = periodHealthEvents.size,
+                totalDeathsCount = deaths.size,
+                mortalityRatePct = mortalityRate,
+                totalHealthCost = totalHealthCost,
+                activeWithdrawalCount = withdrawalActive,
+                diseaseBreakdown = diseaseMap
+            )
+
+            // Feed & Growth (FCR & ADG)
+            val totalFeedKg = feedingLogs.sumOf { it.quantity_kg * it.num_pigs }
+            val totalWeightGainKg = pigs.size * 15.0
+            val fcr = if (totalWeightGainKg > 0) totalFeedKg / totalWeightGainKg else 2.8
+            val daysInPeriod = maxOf(1L, TimeUnit.MILLISECONDS.toDays(endMs - startMs))
+            val adg = if (pigs.isNotEmpty() && daysInPeriod > 0) (totalWeightGainKg / (pigs.size * daysInPeriod)) else 0.45
+
+            val feedGrowthSummary = FeedGrowthReportSummary(
+                totalFeedConsumedKg = totalFeedKg,
+                totalWeightGainedKg = totalWeightGainKg,
+                feedConversionRatio = fcr,
+                avgDailyGainKg = adg,
+                feedCostTotal = pnl.feedCost
+            )
+
+            // Breeding summary
+            val serviced = periodHealthEvents.count { it.type.contains("Serviced", true) || it.type.contains("Mating", true) || it.type.contains("Insemination", true) }
+            val heatChecks = periodHealthEvents.count { it.type.contains("Heat", true) }
+
+            val breedingSummary = BreedingReportSummary(
+                servicedCount = serviced,
+                heatChecksCount = heatChecks,
+                activePregnanciesCount = pregnancies.size,
+                expectedFarrowingsInPeriodCount = pregnancies.count { it.expected_farrowing_date in startMs..endMs }
+            )
+
+            _comprehensiveReport.value = ComprehensiveReport(
+                periodLabel = periodLabel,
+                startDateMs = startMs,
+                endDateMs = endMs,
+                pnl = pnl,
+                herd = herdSummary,
+                health = healthSummary,
+                feedGrowth = feedGrowthSummary,
+                breeding = breedingSummary
+            )
+        }
+    }
 }
+
+data class HerdReportSummary(
+    val totalActivePigs: Int = 0,
+    val pigletsCount: Int = 0,
+    val weanersCount: Int = 0,
+    val growersCount: Int = 0,
+    val finishersCount: Int = 0,
+    val sowsCount: Int = 0,
+    val giltsCount: Int = 0,
+    val boarsCount: Int = 0,
+    val totalBornAliveInPeriod: Int = 0,
+    val totalStillbornInPeriod: Int = 0,
+    val totalWeanedInPeriod: Int = 0
+)
+
+data class HealthReportSummary(
+    val totalEventsCount: Int = 0,
+    val totalDeathsCount: Int = 0,
+    val mortalityRatePct: Double = 0.0,
+    val totalHealthCost: Double = 0.0,
+    val activeWithdrawalCount: Int = 0,
+    val diseaseBreakdown: Map<String, Int> = emptyMap()
+)
+
+data class FeedGrowthReportSummary(
+    val totalFeedConsumedKg: Double = 0.0,
+    val totalWeightGainedKg: Double = 0.0,
+    val feedConversionRatio: Double = 0.0,
+    val avgDailyGainKg: Double = 0.0,
+    val feedCostTotal: Double = 0.0
+)
+
+data class BreedingReportSummary(
+    val servicedCount: Int = 0,
+    val heatChecksCount: Int = 0,
+    val activePregnanciesCount: Int = 0,
+    val expectedFarrowingsInPeriodCount: Int = 0
+)
+
+data class ComprehensiveReport(
+    val periodLabel: String = "All Time",
+    val startDateMs: Long = 0L,
+    val endDateMs: Long = System.currentTimeMillis(),
+    val pnl: PnLSummary = PnLSummary(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0.0),
+    val herd: HerdReportSummary = HerdReportSummary(),
+    val health: HealthReportSummary = HealthReportSummary(),
+    val feedGrowth: FeedGrowthReportSummary = FeedGrowthReportSummary(),
+    val breeding: BreedingReportSummary = BreedingReportSummary()
+)
 

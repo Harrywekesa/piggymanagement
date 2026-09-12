@@ -173,7 +173,10 @@ data class HealthEventEntity(
     val target_scope: String = "Single Pig", // "Single Pig", "Category", "Herd"
     val target_category: String? = null, // e.g. "Piglets", "Weaners", "Sows"
     val cost: Double = 0.0,
-    val notes: String? = null
+    val notes: String? = null,
+    val disease_name: String? = null,
+    val age_weeks: Int? = null,
+    val weight_kg: Double? = null
 )
 
 @Entity(tableName = "symptoms")

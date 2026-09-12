@@ -415,8 +415,23 @@ fun HealthEventRow(event: HealthEventEntity, dateFormat: SimpleDateFormat) {
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(event.type, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(event.type, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    if (!event.disease_name.isNullOrEmpty()) {
+                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF3E2723)) {
+                            Text(event.disease_name!!, color = Color(0xFFFF8A65), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
+                        }
+                    }
+                }
                 Text(event.product, color = Color(0xFF8B949E), fontSize = 12.sp)
+                val extraDetails = buildList {
+                    if (event.age_weeks != null) add("Age: ${event.age_weeks}w")
+                    if (event.weight_kg != null) add("Weight: ${event.weight_kg}kg")
+                    if (event.cost > 0) add("Cost: KSh ${event.cost.toInt()}")
+                }.joinToString(" • ")
+                if (extraDetails.isNotBlank()) {
+                    Text(extraDetails, color = Color(0xFF4CAF50), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                }
                 Text(dateFormat.format(Date(event.date)), color = Color(0xFF6E7681), fontSize = 11.sp)
             }
             if (event.withdrawal_days > 0) {

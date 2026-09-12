@@ -45,7 +45,7 @@ class Converters {
         ExpenseEntity::class,
         GiltHeatRecordEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
