@@ -1921,6 +1921,7 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
     val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
     var selectedCountyFilter by remember { mutableStateOf("All Counties") }
     var buyerSearchQuery by remember { mutableStateOf("") }
+    var showAddBuyerDialog by remember { mutableStateOf(false) }
 
     val filteredBuyers = buyers.filter { buyer ->
         (selectedCountyFilter == "All Counties" || buyer.county.equals(selectedCountyFilter, ignoreCase = true) || buyer.location?.contains(selectedCountyFilter, ignoreCase = true) == true) &&
@@ -1959,15 +1960,27 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
             }
         }
         item {
-            Button(
-                onClick = onStartSale,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-            ) {
-                Icon(Icons.Default.AddShoppingCart, null, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Record New Sale to Buyer", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onStartSale,
+                    modifier = Modifier.weight(1.2f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                ) {
+                    Icon(Icons.Default.AddShoppingCart, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Record Sale", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+                OutlinedButton(
+                    onClick = { showAddBuyerDialog = true },
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color(0xFF4CAF50))
+                ) {
+                    Icon(Icons.Default.PersonAdd, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Add Buyer", color = Color(0xFF4CAF50), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
         item { Text("Market-Ready Stock (${marketPigs.size})", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White) }
@@ -2086,6 +2099,103 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                 }
             }
         }
+    }
+
+    if (showAddBuyerDialog) {
+        var name by remember { mutableStateOf("") }
+        var phone by remember { mutableStateOf("") }
+        var email by remember { mutableStateOf("") }
+        var buyerType by remember { mutableStateOf("Wholesaler") }
+        var county by remember { mutableStateOf("Mombasa") }
+        var subCounty by remember { mutableStateOf("Nyali") }
+        var ward by remember { mutableStateOf("Frere Town") }
+        var notes by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { showAddBuyerDialog = false },
+            containerColor = Color(0xFF161B22),
+            title = {
+                Text("Add New Buyer", color = Color.White, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    FormField("Buyer / Business Name *", name, { name = it })
+                    FormField("Phone Number *", phone, { phone = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone)
+                    FormField("Email (Optional)", email, { email = it })
+
+                    Text("Buyer Type", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("Wholesaler", "Supermarket", "Hotel", "Abattoir", "Broker", "Individual").forEach { type ->
+                            FilterChip(
+                                selected = buyerType == type,
+                                onClick = { buyerType = type },
+                                label = { Text(type, fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF1B5E20),
+                                    selectedLabelColor = Color(0xFF4CAF50),
+                                    containerColor = Color(0xFF21262D),
+                                    labelColor = Color(0xFF8B949E)
+                                )
+                            )
+                        }
+                    }
+
+                    Text("Buyer Location (County, Sub-County, Ward)", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    com.phms.app.ui.components.LocationSelector(
+                        selectedCounty = county,
+                        selectedSubCounty = subCounty,
+                        selectedWard = ward,
+                        onLocationChanged = { c, sc, w ->
+                            county = c
+                            subCounty = sc
+                            ward = w
+                        }
+                    )
+
+                    FormField("Additional Notes", notes, { notes = it }, placeholder = "e.g. Preferred weight 90-100kg")
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (name.isBlank() || phone.isBlank()) {
+                            Toast.makeText(context, "Please enter buyer name and phone number", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        viewModel.addBuyer(
+                            name = name,
+                            phone = phone,
+                            email = email.ifBlank { null },
+                            location = "$ward, $subCounty, $county",
+                            county = county,
+                            subCounty = subCounty,
+                            ward = ward,
+                            type = buyerType,
+                            notes = notes
+                        )
+                        showAddBuyerDialog = false
+                        Toast.makeText(context, "Buyer registered successfully!", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Save Buyer")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showAddBuyerDialog = false },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Cancel", color = Color(0xFF8B949E))
+                }
+            }
+        )
     }
 }
 
@@ -2282,10 +2392,15 @@ fun SettingsScreen(viewModel: MainViewModel) {
     val farmSettings by viewModel.farmSettings.collectAsState()
     var isSeeding by remember { mutableStateOf(false) }
 
+    var isEditingFarmProfile by remember { mutableStateOf(false) }
+
     // Editable state
     var farmName by remember(farmSettings.farmName) { mutableStateOf(farmSettings.farmName) }
     var farmerName by remember(farmSettings.farmerName) { mutableStateOf(farmSettings.farmerName) }
     var farmLocation by remember(farmSettings.farmLocation) { mutableStateOf(farmSettings.farmLocation) }
+    var farmCounty by remember { mutableStateOf("Mombasa") }
+    var farmSubCounty by remember { mutableStateOf("Nyali") }
+    var farmWard by remember { mutableStateOf("Frere Town") }
     var currencySymbol by remember(farmSettings.currencySymbol) { mutableStateOf(farmSettings.currencySymbol) }
     var alertVaccination by remember(farmSettings.alertVaccination) { mutableStateOf(farmSettings.alertVaccination) }
     var alertFarrowing by remember(farmSettings.alertFarrowing) { mutableStateOf(farmSettings.alertFarrowing) }
@@ -2300,33 +2415,78 @@ fun SettingsScreen(viewModel: MainViewModel) {
     ) {
         item { Text("Settings", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White) }
 
-        // Farm Profile
+        // Farm Profile (View Mode vs Edit Mode)
         item {
-            SectionCard("Farm Profile") {
-                FormField("Farm Name", farmName, { farmName = it })
-                Spacer(Modifier.height(12.dp))
-                FormField("Farmer's Name", farmerName, { farmerName = it })
-                Spacer(Modifier.height(12.dp))
-                FormField("Farm Location", farmLocation, { farmLocation = it }, placeholder = "e.g. Kitale, Trans Nzoia")
-                Spacer(Modifier.height(12.dp))
-                FormField("Currency Symbol", currencySymbol, { currencySymbol = it })
-                Spacer(Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        viewModel.saveFarmSettings(
-                            farmSettings.copy(
-                                farmName = farmName,
-                                farmerName = farmerName,
-                                farmLocation = farmLocation,
-                                currencySymbol = currencySymbol
-                            )
+            SectionCard("Farm Profile & Location") {
+                if (!isEditingFarmProfile) {
+                    // View Mode: Read-only info card
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Column {
+                                Text(farmSettings.farmName.ifBlank { "My Pig Farm" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text("Owner: ${farmSettings.farmerName.ifBlank { "Farmer" }}", color = Color(0xFF8B949E), fontSize = 13.sp)
+                            }
+                            OutlinedButton(
+                                onClick = { isEditingFarmProfile = true },
+                                border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text("✏️ Edit Profile", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        HorizontalDivider(color = Color(0xFF21262D))
+                        Text("📍 Location: ${if (farmSettings.farmLocation.isNotBlank()) farmSettings.farmLocation else "$farmWard, $farmSubCounty, $farmCounty"}", color = Color(0xFF81C784), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text("Currency: ${farmSettings.currencySymbol}", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    }
+                } else {
+                    // Edit Mode: Form inputs with LocationSelector
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        FormField("Farm Name *", farmName, { farmName = it })
+                        FormField("Farmer's Name *", farmerName, { farmerName = it })
+
+                        Text("Farm Administrative Location (Kenya)", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        com.phms.app.ui.components.LocationSelector(
+                            selectedCounty = farmCounty,
+                            selectedSubCounty = farmSubCounty,
+                            selectedWard = farmWard,
+                            onLocationChanged = { c, sc, w ->
+                                farmCounty = c
+                                farmSubCounty = sc
+                                farmWard = w
+                                farmLocation = "$w, $sc, $c"
+                            }
                         )
-                        Toast.makeText(context, "Farm profile saved!", Toast.LENGTH_SHORT).show()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                    shape = RoundedCornerShape(10.dp)
-                ) { Text("Save Profile") }
+
+                        FormField("Custom Location Notes", farmLocation, { farmLocation = it }, placeholder = "e.g. Kitale, Trans Nzoia")
+                        FormField("Currency Symbol", currencySymbol, { currencySymbol = it })
+
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { isEditingFarmProfile = false },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) { Text("Cancel", color = Color(0xFF8B949E)) }
+
+                            Button(
+                                onClick = {
+                                    viewModel.saveFarmSettings(
+                                        farmSettings.copy(
+                                            farmName = farmName,
+                                            farmerName = farmerName,
+                                            farmLocation = farmLocation.ifBlank { "$farmWard, $farmSubCounty, $farmCounty" },
+                                            currencySymbol = currencySymbol
+                                        )
+                                    )
+                                    isEditingFarmProfile = false
+                                    Toast.makeText(context, "Farm profile updated!", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                                shape = RoundedCornerShape(10.dp)
+                            ) { Text("Save Profile") }
+                        }
+                    }
+                }
             }
         }
 
