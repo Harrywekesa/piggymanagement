@@ -1378,33 +1378,27 @@ fun HealthScreen(viewModel: MainViewModel) {
     val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Health & Veterinary", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
-                    onClick = {
-                        eventType = "Gilt Heat Check"
-                        product = "Standing Heat Reflex Check"
-                        if (selectedPigId == null && pigs.isNotEmpty()) selectedPigId = pigs.first().id
-                        showGroupHealthDialog = true
-                    },
-                    border = BorderStroke(1.dp, Color(0xFFD81B60)),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text("🔥 Gilt Heat", color = Color(0xFFD81B60), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-                Button(
-                    onClick = {
-                        if (selectedPigId == null && pigs.isNotEmpty()) selectedPigId = pigs.first().id
-                        showGroupHealthDialog = true
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Icon(Icons.Default.MedicalServices, null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Log Event", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text("Health & Veterinary", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Medical logs, disease & servicing records", fontSize = 11.sp, color = Color(0xFF8B949E))
+            }
+            Button(
+                onClick = {
+                    if (selectedPigId == null && pigs.isNotEmpty()) selectedPigId = pigs.first().id
+                    showGroupHealthDialog = true
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                shape = RoundedCornerShape(10.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Icon(Icons.Default.MedicalServices, null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Log Health Event", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -1431,8 +1425,9 @@ fun HealthScreen(viewModel: MainViewModel) {
     }
 
     if (showGroupHealthDialog) {
-        var standingHeatObserved by remember { mutableStateOf(true) }
-        var diseaseName by remember { mutableStateOf("") }
+        var diseaseName by remember { mutableStateOf("Routine Check / Treatment") }
+        var isCustomDisease by remember { mutableStateOf(false) }
+        var customDiseaseText by remember { mutableStateOf("") }
         var ageWeeksStr by remember { mutableStateOf("") }
         var weightKgStr by remember { mutableStateOf("") }
         var selectedBoarId by remember { mutableStateOf<Long?>(null) }
@@ -1453,18 +1448,15 @@ fun HealthScreen(viewModel: MainViewModel) {
             containerColor = Color(0xFF161B22),
             title = { Text("Log Health / Vet Event", color = Color.White, fontWeight = FontWeight.Bold) },
             text = {
-                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Target Scope", color = Color(0xFF8B949E), fontSize = 12.sp)
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("Single Pig", "Category", "Herd").forEach { scope ->
-                            FilterChip(
-                                selected = targetScope == scope,
-                                onClick = { targetScope = scope },
-                                label = { Text(scope, fontSize = 11.sp) },
-                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF1B5E20), selectedLabelColor = Color(0xFF4CAF50))
-                            )
-                        }
-                    }
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Target Scope Dropdown
+                    StringDropdownSelector(
+                        label = "Target Scope *",
+                        options = listOf("Single Pig", "Category", "Herd"),
+                        selectedOption = targetScope,
+                        onSelect = { targetScope = it }
+                    )
+
                     if (targetScope == "Single Pig" && pigs.isNotEmpty()) {
                         Text("Select Animal *", color = Color(0xFF8B949E), fontSize = 12.sp)
                         DropdownSelector(
@@ -1474,61 +1466,63 @@ fun HealthScreen(viewModel: MainViewModel) {
                             onSelect = { selectedPigId = it }
                         )
                     }
+
                     if (targetScope == "Category") {
-                        Text("Category / Group", color = Color(0xFF8B949E), fontSize = 12.sp)
-                        Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            listOf("Piglets", "Weaners", "Growers", "Finishers", "Sows", "Boars").forEach { cat ->
-                                FilterChip(
-                                    selected = targetCategory == cat,
-                                    onClick = { targetCategory = cat },
-                                    label = { Text(cat, fontSize = 11.sp) },
-                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF1B5E20), selectedLabelColor = Color(0xFF4CAF50))
-                                )
+                        StringDropdownSelector(
+                            label = "Select Pig Category *",
+                            options = listOf("Piglets", "Weaners", "Growers", "Finishers", "Sows", "Gilts", "Boars"),
+                            selectedOption = targetCategory,
+                            onSelect = { targetCategory = it }
+                        )
+                    }
+
+                    // Event Type Dropdown
+                    StringDropdownSelector(
+                        label = "Event Type / Purpose *",
+                        options = listOf("Treatment", "Vaccination", "Deworming", "Checkup", "Vitamin", "Gilt/Sow Serviced", "Mortality / Death"),
+                        selectedOption = eventType,
+                        onSelect = { preset ->
+                            eventType = preset
+                            if (preset == "Gilt/Sow Serviced") {
+                                product = "Breeding / Insemination"
+                                diseaseName = "Reproduction / Servicing"
+                            } else if (preset == "Mortality / Death") {
+                                product = "Death / Culling Record"
+                                diseaseName = "African Swine Fever"
                             }
                         }
-                    }
+                    )
 
-                    Text("Event Preset Type:", color = Color(0xFF8B949E), fontSize = 12.sp)
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("Treatment", "Vaccination", "Deworming", "Checkup", "Gilt/Sow Serviced", "Mortality / Death").forEach { preset ->
-                            FilterChip(
-                                selected = eventType == preset,
-                                onClick = {
-                                    eventType = preset
-                                    if (preset == "Gilt/Sow Serviced") {
-                                        product = "Breeding / Insemination"
-                                        diseaseName = "Reproduction"
-                                    } else if (preset == "Mortality / Death") {
-                                        product = "Death / Culling Record"
-                                        diseaseName = "African Swine Fever"
-                                    }
-                                },
-                                label = { Text(preset, fontSize = 11.sp) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = if (preset.contains("Death")) Color(0xFF7B1F1F) else Color(0xFF1B5E20),
-                                    selectedLabelColor = if (preset.contains("Death")) Color(0xFFFF5252) else Color(0xFF4CAF50)
-                                )
-                            )
+                    // Disease / Diagnosis Dropdown
+                    StringDropdownSelector(
+                        label = "Disease / Condition / Diagnosis *",
+                        options = listOf(
+                            "Routine Check / Treatment",
+                            "Diarrhea / Scours",
+                            "Pneumonia / Respiratory",
+                            "African Swine Fever",
+                            "Mange / Skin Parasites",
+                            "MMA / Mastitis",
+                            "Foot Rot / Lameness",
+                            "Reproduction / Servicing",
+                            "Other / Custom"
+                        ),
+                        selectedOption = if (isCustomDisease) "Other / Custom" else diseaseName,
+                        onSelect = { selected ->
+                            if (selected == "Other / Custom") {
+                                isCustomDisease = true
+                            } else {
+                                isCustomDisease = false
+                                diseaseName = selected
+                            }
                         }
+                    )
+
+                    if (isCustomDisease) {
+                        FormField("Custom Disease Name", customDiseaseText, { customDiseaseText = it }, placeholder = "Type disease diagnosis...")
                     }
 
-                    FormField("Event Type", eventType, { eventType = it })
-
-                    // Disease / Diagnosis input with quick chips
-                    Text("Disease / Condition / Diagnosis", color = Color(0xFF8B949E), fontSize = 12.sp)
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("Diarrhea / Scours", "Pneumonia", "African Swine Fever", "Mange / Parasites", "MMA / Mastitis", "Foot Rot", "Routine Check", "Gilt Serviced").forEach { dChip ->
-                            FilterChip(
-                                selected = diseaseName == dChip,
-                                onClick = { diseaseName = dChip },
-                                label = { Text(dChip, fontSize = 10.sp) },
-                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF3E2723), selectedLabelColor = Color(0xFFFF8A65))
-                            )
-                        }
-                    }
-                    FormField("Disease / Diagnosis Name", diseaseName, { diseaseName = it }, placeholder = "e.g. Swine Fever, Pneumonia")
-
-                    FormField("Product / Medication Description *", product, { product = it }, placeholder = "e.g. Oxytetracycline 20%")
+                    FormField("Product / Medication Description *", product, { product = it }, placeholder = "e.g. Oxytetracycline 20%, Iron injection")
 
                     if (eventType == "Gilt/Sow Serviced" && boars.isNotEmpty()) {
                         Text("Servicing Boar (Optional for AI)", color = Color(0xFF8B949E), fontSize = 12.sp)
@@ -1541,7 +1535,7 @@ fun HealthScreen(viewModel: MainViewModel) {
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) { FormField("Age when Affected (Wks)", ageWeeksStr, { ageWeeksStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                        Box(Modifier.weight(1f)) { FormField("Age Affected (Weeks)", ageWeeksStr, { ageWeeksStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
                         Box(Modifier.weight(1f)) { FormField("Weight (kg)", weightKgStr, { weightKgStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
                     }
 
@@ -1552,15 +1546,16 @@ fun HealthScreen(viewModel: MainViewModel) {
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) { FormField("Total Cost (KSh)", costStr, { costStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                        Box(Modifier.weight(1f)) { FormField("Vet / Operator", vetName, { vetName = it }) }
+                        Box(Modifier.weight(1f)) { FormField("Vet / Operator", vetName, { vetName = it }, placeholder = "Dr. John / Self") }
                     }
 
-                    FormField("Notes / Clinical Symptoms", notes, { notes = it }, placeholder = "Additional clinical notes...")
+                    FormField("Notes / Clinical Symptoms", notes, { notes = it }, placeholder = "Additional notes...")
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
+                        val finalDisease = if (isCustomDisease) customDiseaseText.ifBlank { "Unspecified Disease" } else diseaseName
                         if (product.isNotBlank()) {
                             val targetPig = if (targetScope == "Single Pig") selectedPigId else null
                             if (eventType == "Gilt/Sow Serviced" && targetPig != null) {
@@ -1572,7 +1567,7 @@ fun HealthScreen(viewModel: MainViewModel) {
                             } else if (eventType == "Mortality / Death" && targetPig != null) {
                                 viewModel.logMortalityEvent(
                                     pigId = targetPig,
-                                    diseaseName = diseaseName.ifBlank { "Unspecified Disease" },
+                                    diseaseName = finalDisease,
                                     ageWeeks = ageWeeksStr.toIntOrNull(),
                                     weightKg = weightKgStr.toDoubleOrNull(),
                                     notes = notes,
@@ -1590,7 +1585,7 @@ fun HealthScreen(viewModel: MainViewModel) {
                                     vetName = vetName,
                                     notes = notes,
                                     withdrawalDays = withdrawalDaysStr.toIntOrNull() ?: 0,
-                                    diseaseName = diseaseName.ifBlank { null },
+                                    diseaseName = finalDisease,
                                     ageWeeks = ageWeeksStr.toIntOrNull(),
                                     weightKg = weightKgStr.toDoubleOrNull()
                                 )
@@ -2839,6 +2834,55 @@ fun MetricCard(title: String, value: String, icon: androidx.compose.ui.graphics.
                 Text(title, color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
             }
             Text(value, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StringDropdownSelector(
+    label: String,
+    options: List<String>,
+    selectedOption: String,
+    onSelect: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        OutlinedTextField(
+            value = selectedOption.ifBlank { label },
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label, color = Color(0xFF8B949E), fontSize = 12.sp) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            shape = RoundedCornerShape(10.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF4CAF50),
+                unfocusedBorderColor = Color(0xFF30363D),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                unfocusedContainerColor = Color(0xFF161B22),
+                focusedContainerColor = Color(0xFF161B22)
+            )
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(Color(0xFF161B22))
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option, color = Color.White, fontSize = 13.sp) },
+                    onClick = {
+                        onSelect(option)
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }
