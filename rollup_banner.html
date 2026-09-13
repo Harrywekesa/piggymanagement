@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Roll-Up Banner - Digital Pig Farm Manager | Kitale ASK Show 2026</title>
+  <title>Roll-Up Banner Graphic - Digital Pig Farm Manager | Kitale ASK Show 2026</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
     
@@ -14,38 +14,34 @@
     }
     
     body {
-      background-color: #0f172a;
+      background-color: #022c22;
       display: flex;
       justify-content: center;
-      padding: 20px;
-      color: #334155;
+      padding: 0;
+      margin: 0;
     }
     
-    /* Standard Roll-up Banner Aspect Ratio (850px x 2000px proportional) */
-    .banner-container {
-      width: 800px;
-      height: 1880px;
-      background: linear-gradient(180deg, #064e3b 0%, #022c22 15%, #0f172a 40%, #022c22 85%, #064e3b 100%);
-      border-radius: 16px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-      overflow: hidden;
+    /* Pure 2D Banner Graphic Artwork (Standard 850px x 2000px proportional for roll-up printing) */
+    .banner-artwork {
+      width: 850px;
+      height: 2000px;
+      background: linear-gradient(180deg, #064e3b 0%, #022c22 12%, #0f172a 35%, #022c22 88%, #064e3b 100%);
       display: flex;
       flex-direction: column;
       position: relative;
-      border: 4px solid #f59e0b;
+      border: 6px solid #f59e0b;
     }
     
     /* Header Section */
     .header {
       background: linear-gradient(135deg, #065f46 0%, #047857 100%);
-      padding: 30px 40px 20px 40px;
+      padding: 35px 40px 25px 40px;
       text-align: center;
-      border-bottom: 3px solid #fbbf24;
-      position: relative;
+      border-bottom: 4px solid #fbbf24;
     }
     
     .institution-tag {
-      font-size: 16px;
+      font-size: 20px;
       font-weight: 800;
       letter-spacing: 2px;
       color: #fef08a;
@@ -54,15 +50,15 @@
     }
     
     .dept-tag {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
       color: #a7f3d0;
       letter-spacing: 1px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
     
     .main-title {
-      font-size: 38px;
+      font-size: 44px;
       font-weight: 900;
       color: #ffffff;
       text-transform: uppercase;
@@ -75,87 +71,101 @@
     }
     
     .subtitle {
-      font-size: 16px;
-      font-weight: 500;
+      font-size: 18px;
+      font-weight: 600;
       color: #e2e8f0;
-      margin-top: 10px;
-      background: rgba(0,0,0,0.25);
+      margin-top: 12px;
+      background: rgba(0,0,0,0.3);
       display: inline-block;
-      padding: 6px 18px;
+      padding: 8px 22px;
       border-radius: 20px;
-      border: 1px solid rgba(251, 191, 36, 0.4);
+      border: 1px solid rgba(251, 191, 36, 0.5);
     }
     
     /* Event Badge */
     .event-badge {
       background: linear-gradient(90deg, #d97706, #f59e0b);
       color: #ffffff;
-      padding: 10px;
+      padding: 12px;
       text-align: center;
-      font-size: 14px;
-      font-weight: 700;
+      font-size: 16px;
+      font-weight: 800;
       letter-spacing: 1px;
       text-transform: uppercase;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
     
-    /* System Modules / Explanations Container */
+    /* System Modules Container */
     .modules-container {
-      padding: 30px 35px;
+      padding: 30px 40px;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
     }
     
     .module-card {
-      background: rgba(30, 41, 59, 0.85);
-      border-left: 5px solid #10b981;
-      border-radius: 12px;
-      padding: 18px;
+      background: rgba(30, 41, 59, 0.9);
+      border-left: 6px solid #10b981;
+      border-radius: 14px;
+      padding: 20px;
       display: flex;
       gap: 20px;
       align-items: center;
-      backdrop-filter: blur(8px);
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-      border-top: 1px solid rgba(255,255,255,0.05);
+      border-top: 1px solid rgba(255,255,255,0.08);
     }
     
     .module-card:nth-child(even) {
       border-left-color: #f59e0b;
     }
+
+    .module-card.market-highlight {
+      border-left-color: #3b82f6;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(30, 58, 138, 0.4) 100%);
+      border: 2px solid rgba(59, 130, 246, 0.4);
+    }
     
     .module-icon {
-      width: 70px;
-      height: 70px;
-      min-width: 70px;
+      width: 75px;
+      height: 75px;
+      min-width: 75px;
       background: linear-gradient(135deg, #065f46 0%, #047857 100%);
-      border-radius: 14px;
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
+      font-size: 36px;
       color: #fbbf24;
       border: 2px solid rgba(251, 191, 36, 0.3);
     }
     
+    .module-card.market-highlight .module-icon {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      border-color: rgba(147, 197, 253, 0.5);
+      color: #ffffff;
+    }
+    
+    .module-content {
+      flex-grow: 1;
+    }
+    
     .module-content h3 {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 800;
       color: #ffffff;
       margin-bottom: 6px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
     
     .module-content h3 span.tag {
-      font-size: 10px;
+      font-size: 11px;
       background: #10b981;
       color: #022c22;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: 800;
       text-transform: uppercase;
     }
     
@@ -163,70 +173,75 @@
       background: #f59e0b;
       color: #451a03;
     }
+
+    .module-card.market-highlight .module-content h3 span.tag {
+      background: #3b82f6;
+      color: #ffffff;
+    }
     
     .module-content p {
-      font-size: 13px;
+      font-size: 14px;
       color: #cbd5e1;
       line-height: 1.45;
     }
     
     .module-features {
-      margin-top: 8px;
+      margin-top: 10px;
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 8px;
     }
     
     .feature-pill {
-      font-size: 11px;
-      background: rgba(255,255,255,0.08);
-      color: #67e8f9;
-      padding: 3px 10px;
-      border-radius: 6px;
-      border: 1px solid rgba(103, 232, 249, 0.2);
+      font-size: 12px;
+      background: rgba(255,255,255,0.1);
+      color: #93c5fd;
+      padding: 4px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(147, 197, 253, 0.25);
     }
 
     /* Key Specs Highlight Grid */
     .specs-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-top: 5px;
+      gap: 14px;
+      margin-top: 6px;
     }
     
     .spec-item {
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(251, 191, 36, 0.3);
-      padding: 12px;
-      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      padding: 14px;
+      border-radius: 12px;
       text-align: center;
     }
     
     .spec-val {
-      font-size: 22px;
+      font-size: 26px;
       font-weight: 900;
       color: #fbbf24;
     }
     
     .spec-lbl {
-      font-size: 11px;
+      font-size: 12px;
       color: #94a3b8;
       font-weight: 600;
-      margin-top: 2px;
+      margin-top: 3px;
     }
     
     /* Footer Details */
     .footer {
       background: #022c22;
-      border-top: 3px solid #f59e0b;
-      padding: 22px 35px;
+      border-top: 4px solid #f59e0b;
+      padding: 25px 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     
     .innovator-info h4 {
-      font-size: 11px;
+      font-size: 12px;
       color: #fef08a;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -234,23 +249,23 @@
     }
     
     .innovator-info p {
-      font-size: 14px;
-      font-weight: 700;
+      font-size: 15px;
+      font-weight: 800;
       color: #ffffff;
     }
     
     .innovator-info small {
-      font-size: 12px;
+      font-size: 13px;
       color: #a7f3d0;
     }
     
     .theme-info {
       text-align: right;
-      max-width: 340px;
+      max-width: 360px;
     }
     
     .theme-info h4 {
-      font-size: 11px;
+      font-size: 12px;
       color: #fef08a;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -258,22 +273,24 @@
     }
     
     .theme-info p {
-      font-size: 11.5px;
+      font-size: 12.5px;
       font-style: italic;
       color: #e2e8f0;
-      line-height: 1.3;
+      line-height: 1.35;
     }
   </style>
 </head>
 <body>
 
-  <div class="banner-container">
+  <!-- Pure Roll-up Banner Graphic Artwork -->
+  <div class="banner-artwork">
+    
     <!-- Header -->
     <div class="header">
       <div class="institution-tag">Kitale National Polytechnic</div>
       <div class="dept-tag">Department of Computer Science & Information Technology</div>
       <h1 class="main-title">Digital Pig <span>Farm Manager</span></h1>
-      <div class="subtitle">Offline-First Smart Swine Husbandry & Analytics System</div>
+      <div class="subtitle">Offline-First Smart Swine Husbandry, Market Linkage & Analytics</div>
     </div>
     
     <!-- Event Badge -->
@@ -281,10 +298,10 @@
       Exhibition Stand: Kitale Agricultural Society of Kenya (ASK) Show 2026
     </div>
     
-    <!-- Modules Breakdown -->
+    <!-- System Feature Modules -->
     <div class="modules-container">
       
-      <!-- Module 1 -->
+      <!-- Module 1: Herd Registry -->
       <div class="module-card">
         <div class="module-icon">🐖</div>
         <div class="module-content">
@@ -298,7 +315,7 @@
         </div>
       </div>
       
-      <!-- Module 2 -->
+      <!-- Module 2: Vet & Health Logger -->
       <div class="module-card">
         <div class="module-icon">💉</div>
         <div class="module-content">
@@ -306,18 +323,32 @@
           <p>Flexible targeting for single pig, category (e.g. all weaners), or full herd. Records disease diagnoses, age in weeks, weight at event, treatment costs, and gilt servicing.</p>
           <div class="module-features">
             <span class="feature-pill">Single / Category / Herd Scope</span>
-            <span class="feature-pill">Disease Tracking</span>
+            <span class="feature-pill">Disease Diagnostics</span>
             <span class="feature-pill">Gilt Service Record</span>
           </div>
         </div>
       </div>
+
+      <!-- Module 3: Market Connection & Agribusiness (NEW) -->
+      <div class="module-card market-highlight">
+        <div class="module-icon">🤝</div>
+        <div class="module-content">
+          <h3>Market Connection & Buyer Linkage <span class="tag">Direct Sales</span></h3>
+          <p>Connects pig farmers directly with registered pork processors, abattoirs, butcheries, breeding stock buyers, and live market price benchmarks across Kenya.</p>
+          <div class="module-features">
+            <span class="feature-pill">Buyer Directory</span>
+            <span class="feature-pill">Live Market Prices</span>
+            <span class="feature-pill">Direct Pig Sales Flow</span>
+          </div>
+        </div>
+      </div>
       
-      <!-- Module 3 -->
+      <!-- Module 4: Kenya 47 Counties Engine -->
       <div class="module-card">
         <div class="module-icon">🗺️</div>
         <div class="module-content">
           <h3>Kenya 47 Counties Engine <span class="tag">Location Mapping</span></h3>
-          <p>Complete built-in geographic hierarchy for all 47 Kenya Counties, Sub-Counties, and Wards. Enables precise farm registration and localized disease reporting.</p>
+          <p>Complete built-in geographic hierarchy for all 47 Kenya Counties, Sub-Counties, and Wards. Enables precise farm location mapping and regional disease alerts.</p>
           <div class="module-features">
             <span class="feature-pill">47 Kenya Counties</span>
             <span class="feature-pill">Sub-Counties & Wards</span>
@@ -326,12 +357,12 @@
         </div>
       </div>
       
-      <!-- Module 4 -->
+      <!-- Module 5: Feed Formulator -->
       <div class="module-card">
         <div class="module-icon">⚖️</div>
         <div class="module-content">
           <h3>Least-Cost Feed Formulator <span class="tag">FCR & ADG</span></h3>
-          <p>Precision feed stock allocation, commercial premix integration, and automated calculations for Feed Conversion Ratio (FCR) and Average Daily Gain (ADG).</p>
+          <p>Precision feed stock allocation, commercial premix rationing, and automated calculations for Feed Conversion Ratio (FCR) and Average Daily Gain (ADG).</p>
           <div class="module-features">
             <span class="feature-pill">FCR Computation</span>
             <span class="feature-pill">ADG (kg/day)</span>
@@ -340,12 +371,12 @@
         </div>
       </div>
 
-      <!-- Module 5 -->
+      <!-- Module 6: Reports Hub -->
       <div class="module-card">
         <div class="module-icon">📊</div>
         <div class="module-content">
           <h3>Comprehensive Reports Hub <span class="tag">P&L Financials</span></h3>
-          <p>Dropdown date selectors (Today, Last 7 Days, Last 30 Days, YTD, All Time) generating Profit & Loss, Herd Production, Health/Mortality, and Breeding performance reports.</p>
+          <p>Dropdown date selectors (Today, Last 7 Days, Last 30 Days, YTD, All Time) generating Profit & Loss (P&L), Herd Production, Health/Mortality, and Breeding performance reports.</p>
           <div class="module-features">
             <span class="feature-pill">Financial P&L</span>
             <span class="feature-pill">Mortality Rates</span>
@@ -358,15 +389,15 @@
       <div class="specs-grid">
         <div class="spec-item">
           <div class="spec-val">100%</div>
-          <div class="spec-lbl">Offline-First SQLite</div>
+          <div class="spec-lbl">Offline-First Room SQLite</div>
         </div>
         <div class="spec-item">
           <div class="spec-val">47</div>
           <div class="spec-lbl">Kenya Counties Mapped</div>
         </div>
         <div class="spec-item">
-          <div class="spec-val">Ksh 5K</div>
-          <div class="spec-lbl">Development Budget</div>
+          <div class="spec-val">Direct</div>
+          <div class="spec-lbl">Market & Buyer Linkage</div>
         </div>
       </div>
 
