@@ -37,7 +37,7 @@
     /* ─── MAROON HEADER ──────────────────────── */
     .header {
       background: #6b0018;
-      padding: 28px 40px 22px;
+      padding: 26px 40px 20px;
       text-align: center;
       flex-shrink: 0;
     }
@@ -71,10 +71,10 @@
     /* ─── GOLD DIVIDER STRIPE ─────────────────── */
     .gold-bar { width: 100%; height: 6px; background: #ffd700; flex-shrink: 0; }
 
-    /* ─── HERO TITLE & HERO PHOTO ────────────── */
+    /* ─── HERO TITLE & LOGO SHOWCASE ──────────── */
     .hero {
       background: #ffffff;
-      padding: 22px 45px 16px;
+      padding: 22px 45px 18px;
       display: flex;
       gap: 25px;
       align-items: center;
@@ -111,36 +111,26 @@
       font-weight: 500;
     }
 
-    .hero-photo-box {
-      width: 260px;
+    /* App Logo Box beside title */
+    .hero-logo-box {
+      width: 155px;
       height: 155px;
-      border: 3px solid #ffd700;
-      border-radius: 12px;
+      border: 4px solid #ffd700;
+      border-radius: 24px;
+      background: #ffffff;
       overflow: hidden;
-      box-shadow: 0 6px 14px rgba(0,0,0,0.1);
-      position: relative;
+      box-shadow: 0 8px 18px rgba(107, 0, 24, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
+      padding: 8px;
     }
-    .hero-photo-box img {
+    .hero-logo-box img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .hero-photo-tag {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(107, 0, 24, 0.9);
-      color: #ffffff;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 4px 8px;
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      object-fit: contain;
+      border-radius: 16px;
     }
 
     /* ─── EVENT BAND ─────────────────────────── */
@@ -159,7 +149,7 @@
       letter-spacing: 1.5px;
     }
 
-    /* ─── MODULES SECTION (WITH EVENLY DISTRIBUTED PHOTOS) ─── */
+    /* ─── MODULES SECTION (WITH APP SCREENSHOTS) ─── */
     .modules-wrap {
       background: #ffffff;
       padding: 18px 45px 0;
@@ -181,7 +171,7 @@
 
     .module {
       display: flex;
-      gap: 16px;
+      gap: 18px;
       align-items: center;
       border: 1.5px solid #e8e8e8;
       border-left: 6px solid #6b0018;
@@ -245,41 +235,28 @@
       line-height: 1.45;
     }
 
-    .module-photo {
-      width: 140px;
-      height: 105px;
-      border-radius: 8px;
+    /* App Phone Screenshot Frame */
+    .app-screen-frame {
+      width: 105px;
+      height: 175px;
+      border: 3px solid #1a1a1a;
+      border-radius: 12px;
       overflow: hidden;
-      border: 2px solid #ffd700;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       flex-shrink: 0;
+      background: #000000;
       position: relative;
     }
 
-    .module:nth-child(even) .module-photo {
+    .module:nth-child(even) .app-screen-frame {
       border-color: #6b0018;
     }
 
-    .module-photo img {
+    .app-screen-frame img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
-    }
-
-    .module-photo-label {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(0,0,0,0.65);
-      color: #ffffff;
-      font-size: 9px;
-      font-weight: 700;
-      text-align: center;
-      padding: 2px 4px;
-      text-transform: uppercase;
-      font-family: 'Montserrat', sans-serif;
     }
 
     .pills {
@@ -435,7 +412,7 @@
   <!-- Bold gold bar -->
   <div class="gold-bar"></div>
 
-  <!-- Hero Title & Hero Photo Showcase -->
+  <!-- Hero Title & App Logo Showcase -->
   <div class="hero">
     <div class="hero-text">
       <div class="hero-eyebrow">Innovation Project &nbsp;·&nbsp; ASK Show 2026</div>
@@ -446,9 +423,8 @@
         An offline-first Android mobile application for smart pig husbandry, health tracking, market linkage, feed formulation &amp; financial analytics.
       </div>
     </div>
-    <div class="hero-photo-box">
-      <img src="two_pigs.jpg" alt="Commercial Pig Stock">
-      <div class="hero-photo-tag">Commercial Herd</div>
+    <div class="hero-logo-box">
+      <img src="app_logo.jpg" alt="Digital Pig Farm Manager Logo">
     </div>
   </div>
 
@@ -457,47 +433,45 @@
     <p>Kitale Agricultural Society of Kenya (ASK) Show 2026 &nbsp;·&nbsp; Exhibition Stand</p>
   </div>
 
-  <!-- Feature Modules (Photos Distributed Across Every Module) -->
+  <!-- Feature Modules (Using Actual Android App Screenshots) -->
   <div class="modules-wrap">
-    <div class="section-eyebrow">Key System Features &amp; Modules</div>
+    <div class="section-eyebrow">Key Application Features &amp; Screenshots</div>
 
-    <!-- Module 01: Large White Photo -->
+    <!-- Module 01: App Screenshot 1 -->
     <div class="module">
       <div class="module-num">01</div>
       <div class="module-body">
         <div class="module-title">Herd &amp; Lifecycle Registry <span class="module-tag">Pig Profiles</span></div>
-        <div class="module-desc">Track every pig's tag number, breed (Large White, Duroc, Landrace), biological stage (piglet, weaner, grower, finisher, boar, sow), lineage, and weight gain history over time.</div>
+        <div class="module-desc">Track every pig's tag number, breed, biological stage (piglet, weaner, grower, finisher, boar, sow), lineage mapping, and weight gain history over time.</div>
         <div class="pills">
           <span class="pill">Individual Pig Profiles</span>
           <span class="pill">Lineage Mapping</span>
           <span class="pill">Weight History</span>
         </div>
       </div>
-      <div class="module-photo">
-        <img src="large_white.jpg" alt="Large White Pig Breed">
-        <div class="module-photo-label">Large White</div>
+      <div class="app-screen-frame">
+        <img src="app_img_1.jpg" alt="Herd Registry UI Screenshot">
       </div>
     </div>
 
-    <!-- Module 02: Young Pig Photo -->
+    <!-- Module 02: App Screenshot 2 -->
     <div class="module">
       <div class="module-num">02</div>
       <div class="module-body">
         <div class="module-title">Veterinary &amp; Health Logger <span class="module-tag">Gilt Servicing</span></div>
-        <div class="module-desc">Log health events for a single pig, a specific category (e.g. all piglets/weaners), or the full herd. Captures disease name, pig age in weeks, pig weight, treatment cost, and gilt servicing records.</div>
+        <div class="module-desc">Log health events for a single pig, a specific category (e.g. all piglets/weaners), or the full herd. Captures disease name, pig age in weeks, treatment cost, and gilt servicing.</div>
         <div class="pills">
           <span class="pill">Single / Group / Full Herd</span>
           <span class="pill">Disease Diagnostics</span>
           <span class="pill">Gilt &amp; Vaccination Records</span>
         </div>
       </div>
-      <div class="module-photo">
-        <img src="young_pig.jpg" alt="Piglet Care and Health">
-        <div class="module-photo-label">Piglet Health</div>
+      <div class="app-screen-frame">
+        <img src="app_img_2.jpg" alt="Health Logger UI Screenshot">
       </div>
     </div>
 
-    <!-- Module 03: Landrace Photo -->
+    <!-- Module 03: App Screenshot 3 -->
     <div class="module">
       <div class="module-num">03</div>
       <div class="module-body">
@@ -509,13 +483,12 @@
           <span class="pill">Full Revenue &amp; Customer History</span>
         </div>
       </div>
-      <div class="module-photo">
-        <img src="landrace.jpg" alt="Market Connection">
-        <div class="module-photo-label">Direct Market</div>
+      <div class="app-screen-frame">
+        <img src="app_img_3.jpg" alt="Market Connection UI Screenshot">
       </div>
     </div>
 
-    <!-- Module 04: Duroc Photo -->
+    <!-- Module 04: App Screenshot 4 -->
     <div class="module">
       <div class="module-num">04</div>
       <div class="module-body">
@@ -527,13 +500,12 @@
           <span class="pill">Low Stock Alerts</span>
         </div>
       </div>
-      <div class="module-photo">
-        <img src="duroc.jpg" alt="Duroc Feed & Growth">
-        <div class="module-photo-label">Duroc / Feed</div>
+      <div class="app-screen-frame">
+        <img src="app_img_4.jpg" alt="Feed Formulator UI Screenshot">
       </div>
     </div>
 
-    <!-- Module 05: Black Pig / Berkshire Photo -->
+    <!-- Module 05: App Screenshot 5 -->
     <div class="module">
       <div class="module-num">05</div>
       <div class="module-body">
@@ -545,9 +517,8 @@
           <span class="pill">Breeding &amp; Farrowing Stats</span>
         </div>
       </div>
-      <div class="module-photo">
-        <img src="black_pig.jpg" alt="Berkshire Breed Analytics">
-        <div class="module-photo-label">Herd Analytics</div>
+      <div class="app-screen-frame">
+        <img src="app_img_5.jpg" alt="Reports & Analytics UI Screenshot">
       </div>
     </div>
   </div>
