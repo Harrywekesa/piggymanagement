@@ -2,361 +2,595 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Roll-Up Banner Graphic - Digital Pig Farm Manager | Kitale National Polytechnic</title>
+  <title>Kitale National Polytechnic - Digital Pig Farm Manager | Kitale ASK Show 2026</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-    }
-    
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Open+Sans:wght@400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      background-color: #031b33;
+      background: #d0d0d0;
       display: flex;
       justify-content: center;
       padding: 0;
       margin: 0;
     }
-    
-    /* Pure 2D Roll-Up Banner Artwork (Kitale National Polytechnic Brand Colors: Royal Blue, Gold, White) */
-    .banner-artwork {
+
+    /* =========================================
+       PURE FLAT 2D PRINT POSTER
+       Standard Roll-Up: 850 x 2000 px
+       KNP Colors: Maroon #6b0018 · Gold #ffd700 · White #ffffff
+       ========================================= */
+    .poster {
       width: 850px;
       height: 2000px;
-      background: linear-gradient(180deg, #0a2540 0%, #031b33 15%, #081a2e 40%, #031b33 85%, #0a2540 100%);
       display: flex;
       flex-direction: column;
-      position: relative;
-      border: 6px solid #f59e0b;
+      overflow: hidden;
+      font-family: 'Open Sans', sans-serif;
+      background: #ffffff;
     }
-    
-    /* Header Section - Royal Blue & Gold Gradient */
+
+    /* ─── GOLD STRIPE TOP ─────────────────────── */
+    .stripe { width: 100%; height: 10px; background: #ffd700; flex-shrink: 0; }
+
+    /* ─── MAROON HEADER ──────────────────────── */
     .header {
-      background: linear-gradient(135deg, #003399 0%, #0d47a1 100%);
-      padding: 40px 40px 30px 40px;
+      background: #6b0018;
+      padding: 30px 40px 24px;
       text-align: center;
-      border-bottom: 5px solid #f59e0b;
+      flex-shrink: 0;
     }
-    
-    .institution-tag {
-      font-size: 22px;
-      font-weight: 900;
-      letter-spacing: 2px;
-      color: #fbbf24;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-    
-    .dept-tag {
-      font-size: 15px;
+    .knp-overline {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
       font-weight: 700;
-      color: #ffffff;
-      letter-spacing: 1px;
-      margin-bottom: 20px;
+      letter-spacing: 4px;
+      color: #ffd700;
       text-transform: uppercase;
+      margin-bottom: 6px;
     }
-    
-    .main-title {
-      font-size: 46px;
+    .institution-name {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 27px;
       font-weight: 900;
       color: #ffffff;
       text-transform: uppercase;
-      line-height: 1.1;
-      text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      line-height: 1.2;
     }
-    
-    .main-title span {
-      color: #fbbf24;
-    }
-    
-    .subtitle {
-      font-size: 18px;
+    .dept-name {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12.5px;
       font-weight: 600;
-      color: #f8fafc;
-      margin-top: 14px;
-      background: rgba(0, 0, 0, 0.35);
-      display: inline-block;
-      padding: 8px 24px;
-      border-radius: 24px;
-      border: 1.5px solid rgba(245, 158, 11, 0.6);
+      color: #ffd700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 6px;
     }
-    
-    /* Event Badge */
-    .event-badge {
-      background: linear-gradient(90deg, #d97706, #f59e0b);
-      color: #031b33;
-      padding: 14px;
+
+    /* ─── GOLD DIVIDER STRIPE ─────────────────── */
+    .gold-bar { width: 100%; height: 6px; background: #ffd700; flex-shrink: 0; }
+
+    /* ─── HERO TITLE & MAIN PHOTO SHOWCASE ────── */
+    .hero {
+      background: #ffffff;
+      padding: 24px 45px 16px;
       text-align: center;
-      font-size: 17px;
+      border-bottom: 1px solid #eeeeee;
+      flex-shrink: 0;
+    }
+    .hero-eyebrow {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #6b0018;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .hero-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 54px;
       font-weight: 900;
-      letter-spacing: 1px;
+      color: #1a1a1a;
+      line-height: 1.05;
       text-transform: uppercase;
     }
+    .hero-title .maroon { color: #6b0018; }
     
-    /* System Modules Container */
-    .modules-container {
-      padding: 35px 40px;
+    .hero-sub {
+      font-size: 14.5px;
+      color: #444;
+      margin-top: 10px;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    /* Hero Photo Grid */
+    .hero-photos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .hero-photo-card {
+      border: 3px solid #ffd700;
+      border-radius: 10px;
+      overflow: hidden;
+      height: 140px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      position: relative;
+    }
+    .hero-photo-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .hero-photo-label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(107, 0, 24, 0.85);
+      color: #ffffff;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 4px 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ─── EVENT BAND ─────────────────────────── */
+    .event-band {
+      background: #6b0018;
+      padding: 10px 40px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .event-band p {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffd700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    /* ─── MODULES SECTION ─────────────────────── */
+    .modules-wrap {
+      background: #ffffff;
+      padding: 20px 45px 0;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
-      gap: 22px;
-    }
-    
-    .module-card {
-      background: rgba(15, 23, 42, 0.92);
-      border-left: 6px solid #f59e0b;
-      border-radius: 14px;
-      padding: 22px;
-      display: flex;
-      gap: 22px;
-      align-items: center;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-      border-top: 1px solid rgba(255,255,255,0.08);
-    }
-    
-    .module-card:nth-child(even) {
-      border-left-color: #2563eb;
-    }
-    
-    .module-icon {
-      width: 80px;
-      height: 80px;
-      min-width: 80px;
-      background: linear-gradient(135deg, #0d47a1 0%, #1e40af 100%);
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 38px;
-      color: #fbbf24;
-      border: 2px solid rgba(245, 158, 11, 0.4);
-    }
-    
-    .module-content {
-      flex-grow: 1;
-    }
-    
-    .module-content h3 {
-      font-size: 21px;
-      font-weight: 800;
-      color: #ffffff;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
       gap: 12px;
     }
-    
-    .module-content h3 span.tag {
+
+    .section-eyebrow {
+      font-family: 'Montserrat', sans-serif;
       font-size: 11px;
-      background: #f59e0b;
-      color: #031b33;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-weight: 900;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #6b0018;
       text-transform: uppercase;
+      margin-bottom: 2px;
     }
-    
-    .module-card:nth-child(even) .module-content h3 span.tag {
-      background: #2563eb;
-      color: #ffffff;
-    }
-    
-    .module-content p {
-      font-size: 14.5px;
-      color: #cbd5e1;
-      line-height: 1.45;
-    }
-    
-    .module-features {
-      margin-top: 10px;
+
+    .module {
       display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      border: 1.5px solid #e8e8e8;
+      border-left: 6px solid #6b0018;
+      border-radius: 10px;
+      padding: 12px 16px;
+      background: #fafafa;
+    }
+
+    .module:nth-child(even) {
+      border-left-color: #ffd700;
+      background: #fffdf5;
+    }
+
+    .module-num {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      color: #6b0018;
+      line-height: 1;
+      min-width: 40px;
+      opacity: 0.25;
+    }
+
+    .module:nth-child(even) .module-num {
+      color: #b8860b;
+    }
+
+    .module-body { flex: 1; }
+
+    .module-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 15.5px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
       flex-wrap: wrap;
       gap: 8px;
     }
-    
-    .feature-pill {
-      font-size: 12px;
-      background: rgba(255,255,255,0.08);
-      color: #93c5fd;
-      padding: 4px 12px;
-      border-radius: 8px;
-      border: 1px solid rgba(147, 197, 253, 0.3);
+
+    .module-tag {
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #6b0018;
+      color: #ffffff;
     }
 
-    /* Key Metrics Highlights Grid */
-    .specs-grid {
+    .module:nth-child(even) .module-tag {
+      background: #ffd700;
+      color: #3d000e;
+    }
+
+    .module-desc {
+      font-size: 12.5px;
+      color: #555;
+      line-height: 1.45;
+    }
+
+    /* Breed showcase grid in Module 01 */
+    .breed-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .breed-card {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #ffffff;
+      text-align: center;
+    }
+    .breed-card img {
+      width: 100%;
+      height: 52px;
+      object-fit: cover;
+      display: block;
+    }
+    .breed-name {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #6b0018;
+      padding: 2px 4px;
+      text-transform: uppercase;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px;
+    }
+
+    .pill {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #6b0018;
+      border: 1px solid rgba(107,0,24,0.35);
+      padding: 2px 9px;
+      border-radius: 20px;
+      background: rgba(107,0,24,0.05);
+    }
+
+    .module:nth-child(even) .pill {
+      color: #7a5c00;
+      border-color: rgba(179,134,0,0.4);
+      background: rgba(255,215,0,0.08);
+    }
+
+    /* ─── STATS BAR ─────────────────────────── */
+    .stats-bar {
+      margin: 14px 45px 0;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-top: 10px;
+      gap: 12px;
+      flex-shrink: 0;
     }
-    
-    .spec-item {
-      background: rgba(10, 37, 64, 0.95);
-      border: 1.5px solid rgba(245, 158, 11, 0.5);
-      padding: 16px;
-      border-radius: 14px;
+
+    .stat {
+      background: #6b0018;
+      border-radius: 8px;
+      padding: 12px 8px;
       text-align: center;
     }
-    
-    .spec-val {
-      font-size: 28px;
+
+    .stat-val {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 22px;
       font-weight: 900;
-      color: #fbbf24;
+      color: #ffd700;
+      display: block;
     }
-    
-    .spec-lbl {
-      font-size: 12px;
-      color: #e2e8f0;
-      font-weight: 700;
-      margin-top: 4px;
-    }
-    
-    /* Footer Section - Show Theme Banner */
-    .footer {
-      background: #002244;
-      border-top: 4px solid #f59e0b;
-      padding: 28px 40px;
-      text-align: center;
-    }
-    
-    .theme-title {
-      font-size: 13px;
-      font-weight: 800;
-      color: #fbbf24;
+
+    .stat-lbl {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #ffffff;
       text-transform: uppercase;
-      letter-spacing: 1.5px;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+      display: block;
+    }
+
+    /* ─── QR CODE & APP DOWNLOAD SECTION ─────── */
+    .download-section {
+      margin: 14px 45px 0;
+      background: #fffdf5;
+      border: 2px dashed #ffd700;
+      border-radius: 10px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+    .qr-box {
+      width: 90px;
+      height: 90px;
+      background: #ffffff;
+      padding: 6px;
+      border: 2px solid #6b0018;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .qr-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .download-info h4 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      color: #6b0018;
+      text-transform: uppercase;
+    }
+    .download-info p {
+      font-size: 12px;
+      color: #444;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+    .download-badge {
+      display: inline-block;
+      margin-top: 6px;
+      background: #6b0018;
+      color: #ffd700;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ─── FOOTER THEME ─────────────────────── */
+    .footer {
+      margin-top: 14px;
+      background: #6b0018;
+      padding: 18px 45px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .theme-eyebrow {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #ffd700;
+      text-transform: uppercase;
       margin-bottom: 6px;
     }
-    
+
     .theme-text {
-      font-size: 14px;
+      font-size: 12.5px;
       font-style: italic;
       color: #ffffff;
-      line-height: 1.4;
-      max-width: 720px;
-      margin: 0 auto;
+      line-height: 1.45;
     }
   </style>
 </head>
 <body>
+<div class="poster">
 
-  <!-- Pure 2D Roll-Up Banner Artwork in Kitale National Polytechnic Colors -->
-  <div class="banner-artwork">
-    
-    <!-- Header -->
-    <div class="header">
-      <div class="institution-tag">Kitale National Polytechnic</div>
-      <div class="dept-tag">Department of Agriculture and Computing and Informatics</div>
-      <h1 class="main-title">Digital Pig <span>Farm Manager</span></h1>
-      <div class="subtitle">Offline-First Smart Swine Husbandry, Feed Formulator & Financial Analytics</div>
-    </div>
-    
-    <!-- Event Badge -->
-    <div class="event-badge">
-      Kitale Agricultural Society of Kenya (ASK) Show 2026 Exhibition
-    </div>
-    
-    <!-- Core System Feature Modules -->
-    <div class="modules-container">
-      
-      <!-- Module 1: Herd Registry -->
-      <div class="module-card">
-        <div class="module-icon">🐖</div>
-        <div class="module-content">
-          <h3>Herd & Lifecycle Registry <span class="tag">Stage History</span></h3>
-          <p>Tracks individual pig tag numbers, breeds, biological stages (piglets, weaners, growers, finishers, boars, sows), sow/boar lineage, birth dates, and weight gain timelines.</p>
-          <div class="module-features">
-            <span class="feature-pill">Tag Numbering</span>
-            <span class="feature-pill">Lineage Mapping</span>
-            <span class="feature-pill">Weight History Log</span>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Module 2: Vet & Health Logger -->
-      <div class="module-card">
-        <div class="module-icon">💉</div>
-        <div class="module-content">
-          <h3>Vet & Health Event Logger <span class="tag">Gilt Servicing</span></h3>
-          <p>Flexible scope targeting for a Single Pig, Category (e.g. all Weaners), or All Herd. Records disease diagnoses, age in weeks, weight at event, treatment costs, and gilt servicing schedules.</p>
-          <div class="module-features">
-            <span class="feature-pill">Single / Category / Herd Scope</span>
-            <span class="feature-pill">Disease Diagnostics</span>
-            <span class="feature-pill">Gilt Service Record</span>
-          </div>
-        </div>
-      </div>
+  <!-- Top gold stripe -->
+  <div class="stripe"></div>
 
-      <!-- Module 3: Market Connection & Sales Flow -->
-      <div class="module-card">
-        <div class="module-icon">🤝</div>
-        <div class="module-content">
-          <h3>Market Connection & Sales Flow <span class="tag">Buyer Records</span></h3>
-          <p>Farmers directly add and record buyer details (name, contact, buyer category e.g. butchery, processor, trader) when logging sales, maintaining complete customer transaction history.</p>
-          <div class="module-features">
-            <span class="feature-pill">Add Buyers at Sale Time</span>
-            <span class="feature-pill">Buyer Contact History</span>
-            <span class="feature-pill">Sales & Revenue Tracking</span>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Module 4: Least-Cost Feed Formulator -->
-      <div class="module-card">
-        <div class="module-icon">⚖️</div>
-        <div class="module-content">
-          <h3>Least-Cost Feed Formulator <span class="tag">FCR & ADG</span></h3>
-          <p>Precision feed stock allocation, commercial premix rationing, and automated computations for Feed Conversion Ratio (FCR) and Average Daily Gain (ADG in kg/day).</p>
-          <div class="module-features">
-            <span class="feature-pill">FCR Computation</span>
-            <span class="feature-pill">ADG (kg/day)</span>
-            <span class="feature-pill">Premix Rationing</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Module 5: Reports Hub -->
-      <div class="module-card">
-        <div class="module-icon">📊</div>
-        <div class="module-content">
-          <h3>Comprehensive Reports Hub <span class="tag">P&L Financials</span></h3>
-          <p>Dropdown date selectors (Today, Last 7 Days, Last 30 Days, YTD, All Time) generating Profit & Loss (P&L), herd production inventory, mortality rates, and farrowing efficiency.</p>
-          <div class="module-features">
-            <span class="feature-pill">Financial P&L</span>
-            <span class="feature-pill">Mortality Rates</span>
-            <span class="feature-pill">Farrowing Efficiency</span>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Specs Grid -->
-      <div class="specs-grid">
-        <div class="spec-item">
-          <div class="spec-val">100%</div>
-          <div class="spec-lbl">Offline SQLite Data</div>
-        </div>
-        <div class="spec-item">
-          <div class="spec-val">Direct</div>
-          <div class="spec-lbl">Sales & Buyer Logs</div>
-        </div>
-        <div class="spec-item">
-          <div class="spec-val">FCR / ADG</div>
-          <div class="spec-lbl">Growth Analytics</div>
-        </div>
-      </div>
-
-    </div>
-    
-    <!-- Footer with ASK Show Theme -->
-    <div class="footer">
-      <div class="theme-title">Kitale ASK Show Theme 2026</div>
-      <p class="theme-text">"Promoting Climate-Smart Agriculture, Technological Innovation, and Trade Initiatives for Sustainable Economic Growth"</p>
-    </div>
-    
+  <!-- Maroon Header -->
+  <div class="header">
+    <div class="knp-overline">Innovation for Agriculture &nbsp;·&nbsp; Kitale, Kenya</div>
+    <div class="institution-name">Kitale National Polytechnic</div>
+    <div class="dept-name">Department of Agriculture and Computing and Informatics</div>
   </div>
 
+  <!-- Bold gold bar -->
+  <div class="gold-bar"></div>
+
+  <!-- Hero Title & Photos on white -->
+  <div class="hero">
+    <div class="hero-eyebrow">Innovation Project &nbsp;·&nbsp; ASK Show 2026</div>
+    <div class="hero-title">
+      Digital <span class="maroon">Pig Farm</span> Manager
+    </div>
+    <div class="hero-sub">
+      An offline-first Android mobile application for smart pig husbandry,<br>
+      health tracking, market linkage, feed formulation &amp; financial analytics.
+    </div>
+
+    <!-- Real Pig Photos Showcase -->
+    <div class="hero-photos">
+      <div class="hero-photo-card">
+        <img src="two_pigs.jpg" alt="Commercial Pig Stock">
+        <div class="hero-photo-label">Commercial Pig Husbandry</div>
+      </div>
+      <div class="hero-photo-card">
+        <img src="young_pig.jpg" alt="Piglet & Breeding Management">
+        <div class="hero-photo-label">Piglet &amp; Growth Care</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event Band -->
+  <div class="event-band">
+    <p>Kitale Agricultural Society of Kenya (ASK) Show 2026 &nbsp;·&nbsp; Exhibition Stand</p>
+  </div>
+
+  <!-- Feature Modules on white -->
+  <div class="modules-wrap">
+    <div class="section-eyebrow">Key System Features</div>
+
+    <!-- Module 01 with Breeds Photo Grid -->
+    <div class="module">
+      <div class="module-num">01</div>
+      <div class="module-body">
+        <div class="module-title">Herd &amp; Lifecycle Registry <span class="module-tag">Pig Profiles</span></div>
+        <div class="module-desc">Track every pig's tag number, breed, biological stage (piglet, weaner, grower, finisher, boar, sow), lineage, and weight history over time.</div>
+        
+        <!-- Pig Breeds Photo Grid -->
+        <div class="breed-grid">
+          <div class="breed-card">
+            <img src="large_white.jpg" alt="Large White">
+            <div class="breed-name">Large White</div>
+          </div>
+          <div class="breed-card">
+            <img src="duroc.jpg" alt="Duroc">
+            <div class="breed-name">Duroc</div>
+          </div>
+          <div class="breed-card">
+            <img src="landrace.jpg" alt="Landrace">
+            <div class="breed-name">Landrace</div>
+          </div>
+          <div class="breed-card">
+            <img src="black_pig.jpg" alt="Berkshire / Black">
+            <div class="breed-name">Berkshire</div>
+          </div>
+        </div>
+
+        <div class="pills">
+          <span class="pill">Individual Pig Profiles</span>
+          <span class="pill">Lineage Mapping</span>
+          <span class="pill">Weight History</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module 02 -->
+    <div class="module">
+      <div class="module-num">02</div>
+      <div class="module-body">
+        <div class="module-title">Veterinary &amp; Health Logger <span class="module-tag">Gilt Servicing</span></div>
+        <div class="module-desc">Log health events for a single pig, a specific category (e.g. all weaners), or the full herd. Captures disease name, pig age in weeks, pig weight, treatment cost, and gilt servicing records.</div>
+        <div class="pills">
+          <span class="pill">Single / Group / Full Herd</span>
+          <span class="pill">Disease Diagnostics</span>
+          <span class="pill">Gilt &amp; Vaccination Records</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module 03 -->
+    <div class="module">
+      <div class="module-num">03</div>
+      <div class="module-body">
+        <div class="module-title">Market Connection &amp; Buyer Log <span class="module-tag">Direct Sales</span></div>
+        <div class="module-desc">Record buyer details — name, contact, and buyer type (butchery, processor, live-market trader) — directly at the point of pig sale. Builds a full transaction and customer history over time.</div>
+        <div class="pills">
+          <span class="pill">Buyer Captured at Point of Sale</span>
+          <span class="pill">Butcheries &amp; Processors</span>
+          <span class="pill">Full Revenue &amp; Customer History</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module 04 -->
+    <div class="module">
+      <div class="module-num">04</div>
+      <div class="module-body">
+        <div class="module-title">Feed Formulator &amp; Inventory <span class="module-tag">FCR &amp; ADG</span></div>
+        <div class="module-desc">Formulate least-cost pig feed rations with exact kg ingredient distribution. Tracks commercial premix stock levels and automatically computes Feed Conversion Ratio (FCR) and Average Daily Gain (ADG).</div>
+        <div class="pills">
+          <span class="pill">FCR = Feed Consumed ÷ Weight Gained</span>
+          <span class="pill">ADG = kg/day Growth Rate</span>
+          <span class="pill">Low Stock Alerts</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module 05 -->
+    <div class="module">
+      <div class="module-num">05</div>
+      <div class="module-body">
+        <div class="module-title">Reports Hub &amp; Financial Analytics <span class="module-tag">P&amp;L</span></div>
+        <div class="module-desc">Generate Profit &amp; Loss reports, herd production summaries, pig mortality rates, and farrowing efficiency — filtered by Today, Last 7 Days, Last 30 Days, Year to Date, or All Time.</div>
+        <div class="pills">
+          <span class="pill">Profit &amp; Loss (P&amp;L)</span>
+          <span class="pill">Pig Mortality Summary</span>
+          <span class="pill">Breeding &amp; Farrowing Stats</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-val">100%</span>
+      <span class="stat-lbl">Works Offline</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val">Direct</span>
+      <span class="stat-lbl">Market &amp; Buyer Linkage</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val">FCR &amp; ADG</span>
+      <span class="stat-lbl">Pig Growth Analytics</span>
+    </div>
+  </div>
+
+  <!-- QR Code App Download Section -->
+  <div class="download-section">
+    <div class="qr-box">
+      <img src="scan_to_download.svg" alt="Scan QR Code to Download App">
+    </div>
+    <div class="download-info">
+      <h4>Scan to Install Mobile App</h4>
+      <p>Scan this QR code to download the Android APK for Digital Pig Farm Manager on your mobile device.</p>
+      <span class="download-badge">Offline Android Application (v1.0)</span>
+    </div>
+  </div>
+
+  <!-- Footer Theme -->
+  <div class="footer">
+    <div class="theme-eyebrow">Kitale ASK Show 2026 &nbsp;·&nbsp; Official Theme</div>
+    <div class="theme-text">
+      "Promoting Climate-Smart Agriculture, Technological Innovation,<br>
+      and Trade Initiatives for Sustainable Economic Growth"
+    </div>
+  </div>
+
+  <!-- Bottom gold stripe -->
+  <div class="stripe"></div>
+
+</div>
 </body>
 </html>
