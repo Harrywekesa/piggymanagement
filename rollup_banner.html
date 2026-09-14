@@ -37,7 +37,7 @@
     /* ─── MAROON HEADER ──────────────────────── */
     .header {
       background: #6b0018;
-      padding: 26px 40px 20px;
+      padding: 24px 40px 18px;
       text-align: center;
       flex-shrink: 0;
     }
@@ -52,7 +52,7 @@
     }
     .institution-name {
       font-family: 'Montserrat', sans-serif;
-      font-size: 27px;
+      font-size: 26px;
       font-weight: 900;
       color: #ffffff;
       text-transform: uppercase;
@@ -60,12 +60,12 @@
     }
     .dept-name {
       font-family: 'Montserrat', sans-serif;
-      font-size: 12.5px;
+      font-size: 12px;
       font-weight: 600;
       color: #ffd700;
       text-transform: uppercase;
       letter-spacing: 1.5px;
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     /* ─── GOLD DIVIDER STRIPE ─────────────────── */
@@ -74,7 +74,7 @@
     /* ─── HERO TITLE & LOGO SHOWCASE ──────────── */
     .hero {
       background: #ffffff;
-      padding: 22px 45px 18px;
+      padding: 20px 45px 16px;
       display: flex;
       gap: 25px;
       align-items: center;
@@ -91,11 +91,11 @@
       letter-spacing: 3px;
       color: #6b0018;
       text-transform: uppercase;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .hero-title {
       font-family: 'Montserrat', sans-serif;
-      font-size: 46px;
+      font-size: 44px;
       font-weight: 900;
       color: #1a1a1a;
       line-height: 1.05;
@@ -106,17 +106,17 @@
     .hero-sub {
       font-size: 13.5px;
       color: #444;
-      margin-top: 10px;
+      margin-top: 8px;
       line-height: 1.45;
       font-weight: 500;
     }
 
     /* App Logo Box beside title */
     .hero-logo-box {
-      width: 155px;
-      height: 155px;
+      width: 140px;
+      height: 140px;
       border: 4px solid #ffd700;
-      border-radius: 24px;
+      border-radius: 20px;
       background: #ffffff;
       overflow: hidden;
       box-shadow: 0 8px 18px rgba(107, 0, 24, 0.15);
@@ -124,13 +124,13 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      padding: 8px;
+      padding: 6px;
     }
     .hero-logo-box img {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      border-radius: 16px;
+      border-radius: 14px;
     }
 
     /* ─── EVENT BAND ─────────────────────────── */
@@ -142,21 +142,21 @@
     }
     .event-band p {
       font-family: 'Montserrat', sans-serif;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 800;
       color: #ffd700;
       text-transform: uppercase;
       letter-spacing: 1.5px;
     }
 
-    /* ─── MODULES SECTION (WITH APP SCREENSHOTS) ─── */
+    /* ─── MODULES SECTION (LARGE HIGH-LEGIBILITY SCREENSHOTS) ─── */
     .modules-wrap {
       background: #ffffff;
-      padding: 18px 45px 0;
+      padding: 16px 45px 0;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
-      gap: 13px;
+      gap: 14px;
     }
 
     .section-eyebrow {
@@ -171,115 +171,102 @@
 
     .module {
       display: flex;
-      gap: 18px;
+      gap: 22px;
       align-items: center;
-      border: 1.5px solid #e8e8e8;
-      border-left: 6px solid #6b0018;
-      border-radius: 12px;
-      padding: 14px 18px;
+      border: 2px solid #e8e8e8;
+      border-left: 8px solid #6b0018;
+      border-radius: 14px;
+      padding: 16px 20px;
       background: #fafafa;
     }
 
     .module:nth-child(even) {
       border-left-color: #ffd700;
       background: #fffdf5;
+      flex-direction: row-reverse; /* Alternating visual flow */
     }
 
-    .module-num {
+    .module-num-badge {
       font-family: 'Montserrat', sans-serif;
-      font-size: 32px;
+      font-size: 11px;
       font-weight: 900;
-      color: #6b0018;
-      line-height: 1;
-      min-width: 38px;
-      opacity: 0.25;
+      color: #ffffff;
+      background: #6b0018;
+      padding: 3px 10px;
+      border-radius: 6px;
+      letter-spacing: 1px;
+      display: inline-block;
+      margin-bottom: 6px;
     }
 
-    .module:nth-child(even) .module-num {
-      color: #b8860b;
+    .module:nth-child(even) .module-num-badge {
+      background: #ffd700;
+      color: #3d000e;
     }
 
     .module-body { flex: 1; }
 
     .module-title {
       font-family: 'Montserrat', sans-serif;
-      font-size: 15.5px;
-      font-weight: 800;
+      font-size: 17px;
+      font-weight: 900;
       color: #1a1a1a;
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .module-tag {
-      font-size: 9.5px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      padding: 2px 8px;
-      border-radius: 4px;
-      background: #6b0018;
-      color: #ffffff;
-    }
-
-    .module:nth-child(even) .module-tag {
-      background: #ffd700;
-      color: #3d000e;
+      margin-bottom: 6px;
+      line-height: 1.25;
     }
 
     .module-desc {
-      font-size: 12.5px;
-      color: #555;
-      line-height: 1.45;
+      font-size: 13px;
+      color: #444;
+      line-height: 1.5;
     }
 
-    /* App Phone Screenshot Frame */
-    .app-screen-frame {
-      width: 105px;
-      height: 175px;
-      border: 3px solid #1a1a1a;
-      border-radius: 12px;
+    /* LARGE Crisp Smartphone Display Frame */
+    .app-screen-frame-large {
+      width: 195px;
+      height: 250px;
+      border: 4px solid #1a1a1a;
+      border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.18);
       flex-shrink: 0;
       background: #000000;
       position: relative;
     }
 
-    .module:nth-child(even) .app-screen-frame {
+    .module:nth-child(even) .app-screen-frame-large {
       border-color: #6b0018;
     }
 
-    .app-screen-frame img {
+    .app-screen-frame-large img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: top center; /* Focuses on top readable portion of screenshot */
       display: block;
     }
 
     .pills {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
-      margin-top: 8px;
+      gap: 6px;
+      margin-top: 10px;
     }
 
     .pill {
-      font-size: 10.5px;
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 700;
       color: #6b0018;
-      border: 1px solid rgba(107,0,24,0.35);
-      padding: 2px 9px;
+      border: 1px solid rgba(107,0,24,0.4);
+      padding: 3px 10px;
       border-radius: 20px;
-      background: rgba(107,0,24,0.05);
+      background: rgba(107,0,24,0.06);
     }
 
     .module:nth-child(even) .pill {
       color: #7a5c00;
-      border-color: rgba(179,134,0,0.4);
-      background: rgba(255,215,0,0.08);
+      border-color: rgba(179,134,0,0.5);
+      background: rgba(255,215,0,0.12);
     }
 
     /* ─── STATS BAR ─────────────────────────── */
@@ -329,10 +316,10 @@
       flex-shrink: 0;
     }
     .qr-box {
-      width: 90px;
-      height: 90px;
+      width: 85px;
+      height: 85px;
       background: #ffffff;
-      padding: 6px;
+      padding: 5px;
       border: 2px solid #6b0018;
       border-radius: 8px;
       flex-shrink: 0;
@@ -373,7 +360,7 @@
     .footer {
       margin-top: 14px;
       background: #6b0018;
-      padding: 18px 45px;
+      padding: 16px 45px;
       text-align: center;
       flex-shrink: 0;
     }
@@ -385,7 +372,7 @@
       letter-spacing: 3px;
       color: #ffd700;
       text-transform: uppercase;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .theme-text {
@@ -433,32 +420,32 @@
     <p>Kitale Agricultural Society of Kenya (ASK) Show 2026 &nbsp;·&nbsp; Exhibition Stand</p>
   </div>
 
-  <!-- Feature Modules (Using Actual Android App Screenshots) -->
+  <!-- Feature Modules (Large Clear Screenshots with Alternating Layout) -->
   <div class="modules-wrap">
-    <div class="section-eyebrow">Key Application Features &amp; Screenshots</div>
+    <div class="section-eyebrow">Application Modules &amp; Live Interface Features</div>
 
-    <!-- Module 01: App Screenshot 1 -->
+    <!-- Module 01: Large Screenshot -->
     <div class="module">
-      <div class="module-num">01</div>
       <div class="module-body">
-        <div class="module-title">Herd &amp; Lifecycle Registry <span class="module-tag">Pig Profiles</span></div>
-        <div class="module-desc">Track every pig's tag number, breed, biological stage (piglet, weaner, grower, finisher, boar, sow), lineage mapping, and weight gain history over time.</div>
+        <span class="module-num-badge">MODULE 01</span>
+        <div class="module-title">Herd &amp; Lifecycle Registry</div>
+        <div class="module-desc">Track every pig's tag number, breed, biological stage (piglet, weaner, grower, finisher, boar, sow), mother &amp; father lineage mapping, and full weight gain history over time.</div>
         <div class="pills">
           <span class="pill">Individual Pig Profiles</span>
           <span class="pill">Lineage Mapping</span>
           <span class="pill">Weight History</span>
         </div>
       </div>
-      <div class="app-screen-frame">
-        <img src="app_img_1.jpg" alt="Herd Registry UI Screenshot">
+      <div class="app-screen-frame-large">
+        <img src="app_img_1.jpg" alt="Herd Registry Screen Detail">
       </div>
     </div>
 
-    <!-- Module 02: App Screenshot 2 -->
+    <!-- Module 02: Large Screenshot (Alternated) -->
     <div class="module">
-      <div class="module-num">02</div>
       <div class="module-body">
-        <div class="module-title">Veterinary &amp; Health Logger <span class="module-tag">Gilt Servicing</span></div>
+        <span class="module-num-badge">MODULE 02</span>
+        <div class="module-title">Veterinary &amp; Health Logger</div>
         <div class="module-desc">Log health events for a single pig, a specific category (e.g. all piglets/weaners), or the full herd. Captures disease name, pig age in weeks, treatment cost, and gilt servicing.</div>
         <div class="pills">
           <span class="pill">Single / Group / Full Herd</span>
@@ -466,16 +453,16 @@
           <span class="pill">Gilt &amp; Vaccination Records</span>
         </div>
       </div>
-      <div class="app-screen-frame">
-        <img src="app_img_2.jpg" alt="Health Logger UI Screenshot">
+      <div class="app-screen-frame-large">
+        <img src="app_img_2.jpg" alt="Health Logger Screen Detail">
       </div>
     </div>
 
-    <!-- Module 03: App Screenshot 3 -->
+    <!-- Module 03: Large Screenshot -->
     <div class="module">
-      <div class="module-num">03</div>
       <div class="module-body">
-        <div class="module-title">Market Connection &amp; Buyer Log <span class="module-tag">Direct Sales</span></div>
+        <span class="module-num-badge">MODULE 03</span>
+        <div class="module-title">Market Connection &amp; Buyer Log</div>
         <div class="module-desc">Record buyer details — name, contact, and buyer type (butchery, processor, live-market trader) — directly at the point of pig sale. Builds a full transaction and customer history over time.</div>
         <div class="pills">
           <span class="pill">Buyer Captured at Point of Sale</span>
@@ -483,16 +470,16 @@
           <span class="pill">Full Revenue &amp; Customer History</span>
         </div>
       </div>
-      <div class="app-screen-frame">
-        <img src="app_img_3.jpg" alt="Market Connection UI Screenshot">
+      <div class="app-screen-frame-large">
+        <img src="app_img_3.jpg" alt="Market Connection Screen Detail">
       </div>
     </div>
 
-    <!-- Module 04: App Screenshot 4 -->
+    <!-- Module 04: Large Screenshot (Alternated) -->
     <div class="module">
-      <div class="module-num">04</div>
       <div class="module-body">
-        <div class="module-title">Feed Formulator &amp; Inventory <span class="module-tag">FCR &amp; ADG</span></div>
+        <span class="module-num-badge">MODULE 04</span>
+        <div class="module-title">Feed Formulator &amp; Inventory</div>
         <div class="module-desc">Formulate least-cost pig feed rations with exact kg ingredient distribution. Tracks commercial premix stock levels and automatically computes Feed Conversion Ratio (FCR) and Average Daily Gain (ADG).</div>
         <div class="pills">
           <span class="pill">FCR = Feed Consumed ÷ Weight Gained</span>
@@ -500,16 +487,16 @@
           <span class="pill">Low Stock Alerts</span>
         </div>
       </div>
-      <div class="app-screen-frame">
-        <img src="app_img_4.jpg" alt="Feed Formulator UI Screenshot">
+      <div class="app-screen-frame-large">
+        <img src="app_img_4.jpg" alt="Feed Formulator Screen Detail">
       </div>
     </div>
 
-    <!-- Module 05: App Screenshot 5 -->
+    <!-- Module 05: Large Screenshot -->
     <div class="module">
-      <div class="module-num">05</div>
       <div class="module-body">
-        <div class="module-title">Reports Hub &amp; Financial Analytics <span class="module-tag">P&amp;L</span></div>
+        <span class="module-num-badge">MODULE 05</span>
+        <div class="module-title">Reports Hub &amp; Financial Analytics</div>
         <div class="module-desc">Generate Profit &amp; Loss reports, herd production summaries, pig mortality rates, and farrowing efficiency — filtered by Today, Last 7 Days, Last 30 Days, Year to Date, or All Time.</div>
         <div class="pills">
           <span class="pill">Profit &amp; Loss (P&amp;L)</span>
@@ -517,8 +504,8 @@
           <span class="pill">Breeding &amp; Farrowing Stats</span>
         </div>
       </div>
-      <div class="app-screen-frame">
-        <img src="app_img_5.jpg" alt="Reports & Analytics UI Screenshot">
+      <div class="app-screen-frame-large">
+        <img src="app_img_5.jpg" alt="Reports & Analytics Screen Detail">
       </div>
     </div>
   </div>
