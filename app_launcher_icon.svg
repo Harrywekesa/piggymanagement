@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+  <rect width="108" height="108" rx="24" fill="#1B5E20"/>
+  <!-- Left Ear -->
+  <path fill="#81C784" d="M32,32 L22,48 L42,46 Z" />
+  <!-- Right Ear -->
+  <path fill="#81C784" d="M76,32 L86,48 L66,46 Z" />
+  <!-- Pig Face Base -->
+  <path fill="#4CAF50" d="M54,34 C72,34 84,46 84,62 C84,78 72,86 54,86 C36,86 24,78 24,62 C24,46 36,34 54,34 Z" />
+  <!-- Left Eye -->
+  <circle cx="42" cy="54" r="4" fill="#FFFFFF" />
+  <circle cx="43" cy="54" r="2" fill="#0D1117" />
+  <!-- Right Eye -->
+  <circle cx="66" cy="54" r="4" fill="#FFFFFF" />
+  <circle cx="65" cy="54" r="2" fill="#0D1117" />
+  <!-- Snout Oval -->
+  <path fill="#C8E6C9" d="M54,62 C63,62 70,67 70,72 C70,77 63,80 54,80 C45,80 38,77 38,72 C38,67 45,62 54,62 Z" />
+  <!-- Left Nostril -->
+  <circle cx="48" cy="73" r="3" fill="#2E7D32" />
+  <!-- Right Nostril -->
+  <circle cx="60" cy="73" r="3" fill="#2E7D32" />
+</svg>
