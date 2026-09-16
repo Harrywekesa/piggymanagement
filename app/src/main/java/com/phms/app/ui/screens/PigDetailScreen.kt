@@ -345,6 +345,8 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
         }
     }
 }
+    }
+}
 
 @Composable
 fun OverviewTab(
