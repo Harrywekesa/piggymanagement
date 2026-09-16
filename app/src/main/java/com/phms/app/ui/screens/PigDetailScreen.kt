@@ -272,6 +272,75 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
             item {
                 Spacer(Modifier.height(16.dp))
                 ActionButtonsRow(pig = p, viewModel = viewModel, navController = navController, stages = stages, pens = pens)
+        }
+
+        if (showFullScreenPhoto && !p.photo_path.isNullOrBlank()) {
+            val imgModel = remember(p.photo_path) {
+                if (p.photo_path!!.startsWith("content:") || p.photo_path!!.startsWith("file:"))
+                    Uri.parse(p.photo_path)
+                else
+                    java.io.File(p.photo_path!!)
+            }
+            androidx.compose.ui.window.Dialog(
+                onDismissRequest = { showFullScreenPhoto = false },
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.95f))
+                        .clickable { showFullScreenPhoto = false }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 24.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Tag #${p.tag_number} • Full Photo",
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            IconButton(onClick = { showFullScreenPhoto = false }) {
+                                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AsyncImage(
+                                model = imgModel,
+                                contentDescription = "Full Screen Pig Photo",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight()
+                                    .clip(RoundedCornerShape(12.dp)),
+                                contentScale = ContentScale.Fit
+                            )
+                        }
+
+                        Text(
+                            "Tap anywhere to close",
+                            color = Color(0xFF8B949E),
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -376,77 +445,6 @@ fun OverviewTab(
         if (!pig.notes.isNullOrBlank()) {
             InfoSection("Notes") {
                 Text(pig.notes, color = Color(0xFF8B949E), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
-            }
-        }
-    }
-}
-
-    if (showFullScreenPhoto && !p.photo_path.isNullOrBlank()) {
-        val imgModel = remember(p.photo_path) {
-            if (p.photo_path!!.startsWith("content:") || p.photo_path!!.startsWith("file:"))
-                Uri.parse(p.photo_path)
-            else
-                java.io.File(p.photo_path!!)
-        }
-        androidx.compose.ui.window.Dialog(
-            onDismissRequest = { showFullScreenPhoto = false },
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.95f))
-                    .clickable { showFullScreenPhoto = false }
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 24.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Tag #${p.tag_number} • Full Photo",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        IconButton(onClick = { showFullScreenPhoto = false }) {
-                            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = imgModel,
-                            contentDescription = "Full Screen Pig Photo",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentHeight()
-                                .clip(RoundedCornerShape(12.dp)),
-                            contentScale = ContentScale.Fit
-                        )
-                    }
-
-                    Text(
-                        "Tap anywhere to close",
-                        color = Color(0xFF8B949E),
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                }
             }
         }
     }
