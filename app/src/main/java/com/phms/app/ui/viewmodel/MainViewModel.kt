@@ -112,6 +112,58 @@ class MainViewModel(
         }
     }
 
+    suspend fun getLatestWeightForPig(pigId: Long): Double? {
+        return repository.pigDao.getWeightsForPigSync(pigId).firstOrNull()?.weight_kg
+    }
+
+    fun logBreedingServiceEvent(sowId: Long, boarId: Long?, serviceType: String, notes: String = "") {
+        viewModelScope.launch {
+            val sow = repository.pigDao.getPigById(sowId)
+            if (sow != null) {
+                val matingDate = System.currentTimeMillis()
+                val expectedFarrowingDate = matingDate + TimeUnit.DAYS.toMillis(114)
+                
+                // Record pregnancy
+                repository.breedingDao.insertPregnancy(
+                    PregnancyEntity(
+                        sow_id = sow.id,
+                        boar_id = boarId,
+                        mating_date = matingDate,
+                        expected_farrowing_date = expectedFarrowingDate,
+                        notes = "Logged $serviceType for Sow #${sow.tag_number}. $notes"
+                    )
+                )
+
+                // Log health/vet event
+                repository.healthDao.insertHealthEvent(
+                    HealthEventEntity(
+                        pig_id = sow.id,
+                        type = "Breeding Serviced",
+                        disease_name = "Breeding ($serviceType)",
+                        product = serviceType,
+                        dosage = "N/A",
+                        cost = 0.0,
+                        vet_name = "Farm Manager",
+                        date = matingDate,
+                        withdrawal_days = 0,
+                        notes = "Serviced Sow #${sow.tag_number}. Expected farrowing: ${java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(expectedFarrowingDate))}"
+                    )
+                )
+
+                // Insert 114-day farrowing alert
+                repository.alertDao.insertAlert(
+                    AlertEntity(
+                        type = "Farrowing Expected",
+                        title = "Farrowing Due: Sow #${sow.tag_number}",
+                        description = "Sow #${sow.tag_number} is expected to farrow on ${java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(expectedFarrowingDate))} (114-day gestation).",
+                        priority = "High",
+                        pig_id = sow.id
+                    )
+                )
+            }
+        }
+    }
+
     fun saveFarmSettings(settings: FarmSettings) {
         settingsRepository.save(settings)
     }

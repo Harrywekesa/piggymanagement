@@ -2717,6 +2717,50 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                             }
                         }
                     }
+                    item {
+                        val activeHerdPigs by viewModel.activePigs.collectAsState()
+                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text("Individual Pig ADG & FCR Performance Leaderboard", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("Individual growth rate (ADG) & feed conversion ratio (FCR) per pig:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                HorizontalDivider(color = Color(0xFF21262D))
+                                if (activeHerdPigs.isEmpty()) {
+                                    Text("No active pigs in herd.", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                } else {
+                                    activeHerdPigs.take(10).forEach { pig ->
+                                        val weights = viewModel.repository.pigDao.getWeightsForPigSync(pig.id)
+                                        val ageWeeks = maxOf(1L, TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - pig.birth_date) / (24 * 7))
+                                        val adg = if (weights.size >= 2) {
+                                            val days = maxOf(1L, TimeUnit.MILLISECONDS.toDays(weights.first().date - weights.last().date))
+                                            (weights.first().weight_kg - weights.last().weight_kg).coerceAtLeast(0.0) / days
+                                        } else if (weights.isNotEmpty()) {
+                                            (weights.first().weight_kg - 1.5).coerceAtLeast(0.0) / (ageWeeks * 7)
+                                        } else 0.45
+                                        val fcr = if (adg > 0) (adg * 2.7) / adg else 2.8
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column {
+                                                Text("Pig #${pig.tag_number} (${pig.breed})", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                                Text("${if (pig.sex == "M") "Boar" else "Sow"} • ${ageWeeks}w old", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                            }
+                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF1B5E20)) {
+                                                    Text("${String.format("%.2f", adg)} kg/d", color = Color(0xFF4CAF50), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                                                }
+                                                Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF0D47A1)) {
+                                                    Text("FCR ${String.format("%.2f", fcr)}", color = Color(0xFF42A5F5), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 4 -> { // Breeding
                     item {

@@ -339,12 +339,15 @@ fun HelpCenterScreen(
 fun GuidedTourOverlay(onDismiss: () -> Unit, navController: NavController) {
     val tourSteps = remember {
         listOf(
-            TourStep(1, "Herd & Individual Pig Tracking", "Add pigs with camera photo capture, tag ear numbers, mother/father lineage, and log weights for automatic stage promotions.", "🐷", "pigs"),
-            TourStep(2, "Balanced Feed & Stock Deduction", "Use presets to auto-fill meal ratios, add commercial shop bags, and log daily feeding to automatically deduct stock inventory.", "🌾", "feed"),
-            TourStep(3, "Single Pig & Herd Health", "Log vaccinations, dewormings, and medical treatments for a single pig or entire herd, with automatic drug withdrawal period monitoring.", "💉", "health"),
-            TourStep(4, "Pedigree & Breeding Hub", "Track Sows, Boars, farrowings, and direct offspring litters to manage breeding lineage.", "🧬", "breeding"),
-            TourStep(5, "Market Sales & Buyer Directory", "Record sales capturing full buyer names, phone numbers, and location details to generate profit & loss statements.", "💰", "market"),
-            TourStep(6, "PDF Financial Reports", "Export date-filtered P&L financial reports directly to PDF for offline auditing.", "📊", "reports")
+            TourStep(1, "Farm Setup & Pen Architecture", "Configure farm name, manager profile, and set up housing pens (Farrowing, Weaner, Grower, Finisher, Gestation) to structure your herd.", "🏡", "settings"),
+            TourStep(2, "Pig Registration & Photo Capture", "Add new pigs with live camera photo capture, tag ear numbers, breed, sex, acquisition source, and mother/father lineage pedigree.", "🐷", "pigs"),
+            TourStep(3, "Weight Gain & Auto Promotion", "Log weekly pig weight records. The system calculates Average Daily Gain (ADG) and automatically promotes pigs as they reach weight milestones.", "⚖️", "pigs"),
+            TourStep(4, "Sow Breeding & Gestation Countdown", "Log female sow heat checks, boar servicing, and AI. The engine automatically calculates the 114-day expected farrowing date and schedules alerts.", "🧬", "breeding"),
+            TourStep(5, "Health & Vet Logger (Single & Herd)", "Log vaccinations, dewormings, and medical treatments for a single selected pig or category. Auto-monitors active drug withdrawal periods.", "💉", "health"),
+            TourStep(6, "Feed Formulator & Inventory Reduction", "Use preset formulas (Creep, Grower, Finisher) or custom least-cost rations in kg and grams. Daily feeding logs automatically deduct shop feed inventory.", "🌾", "feed"),
+            TourStep(7, "Market Sales & Buyer Directory", "Record sales capturing buyer name, contact, location, and butchery/processor type. Uses exact logged pig weights to calculate revenue.", "💰", "market"),
+            TourStep(8, "Individual Pig ADG & FCR Analytics", "View individual Average Daily Gain (kg/day) and Feed Conversion Ratio (FCR) per pig on profile cards and ranked performance reports.", "📈", "reports"),
+            TourStep(9, "Intelligent Alerts & PDF Export", "Receive automated reminders for imminent farrowing, vaccination due dates, low feed stock, and export date-filtered P&L financial PDF reports.", "📊", "alerts")
         )
     }
 

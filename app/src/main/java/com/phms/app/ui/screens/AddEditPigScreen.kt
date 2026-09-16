@@ -85,24 +85,57 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
     val context = androidx.compose.ui.platform.LocalContext.current
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        photoUri = uri
-        photoPath = uri?.toString()
+        if (uri != null) {
+            photoUri = uri
+            photoPath = uri.toString()
+        }
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
         if (bitmap != null) {
-            // Save bitmap to temporary cache file
             try {
                 val file = java.io.File(context.cacheDir, "pig_cam_${System.currentTimeMillis()}.jpg")
                 val stream = java.io.FileOutputStream(file)
                 bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, stream)
                 stream.flush()
                 stream.close()
-                photoUri = Uri.fromFile(file)
-                photoPath = photoUri.toString()
+                val savedUri = Uri.fromFile(file)
+                photoUri = savedUri
+                photoPath = savedUri.toString()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            try {
+                cameraLauncher.launch(null)
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(context, "Could not open camera: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            android.widget.Toast.makeText(context, "Camera permission is required to take pig photos", android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun launchCameraWithPermission() {
+        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.CAMERA
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (hasPermission) {
+            try {
+                cameraLauncher.launch(null)
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(context, "Camera error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
         }
     }
 
@@ -170,7 +203,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
 
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             OutlinedButton(
-                                onClick = { cameraLauncher.launch(null) },
+                                onClick = { launchCameraWithPermission() },
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF4CAF50)),
                                 border = BorderStroke(1.dp, Color(0xFF4CAF50)),
                                 shape = RoundedCornerShape(10.dp)

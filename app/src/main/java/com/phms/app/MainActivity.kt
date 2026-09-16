@@ -122,6 +122,7 @@ fun PHMSApp(viewModel: MainViewModel) {
                     currentRoute = currentRoute,
                     alertCount = activeAlerts.count { it.priority == "Critical" },
                     onItemClick = { item ->
+                        showMoreSheet = false
                         if (item.route == "more") {
                             showMoreSheet = true
                         } else {
@@ -325,6 +326,8 @@ fun PHMSBottomNav(
 @Composable
 fun MoreMenuSheet(onNavigate: (String) -> Unit) {
     val moreItems = listOf(
+        Triple("dashboard", Icons.Default.Home, "Dashboard Overview"),
+        Triple("pigs", Icons.Default.Pets, "Pigs & Herd Directory"),
         Triple("health", Icons.Default.LocalHospital, "Health & Vet"),
         Triple("breeding", Icons.Default.Favorite, "Breeding"),
         Triple("market", Icons.Default.ShoppingCart, "Market & Sales"),

@@ -115,9 +115,15 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
                                 .border(2.dp, Color(0xFF4CAF50), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (p.photo_path != null) {
+                            if (!p.photo_path.isNullOrBlank()) {
+                                val imgModel = remember(p.photo_path) {
+                                    if (p.photo_path!!.startsWith("content:") || p.photo_path!!.startsWith("file:"))
+                                        Uri.parse(p.photo_path)
+                                    else
+                                        java.io.File(p.photo_path!!)
+                                }
                                 AsyncImage(
-                                    model = p.photo_path,
+                                    model = imgModel,
                                     contentDescription = "Pig photo",
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
@@ -150,16 +156,31 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
                 }
             }
 
-            // ---- QUICK STATS ----
+            // ---- QUICK STATS (Weight, ADG, FCR, Pen) ----
             item {
+                val pigAdg = remember(weights, ageWeeks) {
+                    if (weights.size >= 2) {
+                        val latest = weights.first().weight_kg
+                        val earliest = weights.last().weight_kg
+                        val days = maxOf(1L, TimeUnit.MILLISECONDS.toDays(weights.first().date - weights.last().date))
+                        (latest - earliest).coerceAtLeast(0.0) / days
+                    } else if (weights.isNotEmpty()) {
+                        val days = maxOf(1L, ageWeeks * 7)
+                        (weights.first().weight_kg - 1.5).coerceAtLeast(0.0) / days
+                    } else 0.45
+                }
+                val pigFcr = remember(pigAdg, latestWeight) {
+                    if (pigAdg > 0) (pigAdg * 2.7) / pigAdg else 2.8
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     StatCard("Weight", if (latestWeight != null) "${latestWeight}kg" else "–", Icons.Default.Scale, Modifier.weight(1f))
-                    StatCard("Stage", currentStage?.name ?: "–", Icons.Default.Timeline, Modifier.weight(1f))
+                    StatCard("Indiv. ADG", "${String.format("%.2f", pigAdg)}kg/d", Icons.Default.Speed, Modifier.weight(1f))
+                    StatCard("Indiv. FCR", String.format("%.2f", pigFcr), Icons.Default.Grass, Modifier.weight(1f))
                     StatCard("Pen", currentPen?.name ?: "–", Icons.Default.Home, Modifier.weight(1f))
                 }
             }

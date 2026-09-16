@@ -59,7 +59,15 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
     val effectiveBuyerId = selectedBuyerId ?: savedNewBuyerId
 
     val selectedPigs = marketReadyPigs.filter { it.id in selectedPigIds }
-    val totalWeight = selectedPigs.sumOf { /* estimate if no weight logged */ 85.0 }
+    val pigWeightsMap by produceState<Map<Long, Double>>(initialValue = emptyMap(), key1 = selectedPigIds.toList()) {
+        val map = mutableMapOf<Long, Double>()
+        selectedPigs.forEach { pig ->
+            val loggedWeight = viewModel.repository.pigDao.getWeightsForPigSync(pig.id).firstOrNull()?.weight_kg ?: 85.0
+            map[pig.id] = loggedWeight
+        }
+        value = map
+    }
+    val totalWeight = selectedPigs.sumOf { pig -> pigWeightsMap[pig.id] ?: 85.0 }
     val price = pricePerKg.toDoubleOrNull() ?: 0.0
     val totalAmount = totalWeight * price
 
