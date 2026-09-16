@@ -2727,8 +2727,15 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                                 if (activeHerdPigs.isEmpty()) {
                                     Text("No active pigs in herd.", color = Color(0xFF8B949E), fontSize = 12.sp)
                                 } else {
+                                    val pigWeightsMap by produceState<Map<Long, List<com.phms.app.data.local.entity.WeightRecordEntity>>>(initialValue = emptyMap(), key1 = activeHerdPigs) {
+                                        val map = mutableMapOf<Long, List<com.phms.app.data.local.entity.WeightRecordEntity>>()
+                                        activeHerdPigs.take(10).forEach { pig ->
+                                            map[pig.id] = viewModel.repository.pigDao.getWeightsForPigSync(pig.id)
+                                        }
+                                        value = map
+                                    }
                                     activeHerdPigs.take(10).forEach { pig ->
-                                        val weights = viewModel.repository.pigDao.getWeightsForPigSync(pig.id)
+                                        val weights = pigWeightsMap[pig.id] ?: emptyList()
                                         val ageWeeks = maxOf(1L, TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - pig.birth_date) / (24 * 7))
                                         val adg = if (weights.size >= 2) {
                                             val days = maxOf(1L, TimeUnit.MILLISECONDS.toDays(weights.first().date - weights.last().date))

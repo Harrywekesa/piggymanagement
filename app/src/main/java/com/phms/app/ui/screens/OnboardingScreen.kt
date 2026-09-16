@@ -1,6 +1,7 @@
 package com.phms.app.ui.screens
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -254,7 +255,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                         )
                         // Seed selected pens
                         selectedPens.forEach { (penName, capacity) ->
-                            viewModel.addPen(name = penName, capacity = capacity, notes = "Configured during farm onboarding")
+                            viewModel.createPen(name = penName, capacity = capacity, notes = "Configured during farm onboarding")
                         }
                         navController.navigate("dashboard") {
                             popUpTo("onboarding") { inclusive = true }
