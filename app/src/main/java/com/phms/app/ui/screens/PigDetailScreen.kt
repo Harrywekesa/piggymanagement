@@ -378,6 +378,8 @@ fun OverviewTab(
                 Text(pig.notes, color = Color(0xFF8B949E), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
             }
         }
+    }
+}
 
     if (showFullScreenPhoto && !p.photo_path.isNullOrBlank()) {
         val imgModel = remember(p.photo_path) {
