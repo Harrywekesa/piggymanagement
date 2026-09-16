@@ -272,6 +272,7 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
             item {
                 Spacer(Modifier.height(16.dp))
                 ActionButtonsRow(pig = p, viewModel = viewModel, navController = navController, stages = stages, pens = pens)
+            }
         }
 
         if (showFullScreenPhoto && !p.photo_path.isNullOrBlank()) {
@@ -345,7 +346,6 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
         }
     }
 }
-    }
 
 @Composable
 fun OverviewTab(
