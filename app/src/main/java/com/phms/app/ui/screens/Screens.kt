@@ -1457,14 +1457,19 @@ fun HealthScreen(viewModel: MainViewModel) {
                         onSelect = { targetScope = it }
                     )
 
-                    if (targetScope == "Single Pig" && pigs.isNotEmpty()) {
-                        Text("Select Animal *", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    val eligiblePigs = remember(eventType, pigs) {
+                        if (eventType == "Gilt/Sow Serviced") pigs.filter { it.sex.equals("F", true) } else pigs
+                    }
+                    if (targetScope == "Single Pig" && eligiblePigs.isNotEmpty()) {
+                        Text(if (eventType == "Gilt/Sow Serviced") "Select Female Sow/Gilt *" else "Select Animal *", color = Color(0xFF8B949E), fontSize = 12.sp)
                         DropdownSelector(
                             label = "Select Pig",
-                            options = pigs.map { it.id to "Tag #${it.tag_number} (${it.breed} • ${it.sex})" },
-                            selectedId = selectedPigId ?: pigs.first().id,
+                            options = eligiblePigs.map { it.id to "Tag #${it.tag_number} (${it.breed} • ${if (it.sex.equals("F", true)) "Sow/Gilt" else "Boar"})" },
+                            selectedId = if (eligiblePigs.any { it.id == selectedPigId }) selectedPigId!! else eligiblePigs.first().id,
                             onSelect = { selectedPigId = it }
                         )
+                    } else if (targetScope == "Single Pig" && eventType == "Gilt/Sow Serviced" && eligiblePigs.isEmpty()) {
+                        Text("⚠️ No female pigs (Sows / Gilts) in active herd to service.", color = Color(0xFFFF9800), fontSize = 12.sp)
                     }
 
                     if (targetScope == "Category") {
