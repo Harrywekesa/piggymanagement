@@ -42,6 +42,8 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
     val alerts by viewModel.activeAlerts.collectAsState()
     val criticalAlerts by viewModel.criticalAlerts.collectAsState()
     val pnl by viewModel.pnlSummary.collectAsState()
+    val updateInfo by viewModel.appUpdateInfo.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val marketReadyCount = pigs.count { it.current_stage_id == 5L }
 
     LazyColumn(
@@ -49,6 +51,40 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        if (updateInfo.isUpdateAvailable) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        com.phms.app.data.updater.GitHubUpdateChecker.openUpdateLink(context, updateInfo)
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1B3A4B)),
+                    border = BorderStroke(1.dp, Color(0xFF00B4D8))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = Color(0xFF90E0EF), modifier = Modifier.size(24.dp))
+                            Column {
+                                Text("🚀 New Update Available (${updateInfo.latestVersion})", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("Tap to download & install the latest GitHub release.", color = Color(0xFF90E0EF), fontSize = 11.sp)
+                            }
+                        }
+                        Button(
+                            onClick = { com.phms.app.data.updater.GitHubUpdateChecker.openUpdateLink(context, updateInfo) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0077B6)),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text("Update", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
         // KPI CARDS
         item {
             Row(

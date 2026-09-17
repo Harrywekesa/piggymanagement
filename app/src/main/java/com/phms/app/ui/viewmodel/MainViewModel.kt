@@ -52,6 +52,21 @@ class MainViewModel(
         .map { it.isOnboarded }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), settingsRepository.get().isOnboarded)
 
+    private val _appUpdateInfo = MutableStateFlow(com.phms.app.data.updater.AppUpdateInfo())
+    val appUpdateInfo: StateFlow<com.phms.app.data.updater.AppUpdateInfo> = _appUpdateInfo.asStateFlow()
+
+    init {
+        checkForAppUpdates()
+    }
+
+    fun checkForAppUpdates() {
+        viewModelScope.launch {
+            _appUpdateInfo.value = _appUpdateInfo.value.copy(isChecking = true)
+            val info = com.phms.app.data.updater.GitHubUpdateChecker.checkForUpdates()
+            _appUpdateInfo.value = info
+        }
+    }
+
     private val _pnlSummary = MutableStateFlow<PnLSummary?>(null)
     val pnlSummary: StateFlow<PnLSummary?> = _pnlSummary.asStateFlow()
 

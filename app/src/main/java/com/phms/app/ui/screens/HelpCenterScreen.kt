@@ -200,6 +200,71 @@ fun HelpCenterScreen(
                     }
                 }
 
+                // App Version & In-App GitHub Auto-Update Card
+                item {
+                    val updateInfo by viewModel.appUpdateInfo.collectAsState()
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                        border = BorderStroke(1.dp, if (updateInfo.isUpdateAvailable) Color(0xFF00B4D8) else Color(0xFF30363D))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Icon(Icons.Default.SystemUpdate, null, tint = if (updateInfo.isUpdateAvailable) Color(0xFF00B4D8) else Color(0xFF4CAF50), modifier = Modifier.size(24.dp))
+                                    Column {
+                                        Text("App Version & GitHub Auto-Update", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Text("Installed Version: ${updateInfo.currentVersion}", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                    }
+                                }
+                                if (updateInfo.isChecking) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color(0xFF4CAF50), strokeWidth = 2.dp)
+                                } else {
+                                    OutlinedButton(
+                                        onClick = { viewModel.checkForAppUpdates() },
+                                        border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("Check Updates", fontSize = 11.sp, color = Color(0xFF4CAF50))
+                                    }
+                                }
+                            }
+
+                            if (updateInfo.isUpdateAvailable) {
+                                HorizontalDivider(color = Color(0xFF21262D))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("🎉 New Update Available: ${updateInfo.latestVersion}", color = Color(0xFF90E0EF), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Text(updateInfo.releaseNotes.take(80) + "...", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                    }
+                                    Spacer(Modifier.width(8.dp))
+                                    Button(
+                                        onClick = { com.phms.app.data.updater.GitHubUpdateChecker.openUpdateLink(context, updateInfo) },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0077B6)),
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Text("Update Now", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            } else if (!updateInfo.isChecking) {
+                                Text("✅ Your app is up to date with the latest GitHub release.", color = Color(0xFF4CAF50), fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+
                 // Search Bar
                 item {
                     OutlinedTextField(
