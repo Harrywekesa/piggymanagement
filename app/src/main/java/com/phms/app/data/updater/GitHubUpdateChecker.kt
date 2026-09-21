@@ -12,7 +12,7 @@ import java.net.URL
 data class AppUpdateInfo(
     val isUpdateAvailable: Boolean = false,
     val latestVersion: String = "",
-    val currentVersion: String = "v1.0.0",
+    val currentVersion: String = "v${com.phms.app.BuildConfig.VERSION_NAME}",
     val releaseNotes: String = "",
     val downloadUrl: String = "",
     val releaseUrl: String = "",
@@ -22,7 +22,7 @@ data class AppUpdateInfo(
 
 object GitHubUpdateChecker {
     private const val GITHUB_RELEASES_API = "https://api.github.com/repos/Harrywekesa/piggymanagement/releases/latest"
-    const val CURRENT_VERSION = "1.0.0"
+    val CURRENT_VERSION: String get() = com.phms.app.BuildConfig.VERSION_NAME
 
     suspend fun checkForUpdates(): AppUpdateInfo = withContext(Dispatchers.IO) {
         try {
@@ -83,8 +83,10 @@ object GitHubUpdateChecker {
 
     private fun isVersionNewer(current: String, latest: String): Boolean {
         if (latest.isBlank()) return false
-        val currParts = current.split(".").mapNotNull { it.toIntOrNull() }
-        val lateParts = latest.split(".").mapNotNull { it.toIntOrNull() }
+        val cleanCurr = current.removePrefix("v").removePrefix("V").trim()
+        val cleanLate = latest.removePrefix("v").removePrefix("V").trim()
+        val currParts = cleanCurr.split(".").mapNotNull { it.toIntOrNull() }
+        val lateParts = cleanLate.split(".").mapNotNull { it.toIntOrNull() }
 
         val length = maxOf(currParts.size, lateParts.size)
         for (i in 0 until length) {

@@ -271,7 +271,7 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
             // ---- ACTION BUTTONS ----
             item {
                 Spacer(Modifier.height(16.dp))
-                ActionButtonsRow(pig = p, viewModel = viewModel, navController = navController, stages = stages, pens = pens)
+                ActionButtonsRow(pig = p, viewModel = viewModel, navController = navController, stages = stages, pens = pens, allPigs = allPigs)
             }
         }
 
@@ -655,7 +655,8 @@ fun ActionButtonsRow(
     viewModel: MainViewModel,
     navController: NavController,
     stages: List<GrowthStageEntity>,
-    pens: List<PenEntity>
+    pens: List<PenEntity>,
+    allPigs: List<PigEntity>
 ) {
     var showLogWeightDialog by remember { mutableStateOf(false) }
     var showLogHealthDialog by remember { mutableStateOf(false) }
@@ -720,6 +721,10 @@ fun ActionButtonsRow(
     }
 
     if (showLogHealthDialog) {
+        // Full Health & Vet dialog — same as HealthScreen, pre-seeded for this pig
+        var targetScope by remember { mutableStateOf("Single Pig") }
+        var selectedHealthPigId by remember { mutableStateOf<Long?>(pig.id) }
+        var targetCategory by remember { mutableStateOf("Piglets") }
         var eventType by remember { mutableStateOf("Vaccination") }
         var product by remember { mutableStateOf("") }
         var dosage by remember { mutableStateOf("") }
@@ -727,51 +732,175 @@ fun ActionButtonsRow(
         var costStr by remember { mutableStateOf("") }
         var vetName by remember { mutableStateOf("") }
         var notes by remember { mutableStateOf("") }
+        var diseaseName by remember { mutableStateOf("Routine Check / Treatment") }
+        var isCustomDisease by remember { mutableStateOf(false) }
+        var customDiseaseText by remember { mutableStateOf("") }
+        var ageWeeksStr by remember { mutableStateOf("") }
+        var weightKgStr by remember { mutableStateOf("") }
+        var selectedBoarId by remember { mutableStateOf<Long?>(null) }
+        val boars = allPigs.filter { it.sex.equals("M", true) }
+
+        // Pre-fill age from birth date
+        LaunchedEffect(Unit) {
+            val ageMs = System.currentTimeMillis() - pig.birth_date
+            val weeks = (ageMs / (1000L * 60 * 60 * 24 * 7)).toInt()
+            if (ageWeeksStr.isBlank()) ageWeeksStr = maxOf(1, weeks).toString()
+        }
 
         AlertDialog(
             onDismissRequest = { showLogHealthDialog = false },
             containerColor = Color(0xFF161B22),
-            title = { Text("Log Health Event for Pig #${pig.tag_number}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+            title = { Text("Log Health / Vet Event — Pig #${pig.tag_number}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Event Type", color = Color(0xFF8B949E), fontSize = 12.sp)
-                    Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("Vaccination", "Deworming", "Treatment", "Vitamin", "Checkup").forEach { type ->
-                            FilterChip(
-                                selected = eventType == type,
-                                onClick = { eventType = type },
-                                label = { Text(type, fontSize = 11.sp) },
-                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF1B5E20), selectedLabelColor = Color(0xFF4CAF50))
-                            )
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
+                    // Target Scope
+                    StringDropdownSelector(
+                        label = "Target Scope *",
+                        options = listOf("Single Pig", "Category", "Herd"),
+                        selectedOption = targetScope,
+                        onSelect = { targetScope = it }
+                    )
+
+                    val eligiblePigs = remember(eventType, allPigs) {
+                        if (eventType == "Gilt/Sow Serviced") allPigs.filter { it.sex.equals("F", true) } else allPigs
+                    }
+
+                    if (targetScope == "Single Pig" && eligiblePigs.isNotEmpty()) {
+                        Text(if (eventType == "Gilt/Sow Serviced") "Select Female Sow/Gilt *" else "Select Animal *", color = Color(0xFF8B949E), fontSize = 12.sp)
+                        DropdownSelector(
+                            label = "Select Pig",
+                            options = eligiblePigs.map { it.id to "Tag #${it.tag_number} (${it.breed} • ${if (it.sex.equals("F", true)) "Sow/Gilt" else "Boar"})" },
+                            selectedId = if (eligiblePigs.any { it.id == selectedHealthPigId }) selectedHealthPigId!! else eligiblePigs.first().id,
+                            onSelect = { selectedHealthPigId = it }
+                        )
+                    } else if (targetScope == "Single Pig" && eventType == "Gilt/Sow Serviced" && eligiblePigs.isEmpty()) {
+                        Text("⚠️ No female pigs (Sows / Gilts) in active herd to service.", color = Color(0xFFFF9800), fontSize = 12.sp)
+                    }
+
+                    if (targetScope == "Category") {
+                        StringDropdownSelector(
+                            label = "Select Pig Category *",
+                            options = listOf("Piglets", "Weaners", "Growers", "Finishers", "Sows", "Gilts", "Boars"),
+                            selectedOption = targetCategory,
+                            onSelect = { targetCategory = it }
+                        )
+                    }
+
+                    // Event Type
+                    StringDropdownSelector(
+                        label = "Event Type / Purpose *",
+                        options = listOf("Treatment", "Vaccination", "Deworming", "Checkup", "Vitamin", "Gilt/Sow Serviced", "Mortality / Death"),
+                        selectedOption = eventType,
+                        onSelect = { preset ->
+                            eventType = preset
+                            if (preset == "Gilt/Sow Serviced") {
+                                product = "Breeding / Insemination"
+                                diseaseName = "Reproduction / Servicing"
+                            } else if (preset == "Mortality / Death") {
+                                product = "Death / Culling Record"
+                                diseaseName = "African Swine Fever"
+                            }
                         }
+                    )
+
+                    // Disease / Condition
+                    StringDropdownSelector(
+                        label = "Disease / Condition / Diagnosis *",
+                        options = listOf(
+                            "Routine Check / Treatment",
+                            "Diarrhea / Scours",
+                            "Pneumonia / Respiratory",
+                            "African Swine Fever",
+                            "Mange / Skin Parasites",
+                            "MMA / Mastitis",
+                            "Foot Rot / Lameness",
+                            "Reproduction / Servicing",
+                            "Other / Custom"
+                        ),
+                        selectedOption = if (isCustomDisease) "Other / Custom" else diseaseName,
+                        onSelect = { selected ->
+                            if (selected == "Other / Custom") {
+                                isCustomDisease = true
+                            } else {
+                                isCustomDisease = false
+                                diseaseName = selected
+                            }
+                        }
+                    )
+
+                    if (isCustomDisease) {
+                        FormField("Custom Disease Name", customDiseaseText, { customDiseaseText = it }, placeholder = "Type disease diagnosis...")
                     }
-                    FormField("Product / Medicine Name *", product, { product = it }, placeholder = "e.g. Iron Injection, Penicillin")
+
+                    FormField("Product / Medication Description *", product, { product = it }, placeholder = "e.g. Oxytetracycline 20%, Iron injection")
+
+                    if (eventType == "Gilt/Sow Serviced" && boars.isNotEmpty()) {
+                        Text("Servicing Boar (Optional for AI)", color = Color(0xFF8B949E), fontSize = 12.sp)
+                        DropdownSelector(
+                            label = "Select Boar",
+                            options = listOf(-1L to "Artificial Insemination (AI)") + boars.map { it.id to "Boar Tag #${it.tag_number}" },
+                            selectedId = selectedBoarId ?: -1L,
+                            onSelect = { selectedBoarId = if (it == -1L) null else it }
+                        )
+                    }
+
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) { FormField("Dosage", dosage, { dosage = it }, placeholder = "e.g. 2ml") }
-                        Box(Modifier.weight(1f)) { FormField("Withdrawal Days", withdrawalDaysStr, { withdrawalDaysStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                        Box(Modifier.weight(1f)) { FormField("Age Affected (Weeks)", ageWeeksStr, { ageWeeksStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                        Box(Modifier.weight(1f)) { FormField("Weight (kg)", weightKgStr, { weightKgStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
                     }
+
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) { FormField("Cost (KSh)", costStr, { costStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                        Box(Modifier.weight(1f)) { FormField("Vet / Operator", vetName, { vetName = it }) }
+                        Box(Modifier.weight(1f)) { FormField("Dosage", dosage, { dosage = it }, placeholder = "e.g. 2ml/pig") }
+                        Box(Modifier.weight(1f)) { FormField("Withdrawal (Days)", withdrawalDaysStr, { withdrawalDaysStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
                     }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(Modifier.weight(1f)) { FormField("Total Cost (KSh)", costStr, { costStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
+                        Box(Modifier.weight(1f)) { FormField("Vet / Operator", vetName, { vetName = it }, placeholder = "Dr. John / Self") }
+                    }
+
+                    FormField("Notes / Clinical Symptoms", notes, { notes = it }, placeholder = "Additional notes...")
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
+                        val finalDisease = if (isCustomDisease) customDiseaseText.ifBlank { "Unspecified Disease" } else diseaseName
                         if (product.isNotBlank()) {
-                            viewModel.logGroupHealthEvent(
-                                targetScope = "Single Pig",
-                                targetPigId = pig.id,
-                                targetCategory = null,
-                                type = eventType,
-                                product = product,
-                                dosage = dosage,
-                                cost = costStr.toDoubleOrNull() ?: 0.0,
-                                vetName = vetName,
-                                notes = notes,
-                                withdrawalDays = withdrawalDaysStr.toIntOrNull() ?: 0
-                            )
+                            val targetPig = if (targetScope == "Single Pig") selectedHealthPigId else null
+                            if (eventType == "Gilt/Sow Serviced" && targetPig != null) {
+                                viewModel.logGiltServiceFromHealth(
+                                    sowId = targetPig,
+                                    boarId = selectedBoarId,
+                                    notes = notes
+                                )
+                            } else if (eventType == "Mortality / Death" && targetPig != null) {
+                                viewModel.logMortalityEvent(
+                                    pigId = targetPig,
+                                    diseaseName = finalDisease,
+                                    ageWeeks = ageWeeksStr.toIntOrNull(),
+                                    weightKg = weightKgStr.toDoubleOrNull(),
+                                    notes = notes,
+                                    cost = costStr.toDoubleOrNull() ?: 0.0
+                                )
+                            } else {
+                                viewModel.logGroupHealthEvent(
+                                    targetScope = targetScope,
+                                    targetPigId = targetPig,
+                                    targetCategory = if (targetScope == "Category") targetCategory else null,
+                                    type = eventType,
+                                    product = product,
+                                    dosage = dosage,
+                                    cost = costStr.toDoubleOrNull() ?: 0.0,
+                                    vetName = vetName,
+                                    notes = notes,
+                                    withdrawalDays = withdrawalDaysStr.toIntOrNull() ?: 0,
+                                    diseaseName = finalDisease,
+                                    ageWeeks = ageWeeksStr.toIntOrNull(),
+                                    weightKg = weightKgStr.toDoubleOrNull()
+                                )
+                            }
                             showLogHealthDialog = false
                         }
                     },

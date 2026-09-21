@@ -127,7 +127,7 @@ fun PHMSApp(viewModel: MainViewModel) {
                             showMoreSheet = true
                         } else {
                             navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                popUpTo("dashboard") { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -192,7 +192,7 @@ fun PHMSApp(viewModel: MainViewModel) {
                 onNavigate = { route ->
                     showMoreSheet = false
                     navController.navigate(route) {
-                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        popUpTo("dashboard") { saveState = true }
                         launchSingleTop = true
                         restoreState = true
                     }

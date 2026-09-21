@@ -37,7 +37,9 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
     // Form states for farm setup
     var farmName by remember { mutableStateOf("My Commercial Pig Farm") }
     var farmerName by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
+    var selectedCounty by remember { mutableStateOf("Trans Nzoia") }
+    var selectedSubCounty by remember { mutableStateOf("Kiminini") }
+    var selectedWard by remember { mutableStateOf("Hospital Ward") }
 
     // Pens state
     val defaultPenPresets = listOf(
@@ -136,7 +138,19 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 FormField("Farm Name *", farmName, { farmName = it }, placeholder = "e.g. Wekesa Commercial Pig Farm")
                                 FormField("Farmer / Manager Name", farmerName, { farmerName = it }, placeholder = "e.g. Harrison Wekesa")
-                                FormField("Location / County", location, { location = it }, placeholder = "e.g. Kitale, Trans Nzoia")
+                                HorizontalDivider(color = Color(0xFF21262D))
+                                Text("Farm Administrative Location (Kenya 47 Counties)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("Select your County, Sub-County, and Ward for location branding, weather, and local market linkage:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                com.phms.app.ui.components.LocationSelector(
+                                    selectedCounty = selectedCounty,
+                                    selectedSubCounty = selectedSubCounty,
+                                    selectedWard = selectedWard,
+                                    onLocationChanged = { c, sc, w ->
+                                        selectedCounty = c
+                                        selectedSubCounty = sc
+                                        selectedWard = w
+                                    }
+                                )
                             }
                         }
                     }
@@ -248,7 +262,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                             currentSettings.copy(
                                 farmName = farmName.ifBlank { "My Commercial Pig Farm" },
                                 farmerName = farmerName,
-                                farmLocation = location,
+                                farmLocation = listOf(selectedWard, selectedSubCounty, selectedCounty).filter { it.isNotBlank() }.joinToString(", "),
                                 isOnboarded = true,
                                 showTourOnFirstOpen = true
                             )

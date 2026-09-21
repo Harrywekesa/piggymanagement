@@ -51,7 +51,7 @@ class UpdateManager(private val context: Context) {
         val info = InstallTelemetry(
             installDate = firstLaunch,
             totalAppLaunches = launches,
-            currentVersion = "v1.0.0",
+            currentVersion = "v${com.phms.app.BuildConfig.VERSION_NAME}",
             deviceModel = "${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE})"
         )
         _telemetryState.value = info
@@ -70,11 +70,11 @@ class UpdateManager(private val context: Context) {
             if (connection.responseCode == 200) {
                 val responseText = connection.inputStream.bufferedReader().use { it.readText() }
                 val json = JSONObject(responseText)
-                val latestTag = json.optString("tag_name", "v1.0.0")
+                val latestTag = json.optString("tag_name", "v${com.phms.app.BuildConfig.VERSION_NAME}")
                 val releaseBody = json.optString("body", "New features & bug fixes.")
                 val htmlUrl = json.optString("html_url", "https://github.com/Harrywekesa/piggymanagement/releases")
 
-                val currentVersion = "v1.0.0"
+                val currentVersion = "v${com.phms.app.BuildConfig.VERSION_NAME}"
                 val isNewer = latestTag != currentVersion && latestTag.isNotBlank()
 
                 _updateState.value = AppReleaseInfo(
