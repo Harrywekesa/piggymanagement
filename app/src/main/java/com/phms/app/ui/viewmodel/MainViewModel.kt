@@ -58,11 +58,18 @@ class MainViewModel(
     init {
         checkForAppUpdates()
         seedCommunityBuyers()
+        syncBuyersFromCloud()
     }
 
     private fun seedCommunityBuyers() {
         viewModelScope.launch {
             repository.seedCommunityBuyersIfNeeded()
+        }
+    }
+
+    fun syncBuyersFromCloud() {
+        viewModelScope.launch {
+            com.phms.app.data.remote.FirestoreBuyerSync.syncFromCloud(repository.marketDao)
         }
     }
 
@@ -443,16 +450,21 @@ class MainViewModel(
     fun addBuyer(
         name: String, phone: String, email: String? = null, location: String? = null,
         county: String? = null, subCounty: String? = null, ward: String? = null,
-        type: String = "Wholesaler", notes: String = ""
+        type: String = "Wholesaler", notes: String = "",
+        shareToAllFarmers: Boolean = false
     ) {
         viewModelScope.launch {
-            repository.marketDao.insertBuyer(
-                BuyerEntity(
-                    name = name, phone = phone, email = email, location = location,
-                    county = county, sub_county = subCounty, ward = ward,
-                    type = type, notes = notes
-                )
+            val buyer = BuyerEntity(
+                name = name, phone = phone, email = email, location = location,
+                county = county, sub_county = subCounty, ward = ward,
+                type = type, notes = notes,
+                is_community = shareToAllFarmers  // mark as community if shared
             )
+            repository.marketDao.insertBuyer(buyer)
+            // If farmer wants to share — push to Firestore so ALL farmers see it
+            if (shareToAllFarmers) {
+                com.phms.app.data.remote.FirestoreBuyerSync.pushBuyerToCloud(buyer)
+            }
         }
     }
 

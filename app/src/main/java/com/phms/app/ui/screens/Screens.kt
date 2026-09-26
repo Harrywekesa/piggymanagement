@@ -2574,7 +2574,22 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
 
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Buyers Directory — Search by Location", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Buyers Directory 🌍", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                        Text("Shared across all Kenya pig farmers", fontSize = 11.sp, color = Color(0xFF00B4D8))
+                    }
+                    IconButton(onClick = {
+                        viewModel.syncBuyersFromCloud()
+                        Toast.makeText(context, "Syncing Kenya-wide buyers...", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh Directory", tint = Color(0xFF00B4D8))
+                    }
+                }
                 OutlinedTextField(
                     value = buyerSearchQuery,
                     onValueChange = { buyerSearchQuery = it },
@@ -2679,6 +2694,7 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
         var subCounty by remember { mutableStateOf("Nyali") }
         var ward by remember { mutableStateOf("Frere Town") }
         var notes by remember { mutableStateOf("") }
+        var shareToAllFarmers by remember { mutableStateOf(true) } // default ON — encourage sharing
 
         AlertDialog(
             onDismissRequest = { showAddBuyerDialog = false },
@@ -2727,6 +2743,47 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                     )
 
                     FormField("Additional Notes", notes, { notes = it }, placeholder = "e.g. Preferred weight 90-100kg")
+
+                    // SHARE TO ALL FARMERS TOGGLE
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (shareToAllFarmers) Color(0xFF0D2137) else Color(0xFF21262D),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("🌍", fontSize = 16.sp)
+                                    Text(
+                                        "Share with ALL farmers in Kenya",
+                                        color = if (shareToAllFarmers) Color(0xFF00B4D8) else Color(0xFF8B949E),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                                Text(
+                                    if (shareToAllFarmers)
+                                        "This buyer will appear in the DIRECTORY for every farmer using this app across Kenya."
+                                    else
+                                        "This buyer will only be visible on your phone.",
+                                    color = Color(0xFF6E7681),
+                                    fontSize = 11.sp
+                                )
+                            }
+                            Switch(
+                                checked = shareToAllFarmers,
+                                onCheckedChange = { shareToAllFarmers = it },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = Color(0xFF00B4D8)
+                                )
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -2745,15 +2802,20 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                             subCounty = subCounty,
                             ward = ward,
                             type = buyerType,
-                            notes = notes
+                            notes = notes,
+                            shareToAllFarmers = shareToAllFarmers
                         )
                         showAddBuyerDialog = false
-                        Toast.makeText(context, "Buyer registered successfully!", Toast.LENGTH_SHORT).show()
+                        val msg = if (shareToAllFarmers)
+                            "Buyer saved and shared with all farmers in Kenya! 🌍"
+                        else
+                            "Buyer registered on your phone only."
+                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Save Buyer")
+                    Text(if (shareToAllFarmers) "Save & Share 🌍" else "Save Buyer")
                 }
             },
             dismissButton = {
