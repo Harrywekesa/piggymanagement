@@ -44,7 +44,10 @@ class PHMSRepository(private val db: AppDatabase) {
         feedingTime: String,
         feedType: String,
         quantityPerPigKg: Double,
-        numPigs: Int
+        numPigs: Int,
+        targetScope: String = "Full Herd",
+        category: String? = null,
+        notes: String? = null
     ): Long {
         val now = System.currentTimeMillis()
         val totalConsumedKg = quantityPerPigKg * numPigs
@@ -59,7 +62,10 @@ class PHMSRepository(private val db: AppDatabase) {
                 feeding_time = feedingTime,
                 feed_type = feedType,
                 quantity_kg = totalConsumedKg,
-                num_pigs = numPigs
+                num_pigs = numPigs,
+                target_scope = targetScope,
+                category = category,
+                notes = notes
             )
         )
 
@@ -296,6 +302,36 @@ class PHMSRepository(private val db: AppDatabase) {
     // Seed Demo Data
     suspend fun seedDemoData() {
         com.phms.app.data.seed.DemoDataSeeder.seedDatabase(db)
+    }
+
+    // Community Buyers Directory — seed once per fresh install
+    suspend fun seedCommunityBuyersIfNeeded() {
+        val existing = marketDao.getAllBuyersSync()
+        if (existing.any { it.is_community }) return  // already seeded
+
+        val communityBuyers = listOf(
+            BuyerEntity(name = "Kitale Quality Butchery", phone = "+254712345678", type = "Butchery", county = "Trans Nzoia", sub_county = "Kitale", notes = "Regular buyer of 90kg+ finishers. Mon–Sat.", is_community = true),
+            BuyerEntity(name = "Western Meat Wholesalers", phone = "+254722987654", type = "Wholesaler", county = "Trans Nzoia", sub_county = "Kitale", notes = "Prefers Duroc crossbreds. Bulk orders only.", is_community = true),
+            BuyerEntity(name = "Eldoret Pork Centre", phone = "+254733111222", type = "Butchery", county = "Uasin Gishu", sub_county = "Eldoret East", notes = "Accepts live & dressed pigs. Pays cash.", is_community = true),
+            BuyerEntity(name = "Kakamega Pig Farmers Coop", phone = "+254711333444", type = "Cooperative", county = "Kakamega", sub_county = "Kakamega Central", notes = "Group buying — better prices for 5+ pigs.", is_community = true),
+            BuyerEntity(name = "Kisumu Pork Traders Ltd", phone = "+254700456789", type = "Wholesaler", county = "Kisumu", sub_county = "Kisumu Central", notes = "Lakeside market. Weekly collection Fridays.", is_community = true),
+            BuyerEntity(name = "Bungoma Meat Packers", phone = "+254721567890", type = "Processor", county = "Bungoma", sub_county = "Bungoma", notes = "Processes carcasses. Needs 80kg+ weight.", is_community = true),
+            BuyerEntity(name = "Trans Nzoia Pork Dealers", phone = "+254700678901", type = "Wholesaler", county = "Trans Nzoia", sub_county = "Kiminini", notes = "Serves Kitale–Webuye route. Daily purchases.", is_community = true),
+            BuyerEntity(name = "Nandi Butchery Supplies", phone = "+254722789012", type = "Butchery", county = "Nandi", sub_county = "Nandi Hills", notes = "Retail butchery. Buys 3–5 pigs per week.", is_community = true),
+            BuyerEntity(name = "Siaya Hog Market", phone = "+254733890123", type = "Wholesaler", county = "Siaya", sub_county = "Ugenya", notes = "Saturday market only. Large volumes.", is_community = true),
+            BuyerEntity(name = "Webuye Pork House", phone = "+254711901234", type = "Butchery", county = "Bungoma", sub_county = "Webuye West", notes = "Family-run. Good relationship price possible.", is_community = true),
+            BuyerEntity(name = "Kitale Hotel & Pork Supplies", phone = "+254700123456", type = "Hotel Buyer", county = "Trans Nzoia", sub_county = "Kitale", notes = "Supplies restaurants. Prefers pork cuts.", is_community = true),
+            BuyerEntity(name = "Eldoret Hotel Buyers Group", phone = "+254722234567", type = "Hotel Buyer", county = "Uasin Gishu", sub_county = "Eldoret East", notes = "Consortium of 8 hotels. Monthly contracts.", is_community = true),
+            BuyerEntity(name = "Western Kenya Abattoir", phone = "+254733345678", type = "Slaughterhouse", county = "Kakamega", sub_county = "Shinyalu", notes = "Licensed abattoir. Accepts all breeds.", is_community = true),
+            BuyerEntity(name = "Mumias Pork Dealers", phone = "+254711456789", type = "Wholesaler", county = "Kakamega", sub_county = "Mumias West", notes = "Sugarcane belt market. Good demand.", is_community = true),
+            BuyerEntity(name = "Turbo Livestock Traders", phone = "+254721567891", type = "Wholesaler", county = "Uasin Gishu", sub_county = "Turbo", notes = "Highway market. Buys live pigs.", is_community = true),
+            BuyerEntity(name = "Kimilili Pork Sellers", phone = "+254700678902", type = "Butchery", county = "Bungoma", sub_county = "Kimilili", notes = "Active on Tuesday and Friday market days.", is_community = true),
+            BuyerEntity(name = "Webuye Open Market Buyers", phone = "+254722789013", type = "Wholesaler", county = "Bungoma", sub_county = "Webuye East", notes = "Thursday market. Competitive cash price.", is_community = true),
+            BuyerEntity(name = "Vihiga Pork Supply Chain", phone = "+254700345678", type = "Wholesaler", county = "Vihiga", sub_county = "Emuhaya", notes = "Connects farms to Kisumu hotels.", is_community = true),
+            BuyerEntity(name = "Uasin Gishu Hog Market", phone = "+254733456789", type = "Wholesale Market", county = "Uasin Gishu", sub_county = "Moiben", notes = "Large livestock auction. Monthly events.", is_community = true),
+            BuyerEntity(name = "Nandi Hills Butchery Network", phone = "+254711567890", type = "Butchery", county = "Nandi", sub_county = "Nandi Hills", notes = "Network of 4 butcheries — consolidated orders.", is_community = true)
+        )
+        communityBuyers.forEach { marketDao.insertBuyer(it) }
     }
 }
 

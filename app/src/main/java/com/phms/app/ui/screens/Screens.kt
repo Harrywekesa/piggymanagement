@@ -762,6 +762,8 @@ fun FeedScreen(viewModel: MainViewModel) {
     val formulas by viewModel.formulas.collectAsState()
     val feedingLogs by viewModel.feedingLogs.collectAsState()
     val pigs by viewModel.activePigs.collectAsState()
+    val pens by viewModel.pens.collectAsState()
+    val stages by viewModel.stages.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) } // 0: Inventory, 1: Formulator, 2: Feeding Logs
 
     var showAddInventoryDialog by remember { mutableStateOf(false) }
@@ -1051,24 +1053,69 @@ fun FeedScreen(viewModel: MainViewModel) {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         items(feedingLogs) { log ->
                             val ing = ingredients.find { it.id == log.ingredient_id }
+                            val targetIcon = when (log.target_scope) {
+                                "Single Pig" -> "🐖"
+                                "Pen" -> "📦"
+                                "Category" -> "🐗"
+                                else -> "🐷"
+                            }
+                            val targetTitle = when (log.target_scope) {
+                                "Single Pig" -> {
+                                    val pig = pigs.find { it.id == log.pig_id }
+                                    "Pig #${pig?.tag_number ?: log.pig_id ?: "N/A"}"
+                                }
+                                "Pen" -> {
+                                    val pen = pens.find { it.id == log.pen_id }
+                                    "Pen: ${pen?.name ?: "Pen #${log.pen_id}"}"
+                                }
+                                "Category" -> "Category: ${log.category ?: "Herd"}"
+                                else -> "Full Herd (${log.num_pigs} pigs)"
+                            }
+                            val feedTitle = ing?.name ?: log.feed_type
+
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
                             ) {
-                                Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF1B5E20)), contentAlignment = Alignment.Center) {
-                                        Text("🥣", fontSize = 20.sp)
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                        Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF1B5E20)), contentAlignment = Alignment.Center) {
+                                            Text(targetIcon, fontSize = 20.sp)
+                                        }
+                                        Spacer(Modifier.width(12.dp))
+                                        Column(Modifier.weight(1f)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Text(feedTitle, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                                Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF1B3A1B)) {
+                                                    Text(log.target_scope, color = Color(0xFF81C784), fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                                                }
+                                            }
+                                            Text("${log.feeding_time} • $targetTitle • ${log.num_pigs} pig(s)", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                            Text(dateFormat.format(Date(log.date)), color = Color(0xFF6E7681), fontSize = 11.sp)
+                                        }
+                                        Column(horizontalAlignment = Alignment.End) {
+                                            Text("${log.quantity_kg} kg", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                            val cost = log.quantity_kg * (ing?.cost_per_kg ?: 0.0)
+                                            if (cost > 0) {
+                                                Text("KSh ${cost.toInt()}", color = Color(0xFF81C784), fontSize = 11.sp)
+                                            }
+                                        }
                                     }
-                                    Spacer(Modifier.width(12.dp))
-                                    Column(Modifier.weight(1f)) {
-                                        Text(ing?.name ?: "Feed Mix", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        Text("${log.feeding_time} • ${log.num_pigs} pig(s)", color = Color(0xFF8B949E), fontSize = 12.sp)
-                                        Text(dateFormat.format(Date(log.date)), color = Color(0xFF6E7681), fontSize = 11.sp)
-                                    }
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text("${log.quantity_kg} kg", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                        Text("KSh ${(log.quantity_kg * (ing?.cost_per_kg ?: 0.0)).toInt()}", color = Color(0xFF81C784), fontSize = 11.sp)
+                                    if (!log.notes.isNullOrBlank()) {
+                                        Spacer(Modifier.height(6.dp))
+                                        Surface(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = Color(0xFF21262D)
+                                        ) {
+                                            Text(
+                                                "📝 ${log.notes}",
+                                                color = Color(0xFFC9D1D9),
+                                                fontSize = 11.sp,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -1214,51 +1261,238 @@ fun FeedScreen(viewModel: MainViewModel) {
 
     // Modal Dialog: Log Daily Feeding & Deduct Stock
     if (showLogFeedingDialog) {
+        var targetScope by remember { mutableStateOf("Full Herd") } // "Full Herd", "Category", "Pen", "Single Pig"
+        var selectedCategory by remember { mutableStateOf("Growers") }
+        var selectedPenId by remember { mutableStateOf<Long?>(pens.firstOrNull()?.id) }
+        var selectedPigId by remember { mutableStateOf<Long?>(pigs.firstOrNull()?.id) }
+
         var feedingTime by remember { mutableStateOf("Morning (07:00 AM)") }
-        var selectedIngId by remember { mutableStateOf(ingredients.firstOrNull()?.id ?: 1L) }
+        var feedType by remember { mutableStateOf("Commercial Pellets/Mash") }
+        var selectedIngId by remember { mutableStateOf<Long?>(ingredients.firstOrNull()?.id ?: -1L) }
+
         var amountPerPigStr by remember { mutableStateOf("2.0") }
-        var numPigsStr by remember { mutableStateOf("${pigs.size.coerceAtLeast(1)}") }
+        var numPigsStr by remember { mutableStateOf("${pigs.count { it.status == "Active" }.coerceAtLeast(1)}") }
+        var notes by remember { mutableStateOf("") }
+
+        fun updatePigCountForScope(scope: String, cat: String, pId: Long?, singleId: Long?) {
+            when (scope) {
+                "Full Herd" -> {
+                    val count = pigs.count { it.status == "Active" }
+                    numPigsStr = count.coerceAtLeast(1).toString()
+                }
+                "Category" -> {
+                    val count = pigs.count { pig ->
+                        pig.status == "Active" && when (cat) {
+                            "Piglets" -> pig.current_stage_id == 1L
+                            "Weaners" -> pig.current_stage_id == 2L
+                            "Growers" -> pig.current_stage_id == 3L
+                            "Finishers" -> pig.current_stage_id in listOf(4L, 5L)
+                            "Sows" -> pig.sex == "F" && pig.current_stage_id >= 4L
+                            "Gilts" -> pig.sex == "F" && pig.current_stage_id in listOf(2L, 3L)
+                            "Boars" -> pig.sex == "M" && pig.current_stage_id >= 3L
+                            else -> true
+                        }
+                    }
+                    numPigsStr = count.coerceAtLeast(1).toString()
+                }
+                "Pen" -> {
+                    val count = pigs.count { it.pen_id == pId && it.status == "Active" }
+                    numPigsStr = count.coerceAtLeast(1).toString()
+                }
+                "Single Pig" -> {
+                    numPigsStr = "1"
+                }
+            }
+        }
 
         val amountPerPig = amountPerPigStr.toDoubleOrNull() ?: 0.0
         val numPigs = numPigsStr.toIntOrNull() ?: 0
         val totalFeedKg = amountPerPig * numPigs
+        val chosenIng = ingredients.find { it.id == selectedIngId }
 
         AlertDialog(
             onDismissRequest = { showLogFeedingDialog = false },
             containerColor = Color(0xFF161B22),
-            title = { Text("Log Daily Feeding & Deduct Stock", color = Color.White, fontWeight = FontWeight.Bold) },
+            title = { Text("🥣 Log Daily Feeding & Deduct Stock", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // STEP 1: Target Scope
+                    Text("1. Target Scope (Who is being fed?)", color = Color(0xFF81C784), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("Full Herd", "Category", "Pen", "Single Pig").forEach { scope ->
+                            FilterChip(
+                                selected = targetScope == scope,
+                                onClick = {
+                                    targetScope = scope
+                                    updatePigCountForScope(scope, selectedCategory, selectedPenId, selectedPigId)
+                                },
+                                label = { Text(scope, fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF1B5E20),
+                                    selectedLabelColor = Color(0xFF4CAF50)
+                                )
+                            )
+                        }
+                    }
+
+                    // STEP 2: Target Selection Details
+                    when (targetScope) {
+                        "Category" -> {
+                            val categories = listOf("Piglets", "Weaners", "Growers", "Finishers", "Sows", "Gilts", "Boars")
+                            Text("Select Biological Category", color = Color(0xFF8B949E), fontSize = 12.sp)
+                            Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                categories.forEach { cat ->
+                                    FilterChip(
+                                        selected = selectedCategory == cat,
+                                        onClick = {
+                                            selectedCategory = cat
+                                            updatePigCountForScope("Category", cat, selectedPenId, selectedPigId)
+                                        },
+                                        label = { Text(cat, fontSize = 11.sp) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = Color(0xFF0077B6),
+                                            selectedLabelColor = Color.White
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                        "Pen" -> {
+                            if (pens.isNotEmpty()) {
+                                DropdownSelector(
+                                    label = "Select Pen Location",
+                                    options = pens.map { pen ->
+                                        val pCount = pigs.count { it.pen_id == pen.id && it.status == "Active" }
+                                        pen.id to "${pen.name} ($pCount active pigs)"
+                                    },
+                                    selectedId = selectedPenId ?: pens.first().id,
+                                    onSelect = {
+                                        selectedPenId = it
+                                        updatePigCountForScope("Pen", selectedCategory, it, selectedPigId)
+                                    }
+                                )
+                            } else {
+                                Text("No pens registered yet. Go to pens setup to add pens.", color = Color(0xFFFF5252), fontSize = 12.sp)
+                            }
+                        }
+                        "Single Pig" -> {
+                            val activePigs = pigs.filter { it.status == "Active" }
+                            if (activePigs.isNotEmpty()) {
+                                DropdownSelector(
+                                    label = "Select Specific Pig",
+                                    options = activePigs.map { pig ->
+                                        pig.id to "#${pig.tag_number} • ${pig.breed} (${pig.sex})"
+                                    },
+                                    selectedId = selectedPigId ?: activePigs.first().id,
+                                    onSelect = {
+                                        selectedPigId = it
+                                        updatePigCountForScope("Single Pig", selectedCategory, selectedPenId, it)
+                                    }
+                                )
+                            } else {
+                                Text("No active pigs available.", color = Color(0xFFFF5252), fontSize = 12.sp)
+                            }
+                        }
+                        else -> {
+                            Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF21262D)) {
+                                Text(
+                                    "Feeding the entire herd (${pigs.count { it.status == "Active" }} active pigs total).",
+                                    color = Color(0xFF8B949E),
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = Color(0xFF21262D))
+
+                    // STEP 3: Feed Selection & Time
+                    Text("2. Feed Type & Inventory Deduction", color = Color(0xFF81C784), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    val feedTypeOptions = listOf("Commercial Pellets/Mash", "Farm-Mixed Formula", "Creep Feed", "Green Fodder / Swill", "Raw Ingredient")
+                    Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        feedTypeOptions.forEach { ft ->
+                            FilterChip(
+                                selected = feedType == ft,
+                                onClick = { feedType = ft },
+                                label = { Text(ft, fontSize = 10.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF1B3A4B),
+                                    selectedLabelColor = Color(0xFF90E0EF)
+                                )
+                            )
+                        }
+                    }
+
+                    if (ingredients.isNotEmpty()) {
+                        DropdownSelector(
+                            label = "Deduct from Stock (Optional)",
+                            options = listOf(-1L to "None / Unstocked Feed") + ingredients.map { it.id to "${it.name} (${String.format("%.1f", it.stock_kg)}kg avail)" },
+                            selectedId = selectedIngId ?: -1L,
+                            onSelect = { selectedIngId = it }
+                        )
+                    }
+
                     Text("Feeding Time", color = Color(0xFF8B949E), fontSize = 12.sp)
                     Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("Morning (07:00 AM)", "Afternoon (12:00 PM)", "Evening (05:00 PM)").forEach { ft ->
+                        listOf("Morning (07:00 AM)", "Afternoon (12:00 PM)", "Evening (05:00 PM)", "Ad-hoc").forEach { ft ->
                             FilterChip(
                                 selected = feedingTime == ft,
                                 onClick = { feedingTime = ft },
                                 label = { Text(ft, fontSize = 11.sp) },
-                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF1B5E20), selectedLabelColor = Color(0xFF4CAF50))
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF1B5E20),
+                                    selectedLabelColor = Color(0xFF4CAF50)
+                                )
                             )
                         }
                     }
-                    if (ingredients.isNotEmpty()) {
-                        Text("Select Feed Stock / Bag", color = Color(0xFF8B949E), fontSize = 12.sp)
-                        DropdownSelector(
-                            label = "Feed Stock",
-                            options = ingredients.map { it.id to "${it.name} (${String.format("%.1f", it.stock_kg)}kg avail)" },
-                            selectedId = selectedIngId,
-                            onSelect = { selectedIngId = it ?: 1L }
-                        )
-                    }
+
+                    HorizontalDivider(color = Color(0xFF21262D))
+
+                    // STEP 4: Quantity & Live Calculation
+                    Text("3. Quantity & Calculations", color = Color(0xFF81C784), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.weight(1f)) { FormField("Amount / Pig (kg)", amountPerPigStr, { amountPerPigStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                        Box(Modifier.weight(1f)) { FormField("Number of Pigs", numPigsStr, { numPigsStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                    }
-                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF1B3A1B)) {
-                        Row(Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total Feed Output:", color = Color.White, fontWeight = FontWeight.SemiBold)
-                            Text("${String.format("%.1f", totalFeedKg)} kg", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+                        Box(Modifier.weight(1f)) {
+                            FormField("Kg / Pig", amountPerPigStr, { amountPerPigStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                        }
+                        Box(Modifier.weight(1f)) {
+                            FormField(
+                                label = if (targetScope == "Single Pig") "Number of Pigs (Fixed)" else "Number of Pigs",
+                                value = numPigsStr,
+                                onValueChange = { if (targetScope != "Single Pig") numPigsStr = it },
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            )
                         }
                     }
+
+                    // Live Total Feed Box
+                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF1B3A1B)) {
+                        Column(Modifier.padding(12.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Total Feed Output:", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                Text("${String.format("%.1f", totalFeedKg)} kg", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            }
+                            if (chosenIng != null && chosenIng.cost_per_kg > 0) {
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Estimated Feed Cost:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                    Text("KSh ${(totalFeedKg * chosenIng.cost_per_kg).toInt()} (KSh ${chosenIng.cost_per_kg.toInt()}/kg)", color = Color(0xFF81C784), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+                    }
+
+                    FormField(
+                        label = "Notes / Clinical Observations (Optional)",
+                        value = notes,
+                        onValueChange = { notes = it },
+                        placeholder = "e.g. Added vitamin premix, good appetite"
+                    )
                 }
             },
             confirmButton = {
@@ -1266,22 +1500,27 @@ fun FeedScreen(viewModel: MainViewModel) {
                     onClick = {
                         if (totalFeedKg > 0) {
                             viewModel.logFeedingAndDeductStock(
-                                penId = null,
+                                penId = if (targetScope == "Pen") selectedPenId else null,
                                 batchId = null,
-                                pigId = null,
-                                ingredientId = selectedIngId,
+                                pigId = if (targetScope == "Single Pig") selectedPigId else null,
+                                ingredientId = if (selectedIngId != null && selectedIngId != -1L) selectedIngId else null,
                                 feedingTime = feedingTime,
-                                feedType = "Formula Ration",
+                                feedType = feedType,
                                 quantityPerPigKg = amountPerPig,
-                                numPigs = numPigs
+                                numPigs = numPigs,
+                                targetScope = targetScope,
+                                category = if (targetScope == "Category") selectedCategory else null,
+                                notes = notes.ifBlank { null }
                             )
                             showLogFeedingDialog = false
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                ) { Text("Confirm & Deduct Stock") }
+                ) { Text("Confirm & Deduct Stock", fontWeight = FontWeight.Bold) }
             },
-            dismissButton = { OutlinedButton(onClick = { showLogFeedingDialog = false }) { Text("Cancel", color = Color(0xFF8B949E)) } }
+            dismissButton = {
+                OutlinedButton(onClick = { showLogFeedingDialog = false }) { Text("Cancel", color = Color(0xFF8B949E)) }
+            }
         )
     }
 }
@@ -2366,7 +2605,20 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                 Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
-                            Text(buyer.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(buyer.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                if (buyer.is_community) {
+                                    Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF1B3A4B)) {
+                                        Text(
+                                            "DIRECTORY",
+                                            color = Color(0xFF00B4D8),
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
                             val locText = listOfNotNull(buyer.ward, buyer.sub_county, buyer.county ?: buyer.location).filter { it.isNotBlank() }.joinToString(", ")
                             Text(if (locText.isNotBlank()) "📍 $locText" else "📍 Location N/A", color = Color(0xFF81C784), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                             Text("${buyer.type} • ${buyer.phone}", color = Color(0xFF8B949E), fontSize = 11.sp)

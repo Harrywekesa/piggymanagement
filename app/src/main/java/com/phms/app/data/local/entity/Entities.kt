@@ -137,15 +137,18 @@ data class FeedFormulaEntity(
 @Entity(tableName = "feeding_logs")
 data class FeedingLogEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val pen_id: Long?,
-    val batch_id: Long?,
+    val pen_id: Long? = null,
+    val batch_id: Long? = null,
     val pig_id: Long? = null,
     val ingredient_id: Long? = null,
     val date: Long,
     val feeding_time: String = "Morning", // "Morning", "Afternoon", "Evening"
-    val feed_type: String,
+    val feed_type: String = "Mixed Ration",
     val quantity_kg: Double,
-    val num_pigs: Int = 1
+    val num_pigs: Int = 1,
+    val target_scope: String = "Full Herd",   // "Full Herd", "Category", "Pen", "Single Pig"
+    val category: String? = null,              // "Piglets", "Weaners", "Growers", "Finishers", "Sows", "Gilts", "Boars"
+    val notes: String? = null
 )
 
 @Entity(tableName = "feed_purchases")
@@ -268,9 +271,10 @@ data class BuyerEntity(
     val county: String? = null,
     val sub_county: String? = null,
     val ward: String? = null,
-    val type: String, // "Wholesaler", "Retailer", "Butchery", "Slaughterhouse"
+    val type: String, // "Wholesaler", "Retailer", "Butchery", "Slaughterhouse", "Hotel Buyer", "Cooperative", "Processor"
     val notes: String? = null,
-    val is_synced: Boolean = false
+    val is_synced: Boolean = false,
+    val is_community: Boolean = false  // Pre-seeded directory entries shown to all farmers
 )
 
 @Entity(tableName = "gilt_heat_records")

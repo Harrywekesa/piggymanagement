@@ -57,6 +57,13 @@ class MainViewModel(
 
     init {
         checkForAppUpdates()
+        seedCommunityBuyers()
+    }
+
+    private fun seedCommunityBuyers() {
+        viewModelScope.launch {
+            repository.seedCommunityBuyersIfNeeded()
+        }
     }
 
     fun checkForAppUpdates() {
@@ -257,10 +264,25 @@ class MainViewModel(
         feedingTime: String = "Morning",
         feedType: String = "Formula Ration",
         quantityPerPigKg: Double = 1.0,
-        numPigs: Int = 1
+        numPigs: Int = 1,
+        targetScope: String = "Full Herd",
+        category: String? = null,
+        notes: String? = null
     ) {
         viewModelScope.launch {
-            repository.logFeedingAndDeductStock(penId, batchId, pigId, ingredientId, feedingTime, feedType, quantityPerPigKg, numPigs)
+            repository.logFeedingAndDeductStock(
+                penId = penId,
+                batchId = batchId,
+                pigId = pigId,
+                ingredientId = ingredientId,
+                feedingTime = feedingTime,
+                feedType = feedType,
+                quantityPerPigKg = quantityPerPigKg,
+                numPigs = numPigs,
+                targetScope = targetScope,
+                category = category,
+                notes = notes
+            )
             loadPnL()
         }
     }
