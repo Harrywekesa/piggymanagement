@@ -1,10 +1,13 @@
 package com.phms.app.ui.screens
 
 import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -45,11 +48,13 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
     val updateInfo by viewModel.appUpdateInfo.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
     val marketReadyCount = pigs.count { it.current_stage_id == 5L }
+    val stages by viewModel.stages.collectAsState()
+    val isLoading = stages.isEmpty()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         if (updateInfo.isUpdateAvailable) {
             item {
@@ -69,8 +74,8 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
                             Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = Color(0xFF90E0EF), modifier = Modifier.size(24.dp))
                             Column {
-                                Text("🚀 New Update Available (${updateInfo.latestVersion})", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                Text("Tap to download & install the latest GitHub release.", color = Color(0xFF90E0EF), fontSize = 11.sp)
+                                Text("New Update Available (${updateInfo.latestVersion})", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("Tap to download & install the latest release.", color = Color(0xFF90E0EF), fontSize = 11.sp)
                             }
                         }
                         Button(
@@ -85,74 +90,122 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                 }
             }
         }
-        // KPI CARDS
+
+        // Header
         item {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(animationSpec = tween(300)) + slideInVertically(animationSpec = tween(300))
             ) {
-                Text("Farm Overview", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                OutlinedButton(
-                    onClick = { navController.navigate("help_center?autoTour=true") },
-                    border = BorderStroke(1.dp, Color(0xFF4CAF50)),
-                    shape = RoundedCornerShape(20.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Help, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Help & Tour", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Farm Overview", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    OutlinedButton(
+                        onClick = { navController.navigate("help_center?autoTour=true") },
+                        border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                        shape = RoundedCornerShape(20.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.Help, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Help & Tour", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
+
+        // HERO CARD — big herd number + subdued sub-stats
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DashKpiCard("Total Herd", "${pigs.size}", "Active Pigs", Icons.Default.Pets, Color(0xFF4CAF50), Modifier.weight(1f))
-                DashKpiCard("Market Ready", "$marketReadyCount", "90kg+ Target", Icons.Default.ShoppingCart, Color(0xFFFFB300), Modifier.weight(1f))
-            }
-        }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DashKpiCard(
-                    "Active Alerts", "${alerts.size}", "Action Required",
-                    Icons.Default.Notifications,
-                    if (alerts.isNotEmpty()) Color(0xFFFF5252) else Color(0xFF4CAF50),
-                    Modifier.weight(1f)
-                )
-                DashKpiCard(
-                    "Est. Net Profit", "KSh ${pnl?.netProfit?.toInt() ?: 0}",
-                    "30-Day", Icons.Default.TrendingUp, Color(0xFF4CAF50), Modifier.weight(1f)
-                )
-            }
-        }
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(animationSpec = tween(400)) + slideInVertically(animationSpec = tween(400, delayMillis = 150))
             ) {
-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(18.dp))
-                            Text("30-Day Financial P&L", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                if (isLoading) {
+                    ShimmerBox(Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(20.dp)))
+                } else {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                        border = BorderStroke(1.dp, Color(0xFF21262D))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(20.dp).fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "${pigs.size}",
+                                    fontSize = 64.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFF4CAF50),
+                                    lineHeight = 64.sp
+                                )
+                                Text("Active Pigs in Herd", fontSize = 13.sp, color = Color(0xFF8B949E), fontWeight = FontWeight.Medium)
+                                if (pigs.isEmpty()) {
+                                    Spacer(Modifier.height(10.dp))
+                                    OutlinedButton(
+                                        onClick = { navController.navigate("add_edit_pig/-1") },
+                                        border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Icon(Icons.Default.Add, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Add First Pig", color = Color(0xFF4CAF50), fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                            // Subdued sub-stats
+                            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                MiniStat("Market Ready", "$marketReadyCount", Icons.Default.ShoppingCart, Color(0xFFFFB300))
+                                MiniStat("Alerts", "${alerts.size}", Icons.Default.Notifications,
+                                    if (alerts.isNotEmpty()) Color(0xFFFF5252) else Color(0xFF4CAF50))
+                                MiniStat("Net Profit", "KSh ${pnl?.netProfit?.toInt() ?: 0}", Icons.Default.TrendingUp, Color(0xFF4CAF50))
+                            }
                         }
-                        Text(
-                            "Net: KSh ${String.format("%.0f", pnl?.netProfit ?: 0.0)}",
-                            fontWeight = FontWeight.Bold,
-                            color = if ((pnl?.netProfit ?: 0.0) >= 0) Color(0xFF81C784) else Color(0xFFE57373),
-                            fontSize = 14.sp
-                        )
                     }
-                    HorizontalDivider(color = Color(0xFF21262D))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column {
-                            Text("Revenue: KSh ${String.format("%.0f", pnl?.totalRevenue ?: 0.0)}", color = Color(0xFF81C784), fontSize = 11.sp)
-                            Text("Feed: KSh ${String.format("%.0f", pnl?.feedCost ?: 0.0)}", color = Color(0xFFE57373), fontSize = 11.sp)
+                }
+            }
+        }
+
+        // P&L Summary Card
+        item {
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(animationSpec = tween(400)) + slideInVertically(animationSpec = tween(400, delayMillis = 200))
+            ) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                ) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(18.dp))
+                                Text("30-Day Financial P&L", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                            }
+                            Text(
+                                "Net: KSh ${String.format("%.0f", pnl?.netProfit ?: 0.0)}",
+                                fontWeight = FontWeight.Bold,
+                                color = if ((pnl?.netProfit ?: 0.0) >= 0) Color(0xFF81C784) else Color(0xFFE57373),
+                                fontSize = 14.sp
+                            )
                         }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("Health: KSh ${String.format("%.0f", pnl?.healthCost ?: 0.0)}", color = Color(0xFFE57373), fontSize = 11.sp)
-                            Text("Overheads: KSh ${String.format("%.0f", pnl?.otherExpensesCost ?: 0.0)}", color = Color(0xFFE57373), fontSize = 11.sp)
+                        HorizontalDivider(color = Color(0xFF21262D))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("Revenue: KSh ${String.format("%.0f", pnl?.totalRevenue ?: 0.0)}", color = Color(0xFF81C784), fontSize = 11.sp)
+                                Text("Feed: KSh ${String.format("%.0f", pnl?.feedCost ?: 0.0)}", color = Color(0xFFE57373), fontSize = 11.sp)
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("Health: KSh ${String.format("%.0f", pnl?.healthCost ?: 0.0)}", color = Color(0xFFE57373), fontSize = 11.sp)
+                                Text("Overheads: KSh ${String.format("%.0f", pnl?.otherExpensesCost ?: 0.0)}", color = Color(0xFFE57373), fontSize = 11.sp)
+                            }
                         }
                     }
                 }
@@ -161,22 +214,39 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
 
         // QUICK ACTIONS
         item {
-            Text("Quick Actions", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DashQuickAction("Pigs", Icons.Default.Pets, { navController.navigate("pigs") }, Modifier.weight(1f))
-                DashQuickAction("Feed", Icons.Default.Grass, { navController.navigate("feed") }, Modifier.weight(1f))
-                DashQuickAction("Health", Icons.Default.LocalHospital, { navController.navigate("health") }, Modifier.weight(1f))
-                DashQuickAction("Market", Icons.Default.ShoppingCart, { navController.navigate("market") }, Modifier.weight(1f))
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(animationSpec = tween(400)) + slideInVertically(animationSpec = tween(400, delayMillis = 250))
+            ) {
+                Column {
+                    Text("Quick Actions", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DashQuickAction("Pigs", Icons.Default.Pets, { navController.navigate("pigs") }, Modifier.weight(1f))
+                        DashQuickAction("Feed", Icons.Default.Grass, { navController.navigate("feed") }, Modifier.weight(1f))
+                        DashQuickAction("Health", Icons.Default.LocalHospital, { navController.navigate("health") }, Modifier.weight(1f))
+                        DashQuickAction("Market", Icons.Default.ShoppingCart, { navController.navigate("market") }, Modifier.weight(1f))
+                    }
+                }
             }
         }
 
         // ALERTS PREVIEW
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Recent Alerts (${alerts.size})", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                TextButton(onClick = { navController.navigate("alerts") }) {
-                    Text("View All", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(animationSpec = tween(400)) + slideInVertically(animationSpec = tween(400, delayMillis = 300))
+            ) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(Icons.Default.Notifications, null,
+                            tint = if (alerts.isNotEmpty()) Color(0xFFFF5252) else Color(0xFF4CAF50),
+                            modifier = Modifier.size(18.dp))
+                        Text("Alerts (${alerts.size})", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                    TextButton(onClick = { navController.navigate("alerts") }) {
+                        Text("View All", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -195,16 +265,33 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
             }
         }
 
-        // RECENT PIGS PREVIEW
-        item { Text("Recent Pigs", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White) }
-        items(pigs.take(3)) { pig ->
-            CompactPigRow(pig = pig, onClick = { navController.navigate("pig_detail/${pig.id}") })
-        }
-        if (pigs.isNotEmpty()) {
-            item {
-                TextButton(onClick = { navController.navigate("pigs") }, modifier = Modifier.fillMaxWidth()) {
-                    Text("View All ${pigs.size} Pigs →", color = Color(0xFF4CAF50))
+        // RECENT PIGS
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(Icons.Default.Pets, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
+                    Text("Recent Pigs", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
+                if (pigs.isNotEmpty()) {
+                    TextButton(onClick = { navController.navigate("pigs") }) {
+                        Text("View All ${pigs.size}", color = Color(0xFF4CAF50))
+                    }
+                }
+            }
+        }
+        if (pigs.isEmpty()) {
+            item {
+                EmptyStateCard(
+                    icon = Icons.Default.Pets,
+                    title = "No Pigs Yet",
+                    message = "Add your first pig to start tracking your herd.",
+                    actionLabel = "Add Pig",
+                    onAction = { navController.navigate("add_edit_pig/-1") }
+                )
+            }
+        } else {
+            items(pigs.take(3)) { pig ->
+                CompactPigRow(pig = pig, onClick = { navController.navigate("pig_detail/${pig.id}") })
             }
         }
         item { Spacer(Modifier.height(8.dp)) }
@@ -224,6 +311,104 @@ fun DashKpiCard(title: String, value: String, subtitle: String, icon: ImageVecto
             Text(value, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = color)
             Text(title, fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Medium)
             Text(subtitle, fontSize = 11.sp, color = Color(0xFF6E7681))
+        }
+    }
+}
+
+@Composable
+fun MiniStat(label: String, value: String, icon: ImageVector, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Icon(icon, null, tint = color, modifier = Modifier.size(13.dp))
+        Column(horizontalAlignment = Alignment.End) {
+            Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = color)
+            Text(label, fontSize = 10.sp, color = Color(0xFF6E7681))
+        }
+    }
+}
+
+@Composable
+fun ShimmerBox(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
+    val shimmerAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.25f,
+        targetValue = 0.65f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "shimmerAlpha"
+    )
+    Box(modifier = modifier.background(Color(0xFF21262D).copy(alpha = shimmerAlpha)))
+}
+
+@Composable
+fun EmptyStateCard(
+    icon: ImageVector,
+    title: String,
+    message: String,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF21262D))
+    ) {
+        Column(
+            Modifier.padding(32.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier.size(64.dp).clip(CircleShape).background(Color(0xFF1B5E20)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(32.dp))
+            }
+            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(message, color = Color(0xFF8B949E), fontSize = 13.sp, textAlign = TextAlign.Center)
+            if (actionLabel != null && onAction != null) {
+                Button(
+                    onClick = onAction,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(actionLabel, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ErrorStateCard(message: String, onRetry: (() -> Unit)? = null) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A0A0A)),
+        border = BorderStroke(1.dp, Color(0xFFFF5252))
+    ) {
+        Column(
+            Modifier.padding(24.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(Icons.Default.ErrorOutline, null, tint = Color(0xFFFF5252), modifier = Modifier.size(40.dp))
+            Text("Something went wrong", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text(message, color = Color(0xFF8B949E), fontSize = 12.sp, textAlign = TextAlign.Center)
+            if (onRetry != null) {
+                OutlinedButton(
+                    onClick = onRetry,
+                    border = BorderStroke(1.dp, Color(0xFFFF5252))
+                ) {
+                    Icon(Icons.Default.Refresh, null, tint = Color(0xFFFF5252), modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Retry", color = Color(0xFFFF5252))
+                }
+            }
         }
     }
 }
@@ -319,12 +504,12 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                     Tab(
                         selected = mainTab == 0,
                         onClick = { mainTab = 0 },
-                        text = { Text("🐷 Pig Herd (${pigs.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                        text = { Text("Pig Herd (${pigs.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
                     )
                     Tab(
                         selected = mainTab == 1,
                         onClick = { mainTab = 1 },
-                        text = { Text("🏡 Pens Directory (${pens.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                        text = { Text("Pens Directory (${pens.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
                     )
                 }
             }
@@ -369,18 +554,42 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                             }
                         }
                     }
-                    if (filteredPigs.isEmpty()) {
+                    if (stages.isEmpty()) {
+                        items(4) {
+                            ShimmerBox(Modifier.fillMaxWidth().height(80.dp).clip(RoundedCornerShape(12.dp)))
+                        }
+                    } else if (filteredPigs.isEmpty()) {
                         item {
-                            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                                Text("No pigs match your search.", color = Color(0xFF6E7681), textAlign = TextAlign.Center)
+                            if (pigs.isEmpty()) {
+                                EmptyStateCard(
+                                    icon = Icons.Default.Pets,
+                                    title = "No Pigs Registered Yet",
+                                    message = "Start tracking your herd by registering your first pig with ear tag, breed, and growth stage.",
+                                    actionLabel = "Add First Pig",
+                                    onAction = { navController.navigate("add_edit_pig/-1") }
+                                )
+                            } else {
+                                Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Icon(Icons.Default.SearchOff, null, tint = Color(0xFF6E7681), modifier = Modifier.size(40.dp))
+                                        Text("No pigs match '$searchQuery'", color = Color(0xFF8B949E), fontSize = 14.sp)
+                                    }
+                                }
                             }
                         }
                     } else {
-                        items(filteredPigs) { pig ->
-                            val stage = stages.find { it.id == pig.current_stage_id }
-                            PigListCard(pig = pig, stageName = stage?.name ?: "Piglet", onClick = {
-                                navController.navigate("pig_detail/${pig.id}")
-                            })
+                        itemsIndexed(filteredPigs) { index, pig ->
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = fadeIn(animationSpec = tween(300)) + slideInVertically(
+                                    animationSpec = tween(300, delayMillis = (index.coerceAtMost(6) * 40))
+                                )
+                            ) {
+                                val stage = stages.find { it.id == pig.current_stage_id }
+                                PigListCard(pig = pig, stageName = stage?.name ?: "Piglet", onClick = {
+                                    navController.navigate("pig_detail/${pig.id}")
+                                })
+                            }
                         }
                     }
                 }
@@ -408,97 +617,93 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
 
                     if (pens.isEmpty()) {
                         item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
-                            ) {
-                                Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(Icons.Default.Home, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(48.dp))
-                                    Spacer(Modifier.height(8.dp))
-                                    Text("No Pens Created Yet", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                    Text("Create pens to organize pigs into Nursery, Growth, Farrowing, or Finishers.", color = Color(0xFF8B949E), fontSize = 12.sp, textAlign = TextAlign.Center)
-                                    Spacer(Modifier.height(12.dp))
-                                    Button(
-                                        onClick = { showAddPenDialog = true },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                                    ) {
-                                        Text("Create First Pen")
-                                    }
-                                }
-                            }
+                            EmptyStateCard(
+                                icon = Icons.Default.Home,
+                                title = "No Pens Created Yet",
+                                message = "Pens organize your herd into Nursery, Growers, Farrowing, or Finishers with occupancy tracking.",
+                                actionLabel = "Create First Pen",
+                                onAction = { showAddPenDialog = true }
+                            )
                         }
                     } else {
-                        items(pens) { pen ->
-                            val assignedPigs = pigs.filter { it.pen_id == pen.id }
-                            val occupancyPct = (assignedPigs.size.toFloat() / pen.capacity.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
-
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                        itemsIndexed(pens) { index, pen ->
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = fadeIn(animationSpec = tween(300)) + slideInVertically(
+                                    animationSpec = tween(300, delayMillis = (index.coerceAtMost(6) * 40))
+                                )
                             ) {
-                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                        Column {
-                                            Text(pen.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                            if (!pen.notes.isNullOrBlank()) {
-                                                Text(pen.notes, color = Color(0xFF8B949E), fontSize = 11.sp)
+                                val assignedPigs = pigs.filter { it.pen_id == pen.id }
+                                val occupancyPct = (assignedPigs.size.toFloat() / pen.capacity.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                    border = BorderStroke(1.dp, Color(0xFF30363D))
+                                ) {
+                                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                            Column {
+                                                Text(pen.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                                if (!pen.notes.isNullOrBlank()) {
+                                                    Text(pen.notes, color = Color(0xFF8B949E), fontSize = 11.sp)
+                                                }
                                             }
-                                        }
-                                        Surface(
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = if (assignedPigs.size >= pen.capacity) Color(0xFF3E1F1F) else Color(0xFF1B3A1B)
-                                        ) {
-                                            Text(
-                                                "Occupancy: ${assignedPigs.size} / ${pen.capacity}",
-                                                color = if (assignedPigs.size >= pen.capacity) Color(0xFFFF5252) else Color(0xFF4CAF50),
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                            )
-                                        }
-                                    }
-
-                                    LinearProgressIndicator(
-                                        progress = { occupancyPct },
-                                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                                        color = if (occupancyPct >= 1.0f) Color(0xFFFF5252) else if (occupancyPct >= 0.8f) Color(0xFFFFB300) else Color(0xFF4CAF50),
-                                        trackColor = Color(0xFF21262D)
-                                    )
-
-                                    if (assignedPigs.isNotEmpty()) {
-                                        Text("Assigned Pigs (${assignedPigs.size}):", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            assignedPigs.forEach { pig ->
-                                                AssistChip(
-                                                    onClick = { navController.navigate("pig_detail/${pig.id}") },
-                                                    label = { Text("#${pig.tag_number} (${pig.breed.take(8)})", fontSize = 11.sp) },
-                                                    colors = AssistChipDefaults.assistChipColors(containerColor = Color(0xFF21262D), labelColor = Color.White)
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = if (assignedPigs.size >= pen.capacity) Color(0xFF3E1F1F) else Color(0xFF1B3A1B)
+                                            ) {
+                                                Text(
+                                                    "Occupancy: ${assignedPigs.size} / ${pen.capacity}",
+                                                    color = if (assignedPigs.size >= pen.capacity) Color(0xFFFF5252) else Color(0xFF4CAF50),
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                                 )
                                             }
                                         }
-                                    } else {
-                                        Text("No pigs assigned to this pen.", color = Color(0xFF6E7681), fontSize = 12.sp)
-                                    }
 
-                                    OutlinedButton(
-                                        onClick = { targetPenForAssignment = pen },
-                                        modifier = Modifier.fillMaxWidth().height(36.dp),
-                                        border = BorderStroke(1.dp, Color(0xFF4CAF50)),
-                                        shape = RoundedCornerShape(8.dp)
-                                    ) {
-                                        Icon(Icons.Default.Pets, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(14.dp))
-                                        Spacer(Modifier.width(6.dp))
-                                        Text("Assign / Move Pig To ${pen.name}", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        LinearProgressIndicator(
+                                            progress = { occupancyPct },
+                                            modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                                            color = if (occupancyPct >= 1.0f) Color(0xFFFF5252) else if (occupancyPct >= 0.8f) Color(0xFFFFB300) else Color(0xFF4CAF50),
+                                            trackColor = Color(0xFF21262D)
+                                        )
+
+                                        if (assignedPigs.isNotEmpty()) {
+                                            Text("Assigned Pigs (${assignedPigs.size}):", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                assignedPigs.forEach { pig ->
+                                                    AssistChip(
+                                                        onClick = { navController.navigate("pig_detail/${pig.id}") },
+                                                        label = { Text("#${pig.tag_number} (${pig.breed.take(8)})", fontSize = 11.sp) },
+                                                        colors = AssistChipDefaults.assistChipColors(containerColor = Color(0xFF21262D), labelColor = Color.White)
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            Text("No pigs assigned to this pen.", color = Color(0xFF6E7681), fontSize = 12.sp)
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = { targetPenForAssignment = pen },
+                                            modifier = Modifier.fillMaxWidth().height(36.dp),
+                                            border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Icon(Icons.Default.Pets, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(14.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                            Text("Assign / Move Pig To ${pen.name}", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        }
                                     }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+                                }   // end Card
+                            }       // end AnimatedVisibility
+                        }           // end itemsIndexed
+                    }               // end else (pens not empty)
+                }                   // end LazyColumn
+            }                       // end Box
+        }                           // end Scaffold
 
         // FAB to add pig
         if (mainTab == 0) {
@@ -630,7 +835,7 @@ fun PigListCard(pig: PigEntity, stageName: String, onClick: () -> Unit) {
                     )
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🐷", fontSize = 18.sp)
+                        Icon(Icons.Default.Pets, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
                         Text(
                             pig.tag_number.take(4),
                             color = Color.White,
@@ -708,7 +913,7 @@ fun AlertsScreen(viewModel: MainViewModel) {
         if (filteredAlerts.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("✅", fontSize = 40.sp)
+                    Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(48.dp))
                     Text("All clear! No alerts here.", color = Color(0xFF8B949E), textAlign = TextAlign.Center)
                 }
             }
@@ -811,7 +1016,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text("🥣 Log Feeding", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Log Feeding", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -822,8 +1027,8 @@ fun FeedScreen(viewModel: MainViewModel) {
             contentColor = Color(0xFF4CAF50)
         ) {
             Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Inventory", fontSize = 12.sp) })
-            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Formulator 🌾", fontSize = 12.sp) })
-            Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Feeding Logs 📋", fontSize = 12.sp) })
+            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Formulator", fontSize = 12.sp) })
+            Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Feeding Logs", fontSize = 12.sp) })
         }
         Spacer(Modifier.height(12.dp))
 
@@ -1053,11 +1258,11 @@ fun FeedScreen(viewModel: MainViewModel) {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         items(feedingLogs) { log ->
                             val ing = ingredients.find { it.id == log.ingredient_id }
-                            val targetIcon = when (log.target_scope) {
-                                "Single Pig" -> "🐖"
-                                "Pen" -> "📦"
-                                "Category" -> "🐗"
-                                else -> "🐷"
+                            val targetIcon: ImageVector = when (log.target_scope) {
+                                "Single Pig" -> Icons.Default.Pets
+                                "Pen" -> Icons.Default.Home
+                                "Category" -> Icons.Default.Groups
+                                else -> Icons.Default.Pets
                             }
                             val targetTitle = when (log.target_scope) {
                                 "Single Pig" -> {
@@ -1081,7 +1286,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                         Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF1B5E20)), contentAlignment = Alignment.Center) {
-                                            Text(targetIcon, fontSize = 20.sp)
+                                            Icon(targetIcon, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
                                         }
                                         Spacer(Modifier.width(12.dp))
                                         Column(Modifier.weight(1f)) {
@@ -1110,7 +1315,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                                             color = Color(0xFF21262D)
                                         ) {
                                             Text(
-                                                "📝 ${log.notes}",
+                                                log.notes ?: "",
                                                 color = Color(0xFFC9D1D9),
                                                 fontSize = 11.sp,
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -1313,7 +1518,7 @@ fun FeedScreen(viewModel: MainViewModel) {
         AlertDialog(
             onDismissRequest = { showLogFeedingDialog = false },
             containerColor = Color(0xFF161B22),
-            title = { Text("🥣 Log Daily Feeding & Deduct Stock", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            title = { Text("Log Daily Feeding & Deduct Stock", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = {
                 Column(
                     modifier = Modifier
@@ -1555,7 +1760,7 @@ fun UneditableMeasurementBox(
         trailingIcon = {
             Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF1B5E20)) {
                 Text(
-                    "🔒 Auto-Calc",
+                    "Auto-Calc",
                     color = Color(0xFF81C784),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
@@ -1744,7 +1949,10 @@ fun HealthScreen(viewModel: MainViewModel) {
                             onSelect = { selectedPigId = it }
                         )
                     } else if (targetScope == "Single Pig" && eventType == "Gilt/Sow Serviced" && eligiblePigs.isEmpty()) {
-                        Text("⚠️ No female pigs (Sows / Gilts) in active herd to service.", color = Color(0xFFFF9800), fontSize = 12.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF9800), modifier = Modifier.size(16.dp))
+                            Text("No female pigs (Sows / Gilts) in active herd to service.", color = Color(0xFFFF9800), fontSize = 12.sp)
+                        }
                     }
 
                     if (targetScope == "Category") {
@@ -1922,14 +2130,17 @@ fun BreedingScreen(viewModel: MainViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD81B60)),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("🔥 Record Gilt Heat", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(Icons.Default.LocalFireDepartment, null, modifier = Modifier.size(14.dp))
+                        Text("Record Gilt Heat", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
                 Button(
                     onClick = { showGiltServiceDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("🐖 Record Gilt Served", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Record Gilt Served", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = {
@@ -1999,7 +2210,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                                                 Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF880E4F)),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text("🐖", fontSize = 20.sp)
+                                                Icon(Icons.Default.Female, contentDescription = "Sow", tint = Color(0xFFF48FB1), modifier = Modifier.size(24.dp))
                                             }
                                             Column {
                                                 Text("Sow Tag #${sow?.tag_number ?: preg.sow_id}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -2068,7 +2279,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text("🐖", fontSize = 20.sp)
+                                            Icon(Icons.Default.Female, contentDescription = "Sow", tint = Color(0xFFF48FB1), modifier = Modifier.size(24.dp))
                                             Column {
                                                 Text("Tag #${sow.tag_number}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                                 Text(sow.breed, color = Color(0xFF8B949E), fontSize = 12.sp)
@@ -2117,7 +2328,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                             ) {
                                 Row(Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text("🐗", fontSize = 20.sp)
+                                        Icon(Icons.Default.Male, contentDescription = "Boar", tint = Color(0xFF90CAF9), modifier = Modifier.size(24.dp))
                                         Column {
                                             Text("Boar Tag #${boar.tag_number}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                             Text(boar.breed, color = Color(0xFF8B949E), fontSize = 12.sp)
@@ -2343,7 +2554,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
         AlertDialog(
             onDismissRequest = { showGiltHeatDialog = false },
             containerColor = Color(0xFF161B22),
-            title = { Text("🔥 Record Gilt Heat Observation", color = Color.White) },
+            title = { Text("Record Gilt Heat Observation", color = Color.White) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Select a female pig/gilt to record heat symptoms. The app will auto-alert you in 21 days for the next heat cycle if not served.", color = Color(0xFF8B949E), fontSize = 12.sp)
@@ -2414,7 +2625,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
         AlertDialog(
             onDismissRequest = { showGiltServiceDialog = false },
             containerColor = Color(0xFF161B22),
-            title = { Text("🐖 Record Gilt Served / Mating Event", color = Color.White) },
+            title = { Text("Record Gilt Served / Mating Event", color = Color.White) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Record mating event for a gilt. Starts 114-day gestation tracking and schedules Day 110 & Day 114 farrowing alerts.", color = Color(0xFF8B949E), fontSize = 12.sp)
@@ -2580,7 +2791,7 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Buyers Directory 🌍", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                        Text("Buyers Directory", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                         Text("Shared across all Kenya pig farmers", fontSize = 11.sp, color = Color(0xFF00B4D8))
                     }
                     IconButton(onClick = {
@@ -2635,7 +2846,10 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                                 }
                             }
                             val locText = listOfNotNull(buyer.ward, buyer.sub_county, buyer.county ?: buyer.location).filter { it.isNotBlank() }.joinToString(", ")
-                            Text(if (locText.isNotBlank()) "📍 $locText" else "📍 Location N/A", color = Color(0xFF81C784), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Default.Place, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(13.dp))
+                                Text(if (locText.isNotBlank()) locText else "Location N/A", color = Color(0xFF81C784), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            }
                             Text("${buyer.type} • ${buyer.phone}", color = Color(0xFF8B949E), fontSize = 11.sp)
                         }
                         if (!buyer.phone.isNullOrBlank()) {
@@ -2757,7 +2971,7 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                         ) {
                             Column(Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text("🌍", fontSize = 16.sp)
+                                    Icon(Icons.Default.Public, contentDescription = null, tint = Color(0xFF00B4D8), modifier = Modifier.size(16.dp))
                                     Text(
                                         "Share with ALL farmers in Kenya",
                                         color = if (shareToAllFarmers) Color(0xFF00B4D8) else Color(0xFF8B949E),
@@ -2807,7 +3021,7 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                         )
                         showAddBuyerDialog = false
                         val msg = if (shareToAllFarmers)
-                            "Buyer saved and shared with all farmers in Kenya! 🌍"
+                            "Buyer saved and shared with all farmers in Kenya!"
                         else
                             "Buyer registered on your phone only."
                         Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
@@ -2815,7 +3029,7 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(if (shareToAllFarmers) "Save & Share 🌍" else "Save Buyer")
+                    Text(if (shareToAllFarmers) "Save & Share" else "Save Buyer")
                 }
             },
             dismissButton = {
@@ -2899,25 +3113,25 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
             StringDropdownSelector(
                 label = "Select Report Category *",
                 options = listOf(
-                    "💵 Financial Reports",
-                    "🐖 Herd & Count Reports",
-                    "🩺 Health & Mortality Reports",
-                    "🌾 Feed & FCR Growth Reports",
-                    "💕 Breeding & Reproduction Reports"
+                    "Financial Reports",
+                    "Herd & Count Reports",
+                    "Health & Mortality Reports",
+                    "Feed & FCR Growth Reports",
+                    "Breeding & Reproduction Reports"
                 ),
                 selectedOption = when (selectedTab) {
-                    0 -> "💵 Financial Reports"
-                    1 -> "🐖 Herd & Count Reports"
-                    2 -> "🩺 Health & Mortality Reports"
-                    3 -> "🌾 Feed & FCR Growth Reports"
-                    else -> "💕 Breeding & Reproduction Reports"
+                    0 -> "Financial Reports"
+                    1 -> "Herd & Count Reports"
+                    2 -> "Health & Mortality Reports"
+                    3 -> "Feed & FCR Growth Reports"
+                    else -> "Breeding & Reproduction Reports"
                 },
                 onSelect = { category ->
                     selectedTab = when (category) {
-                        "💵 Financial Reports" -> 0
-                        "🐖 Herd & Count Reports" -> 1
-                        "🩺 Health & Mortality Reports" -> 2
-                        "🌾 Feed & FCR Growth Reports" -> 3
+                        "Financial Reports" -> 0
+                        "Herd & Count Reports" -> 1
+                        "Health & Mortality Reports" -> 2
+                        "Feed & FCR Growth Reports" -> 3
                         else -> 4
                     }
                 }
@@ -3333,11 +3547,17 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                 border = BorderStroke(1.dp, Color(0xFF4CAF50)),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Text("✏️ Edit Profile", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(14.dp))
+                                    Text("Edit Profile", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                         HorizontalDivider(color = Color(0xFF21262D))
-                        Text("📍 Location: ${if (farmSettings.farmLocation.isNotBlank()) farmSettings.farmLocation else "$farmWard, $farmSubCounty, $farmCounty"}", color = Color(0xFF81C784), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(Icons.Default.Place, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(14.dp))
+                            Text("Location: ${if (farmSettings.farmLocation.isNotBlank()) farmSettings.farmLocation else "$farmWard, $farmSubCounty, $farmCounty"}", color = Color(0xFF81C784), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        }
                         Text("Currency: ${farmSettings.currencySymbol}", color = Color(0xFF8B949E), fontSize = 12.sp)
                     }
                 } else {
@@ -3502,3 +3722,4 @@ fun AlertToggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
 }
 
 // End of Screens.kt
+

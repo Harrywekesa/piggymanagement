@@ -224,18 +224,21 @@ fun PHMSHeader(farmName: String, pigCount: Int, alertCount: Int) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "🐖 $farmName",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = today,
-                        color = Color(0xFFB9F6CA),
-                        fontSize = 12.sp
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.Pets, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(24.dp))
+                    Column {
+                        Text(
+                            text = farmName,
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = today,
+                            color = Color(0xFFB9F6CA),
+                            fontSize = 12.sp
+                        )
+                    }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(
@@ -333,7 +336,7 @@ fun MoreMenuSheet(onNavigate: (String) -> Unit) {
         Triple("market", Icons.Default.ShoppingCart, "Market & Sales"),
         Triple("reports", Icons.Default.BarChart, "Reports"),
         Triple("settings", Icons.Default.Settings, "Settings"),
-        Triple("help_center", Icons.Default.HelpOutline, "Help Center & Tour 🧭")
+        Triple("help_center", Icons.Default.HelpOutline, "Help Center & Tour")
     )
     Column(modifier = Modifier.padding(16.dp)) {
         Text(

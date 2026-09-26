@@ -195,7 +195,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                                 )
                             } else {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("📸", fontSize = 32.sp)
+                                    Icon(Icons.Default.CameraAlt, null, tint = Color(0xFF6E7681), modifier = Modifier.size(32.dp))
                                     Text("Tap to add photo", color = Color(0xFF6E7681), fontSize = 10.sp)
                                 }
                             }
@@ -305,11 +305,65 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                     // Pen
                     Text("Pen Assignment", color = Color(0xFF8B949E), fontSize = 13.sp)
                     Spacer(Modifier.height(4.dp))
-                    if (pens.isEmpty()) {
-                        Text(
-                            "⚠ No pens configured yet — pens can be set up in the Farm Settings.",
-                            color = Color(0xFF6E7681), fontSize = 12.sp
-                        )
+                    var showCreatePenInline by remember { mutableStateOf(false) }
+                    var inlinePenName by remember { mutableStateOf("") }
+                    var inlinePenCapacityStr by remember { mutableStateOf("10") }
+
+                    if (pens.isEmpty() && !showCreatePenInline) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1F2B)),
+                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                        ) {
+                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Icon(Icons.Default.Home, null, tint = Color(0xFFFFB300), modifier = Modifier.size(18.dp))
+                                    Text("No pens configured yet", color = Color(0xFF8B949E), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                }
+                                Text("You need at least one pen before assigning a pig. Create one now:", color = Color(0xFF6E7681), fontSize = 11.sp)
+                                OutlinedButton(
+                                    onClick = { showCreatePenInline = true },
+                                    border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.Add, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Create a New Pen", color = Color(0xFF4CAF50), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+                    } else if (showCreatePenInline && pens.isEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1F2B)),
+                            border = BorderStroke(1.dp, Color(0xFF4CAF50))
+                        ) {
+                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text("Quick Create Pen", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                FormField("Pen Name *", inlinePenName, { inlinePenName = it }, placeholder = "e.g. Pen A1 (Nursery)")
+                                FormField("Capacity (pigs)", inlinePenCapacityStr, { inlinePenCapacityStr = it }, keyboardType = KeyboardType.Number)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedButton(
+                                        onClick = { showCreatePenInline = false },
+                                        border = BorderStroke(1.dp, Color(0xFF30363D)),
+                                        modifier = Modifier.weight(1f)
+                                    ) { Text("Cancel", color = Color(0xFF8B949E)) }
+                                    Button(
+                                        onClick = {
+                                            if (inlinePenName.isNotBlank()) {
+                                                viewModel.createPen(inlinePenName, inlinePenCapacityStr.toIntOrNull() ?: 10, null)
+                                                showCreatePenInline = false
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                                        modifier = Modifier.weight(1f)
+                                    ) { Text("Save Pen", fontWeight = FontWeight.Bold) }
+                                }
+                            }
+                        }
                     } else {
                         DropdownSelector(
                             label = "Pen (optional)",
@@ -323,10 +377,13 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                     Text("Batch / Group", color = Color(0xFF8B949E), fontSize = 13.sp)
                     Spacer(Modifier.height(4.dp))
                     if (batches.isEmpty()) {
-                        Text(
-                            "⚠ No batches configured yet — batches help group pigs for herd operations.",
-                            color = Color(0xFF6E7681), fontSize = 12.sp
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.Info, null, tint = Color(0xFF6E7681), modifier = Modifier.size(14.dp))
+                            Text(
+                                "No batches yet — batches help group pigs for herd operations.",
+                                color = Color(0xFF6E7681), fontSize = 12.sp
+                            )
+                        }
                     } else {
                         DropdownSelector(
                             label = "Batch (optional)",

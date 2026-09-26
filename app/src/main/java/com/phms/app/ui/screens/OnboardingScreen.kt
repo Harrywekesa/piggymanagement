@@ -109,7 +109,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                 .border(2.dp, Color(0xFF4CAF50), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("🐖", fontSize = 56.sp)
+                            Icon(Icons.Default.Pets, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(56.dp))
                         }
                         Spacer(Modifier.height(24.dp))
                         Text("Welcome to Digital Pig Farm Manager", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
@@ -280,7 +280,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                 shape = RoundedCornerShape(12.dp),
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
             ) {
-                Text(if (step < 2) "Next →" else "Complete Setup 🎉", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(if (step < 2) "Next →" else "Complete Setup", fontSize = 15.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

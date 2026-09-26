@@ -132,7 +132,7 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
                                 )
                             } else {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("🐷", fontSize = 32.sp)
+                                    Icon(Icons.Default.Pets, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(32.dp))
                                     Text(
                                         p.tag_number,
                                         color = Color(0xFF4CAF50),
@@ -389,7 +389,7 @@ fun OverviewTab(
                         .background(Color(0xFF2E7D32).copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("🌾", fontSize = 22.sp)
+                    Icon(Icons.Default.Grass, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(24.dp))
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
@@ -775,7 +775,10 @@ fun ActionButtonsRow(
                             onSelect = { selectedHealthPigId = it }
                         )
                     } else if (targetScope == "Single Pig" && eventType == "Gilt/Sow Serviced" && eligiblePigs.isEmpty()) {
-                        Text("⚠️ No female pigs (Sows / Gilts) in active herd to service.", color = Color(0xFFFF9800), fontSize = 12.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF9800), modifier = Modifier.size(16.dp))
+                            Text("No female pigs (Sows / Gilts) in active herd to service.", color = Color(0xFFFF9800), fontSize = 12.sp)
+                        }
                     }
 
                     if (targetScope == "Category") {

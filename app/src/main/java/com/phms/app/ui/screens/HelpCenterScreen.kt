@@ -34,7 +34,7 @@ data class TourStep(
     val stepNumber: Int,
     val title: String,
     val description: String,
-    val icon: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val route: String
 )
 
@@ -80,7 +80,7 @@ fun HelpCenterScreen(
                 id = "feed_1",
                 category = "Feed & Nutrition",
                 question = "How do I use Feed Formulator presets?",
-                answer = "Open the Feed tab and switch to 'Formulator 🌾'. Tap preset buttons like 'Creep Starter', 'Grower Mash', or 'Finisher Meal' to automatically balance energy, protein, and mineral ratios for your target batch weight.",
+                answer = "Open the Feed tab and switch to 'Formulator'. Tap preset buttons like 'Creep Starter', 'Grower Mash', or 'Finisher Meal' to automatically balance energy, protein, and mineral ratios for your target batch weight.",
                 actionRoute = "feed",
                 actionLabel = "Open Feed Formulator"
             ),
@@ -88,7 +88,7 @@ fun HelpCenterScreen(
                 id = "feed_2",
                 category = "Feed & Nutrition",
                 question = "How does daily feeding automatically reduce stock?",
-                answer = "Tap '🥣 Log Feeding' at the top of the Feed screen. Select your feed item/bag, feeding time, amount per pig, and number of pigs. Upon confirming, the total feed weight is automatically deducted from your stock inventory.",
+                answer = "Tap 'Log Feeding' at the top of the Feed screen. Select your feed item/bag, feeding time, amount per pig, and number of pigs. Upon confirming, the total feed weight is automatically deducted from your stock inventory.",
                 actionRoute = "feed",
                 actionLabel = "Log Daily Feeding"
             ),
@@ -104,7 +104,7 @@ fun HelpCenterScreen(
                 id = "health_1",
                 category = "Health & Vet",
                 question = "How do I log a health event for a specific single pig?",
-                answer = "Open the pig's detail page and tap 'Log Health 💉'. Alternatively, in the Health screen, tap 'Log Event', select 'Single Pig' as the target scope, and pick the pig from the dropdown list.",
+                answer = "Open the pig's detail page and tap 'Log Health'. Alternatively, in the Health screen, tap 'Log Event', select 'Single Pig' as the target scope, and pick the pig from the dropdown list.",
                 actionRoute = "health",
                 actionLabel = "Health Module"
             ),
@@ -245,7 +245,7 @@ fun HelpCenterScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("🎉 New Update Available: ${updateInfo.latestVersion}", color = Color(0xFF90E0EF), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Text("New Update Available: ${updateInfo.latestVersion}", color = Color(0xFF90E0EF), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                         Text(updateInfo.releaseNotes.take(80) + "...", color = Color(0xFF8B949E), fontSize = 11.sp)
                                     }
                                     Spacer(Modifier.width(8.dp))
@@ -259,7 +259,10 @@ fun HelpCenterScreen(
                                     }
                                 }
                             } else if (!updateInfo.isChecking) {
-                                Text("✅ Your app is up to date with the latest GitHub release.", color = Color(0xFF4CAF50), fontSize = 11.sp)
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                                    Text("Your app is up to date with the latest GitHub release.", color = Color(0xFF4CAF50), fontSize = 11.sp)
+                                }
                             }
                         }
                     }
@@ -404,15 +407,15 @@ fun HelpCenterScreen(
 fun GuidedTourOverlay(onDismiss: () -> Unit, navController: NavController) {
     val tourSteps = remember {
         listOf(
-            TourStep(1, "Farm Setup & Pen Architecture", "Configure farm name, manager profile, and set up housing pens (Farrowing, Weaner, Grower, Finisher, Gestation) to structure your herd.", "🏡", "settings"),
-            TourStep(2, "Pig Registration & Photo Capture", "Add new pigs with live camera photo capture, tag ear numbers, breed, sex, acquisition source, and mother/father lineage pedigree.", "🐷", "pigs"),
-            TourStep(3, "Weight Gain & Auto Promotion", "Log weekly pig weight records. The system calculates Average Daily Gain (ADG) and automatically promotes pigs as they reach weight milestones.", "⚖️", "pigs"),
-            TourStep(4, "Sow Breeding & Gestation Countdown", "Log female sow heat checks, boar servicing, and AI. The engine automatically calculates the 114-day expected farrowing date and schedules alerts.", "🧬", "breeding"),
-            TourStep(5, "Health & Vet Logger (Single & Herd)", "Log vaccinations, dewormings, and medical treatments for a single selected pig or category. Auto-monitors active drug withdrawal periods.", "💉", "health"),
-            TourStep(6, "Feed Formulator & Inventory Reduction", "Use preset formulas (Creep, Grower, Finisher) or custom least-cost rations in kg and grams. Daily feeding logs automatically deduct shop feed inventory.", "🌾", "feed"),
-            TourStep(7, "Market Sales & Buyer Directory", "Record sales capturing buyer name, contact, location, and butchery/processor type. Uses exact logged pig weights to calculate revenue.", "💰", "market"),
-            TourStep(8, "Individual Pig ADG & FCR Analytics", "View individual Average Daily Gain (kg/day) and Feed Conversion Ratio (FCR) per pig on profile cards and ranked performance reports.", "📈", "reports"),
-            TourStep(9, "Intelligent Alerts & PDF Export", "Receive automated reminders for imminent farrowing, vaccination due dates, low feed stock, and export date-filtered P&L financial PDF reports.", "📊", "alerts")
+            TourStep(1, "Farm Setup & Pen Architecture", "Configure farm name, manager profile, and set up housing pens (Farrowing, Weaner, Grower, Finisher, Gestation) to structure your herd.", Icons.Default.Home, "settings"),
+            TourStep(2, "Pig Registration & Photo Capture", "Add new pigs with live camera photo capture, tag ear numbers, breed, sex, acquisition source, and mother/father lineage pedigree.", Icons.Default.Pets, "pigs"),
+            TourStep(3, "Weight Gain & Auto Promotion", "Log weekly pig weight records. The system calculates Average Daily Gain (ADG) and automatically promotes pigs as they reach weight milestones.", Icons.Default.TrendingUp, "pigs"),
+            TourStep(4, "Sow Breeding & Gestation Countdown", "Log female sow heat checks, boar servicing, and AI. The engine automatically calculates the 114-day expected farrowing date and schedules alerts.", Icons.Default.Favorite, "breeding"),
+            TourStep(5, "Health & Vet Logger (Single & Herd)", "Log vaccinations, dewormings, and medical treatments for a single selected pig or category. Auto-monitors active drug withdrawal periods.", Icons.Default.LocalHospital, "health"),
+            TourStep(6, "Feed Formulator & Inventory Reduction", "Use preset formulas (Creep, Grower, Finisher) or custom least-cost rations in kg and grams. Daily feeding logs automatically deduct shop feed inventory.", Icons.Default.Grass, "feed"),
+            TourStep(7, "Market Sales & Buyer Directory", "Record sales capturing buyer name, contact, location, and butchery/processor type. Uses exact logged pig weights to calculate revenue.", Icons.Default.ShoppingCart, "market"),
+            TourStep(8, "Individual Pig ADG & FCR Analytics", "View individual Average Daily Gain (kg/day) and Feed Conversion Ratio (FCR) per pig on profile cards and ranked performance reports.", Icons.Default.BarChart, "reports"),
+            TourStep(9, "Intelligent Alerts & PDF Export", "Receive automated reminders for imminent farrowing, vaccination due dates, low feed stock, and export date-filtered P&L financial PDF reports.", Icons.Default.Notifications, "alerts")
         )
     }
 
@@ -423,8 +426,8 @@ fun GuidedTourOverlay(onDismiss: () -> Unit, navController: NavController) {
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF161B22),
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(step.icon, fontSize = 24.sp)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(step.icon, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(24.dp))
                 Column {
                     Text("Step ${step.stepNumber} of ${tourSteps.size}", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     Text(step.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -466,7 +469,7 @@ fun GuidedTourOverlay(onDismiss: () -> Unit, navController: NavController) {
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                     ) {
-                        Text("Finish Tour 🎉", fontSize = 12.sp)
+                        Text("Finish Tour", fontSize = 12.sp)
                     }
                 }
             }
