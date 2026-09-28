@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,7 +41,6 @@ import java.util.concurrent.TimeUnit
 fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
     val pigs by viewModel.activePigs.collectAsState()
     val alerts by viewModel.activeAlerts.collectAsState()
-    val criticalAlerts by viewModel.criticalAlerts.collectAsState()
     val pnl by viewModel.pnlSummary.collectAsState()
     val updateInfo by viewModel.appUpdateInfo.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -69,7 +69,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
                             Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = Color(0xFF90E0EF), modifier = Modifier.size(24.dp))
                             Column {
-                                Text("🚀 New Update Available (${updateInfo.latestVersion})", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("New Update Available (${updateInfo.latestVersion})", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Text("Tap to download & install the latest GitHub release.", color = Color(0xFF90E0EF), fontSize = 11.sp)
                             }
                         }
@@ -99,7 +99,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                     shape = RoundedCornerShape(20.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Icon(Icons.Default.Help, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                    Icon(Icons.AutoMirrored.Filled.Help, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("Help & Tour", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
@@ -121,7 +121,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                 )
                 DashKpiCard(
                     "Est. Net Profit", "KSh ${pnl?.netProfit?.toInt() ?: 0}",
-                    "30-Day", Icons.Default.TrendingUp, Color(0xFF4CAF50), Modifier.weight(1f)
+                    "30-Day", Icons.AutoMirrored.Filled.TrendingUp, Color(0xFF4CAF50), Modifier.weight(1f)
                 )
             }
         }
@@ -134,7 +134,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(18.dp))
+                            Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(18.dp))
                             Text("30-Day Financial P&L", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
                         }
                         Text(
