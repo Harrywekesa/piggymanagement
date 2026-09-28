@@ -88,6 +88,9 @@ dependencies {
     // ZXing Barcode Scanning / Formatting
     implementation("com.google.zxing:core:3.5.3")
 
+    // Gson - JSON serialization for Backup / Restore
+    implementation("com.google.code.gson:gson:2.10.1")
+
     // Firebase - Shared Buyers Directory (Cloud Firestore)
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-firestore-ktx")

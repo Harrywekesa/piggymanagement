@@ -1,5 +1,9 @@
 package com.phms.app.data.repository
 
+import android.content.Context
+import android.net.Uri
+import com.phms.app.data.backup.BackupManager
+import com.phms.app.data.backup.BackupResult
 import com.phms.app.data.local.database.AppDatabase
 import com.phms.app.data.local.entity.*
 import com.phms.app.domain.engine.OutbreakDetector
@@ -332,6 +336,15 @@ class PHMSRepository(private val db: AppDatabase) {
             BuyerEntity(name = "Nandi Hills Butchery Network", phone = "+254711567890", type = "Butchery", county = "Nandi", sub_county = "Nandi Hills", notes = "Network of 4 butcheries — consolidated orders.", is_community = true)
         )
         communityBuyers.forEach { marketDao.insertBuyer(it) }
+    }
+
+    // Backup & Restore
+    suspend fun exportBackup(context: Context, uri: Uri): BackupResult {
+        return BackupManager.exportToUri(context, db, uri)
+    }
+
+    suspend fun importBackup(context: Context, uri: Uri): BackupResult {
+        return BackupManager.importFromUri(context, db, uri)
     }
 }
 

@@ -15,6 +15,9 @@ interface PigDao {
     @Query("SELECT * FROM pigs WHERE status = 'Active'")
     suspend fun getActivePigsSync(): List<PigEntity>
 
+    @Query("SELECT * FROM pigs ORDER BY id DESC")
+    suspend fun getAllPigsSync(): List<PigEntity>
+
     @Query("SELECT * FROM pigs WHERE id = :id")
     suspend fun getPigById(id: Long): PigEntity?
 
@@ -52,8 +55,23 @@ interface PigDao {
     @Query("SELECT * FROM weight_records WHERE pig_id = :pigId ORDER BY date DESC")
     suspend fun getWeightsForPigSync(pigId: Long): List<WeightRecordEntity>
 
+    @Query("SELECT * FROM weight_records ORDER BY date ASC")
+    suspend fun getAllWeightRecordsSync(): List<WeightRecordEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWeightRecord(record: WeightRecordEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllPigs(pigs: List<PigEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllWeightRecords(records: List<WeightRecordEntity>)
+
+    @Query("DELETE FROM pigs")
+    suspend fun deleteAllPigs()
+
+    @Query("DELETE FROM weight_records")
+    suspend fun deleteAllWeightRecords()
 }
 
 @Dao
@@ -70,8 +88,14 @@ interface PenDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPen(pen: PenEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllPens(pens: List<PenEntity>)
+
     @Update
     suspend fun updatePen(pen: PenEntity)
+
+    @Query("DELETE FROM pens")
+    suspend fun deleteAllPens()
 }
 
 @Dao
@@ -88,8 +112,14 @@ interface BatchDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBatch(batch: BatchEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllBatches(batches: List<BatchEntity>)
+
     @Update
     suspend fun updateBatch(batch: BatchEntity)
+
+    @Query("DELETE FROM batches")
+    suspend fun deleteAllBatches()
 }
 
 @Dao
@@ -174,6 +204,9 @@ interface FeedDao {
     @Query("SELECT * FROM feeding_logs ORDER BY date DESC")
     fun getAllFeedingLogs(): Flow<List<FeedingLogEntity>>
 
+    @Query("SELECT * FROM feeding_logs ORDER BY date DESC")
+    suspend fun getAllFeedingLogsSync(): List<FeedingLogEntity>
+
     @Query("SELECT * FROM feeding_logs WHERE date >= :startDate ORDER BY date DESC")
     suspend fun getFeedingLogsSince(startDate: Long): List<FeedingLogEntity>
 
@@ -184,11 +217,32 @@ interface FeedDao {
     @Query("SELECT * FROM feed_purchases ORDER BY date DESC")
     fun getAllPurchases(): Flow<List<FeedPurchaseEntity>>
 
+    @Query("SELECT * FROM feed_purchases ORDER BY date DESC")
+    suspend fun getAllFeedPurchasesSync(): List<FeedPurchaseEntity>
+
     @Query("SELECT * FROM feed_purchases WHERE date >= :startDate")
     suspend fun getPurchasesSince(startDate: Long): List<FeedPurchaseEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPurchase(purchase: FeedPurchaseEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllIngredients(ingredients: List<FeedIngredientEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFeedingLogs(logs: List<FeedingLogEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFeedPurchases(purchases: List<FeedPurchaseEntity>)
+
+    @Query("DELETE FROM feed_ingredients")
+    suspend fun deleteAllIngredients()
+
+    @Query("DELETE FROM feeding_logs")
+    suspend fun deleteAllFeedingLogs()
+
+    @Query("DELETE FROM feed_purchases")
+    suspend fun deleteAllFeedPurchases()
 }
 
 @Dao
@@ -202,6 +256,9 @@ interface HealthDao {
     @Query("SELECT * FROM health_events ORDER BY date DESC")
     suspend fun getAllEventsSync(): List<HealthEventEntity>
 
+    @Query("SELECT * FROM health_events ORDER BY date DESC")
+    suspend fun getAllHealthEventsSync(): List<HealthEventEntity> = getAllEventsSync()
+
     @Query("SELECT * FROM health_events WHERE pig_id = :pigId ORDER BY date DESC")
     suspend fun getEventsForPigSync(pigId: Long): List<HealthEventEntity>
 
@@ -210,6 +267,12 @@ interface HealthDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHealthEvent(event: HealthEventEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllHealthEvents(events: List<HealthEventEntity>)
+
+    @Query("DELETE FROM health_events")
+    suspend fun deleteAllHealthEvents()
 
     // Symptoms
     @Query("SELECT * FROM symptoms ORDER BY date DESC")
@@ -240,12 +303,18 @@ interface BreedingDao {
     @Query("SELECT * FROM breeding_events WHERE sow_id = :sowId ORDER BY date DESC")
     fun getBreedingForSow(sowId: Long): Flow<List<BreedingEventEntity>>
 
+    @Query("SELECT * FROM breeding_events ORDER BY date DESC")
+    suspend fun getAllBreedingEventsSync(): List<BreedingEventEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBreedingEvent(event: BreedingEventEntity): Long
 
     // Pregnancies
     @Query("SELECT * FROM pregnancies WHERE status = 'Active' ORDER BY expected_farrowing_date ASC")
     fun getActivePregnancies(): Flow<List<PregnancyEntity>>
+
+    @Query("SELECT * FROM pregnancies ORDER BY insemination_date DESC")
+    suspend fun getAllPregnanciesSync(): List<PregnancyEntity>
 
     @Query("SELECT * FROM pregnancies WHERE sow_id = :sowId AND status = 'Active' LIMIT 1")
     suspend fun getActivePregnancyForSow(sowId: Long): PregnancyEntity?
@@ -280,11 +349,44 @@ interface BreedingDao {
     @Query("SELECT * FROM gilt_heat_records ORDER BY heat_date DESC")
     fun getAllGiltHeatRecords(): Flow<List<GiltHeatRecordEntity>>
 
+    @Query("SELECT * FROM gilt_heat_records ORDER BY heat_date DESC")
+    suspend fun getAllGiltHeatRecordsSync(): List<GiltHeatRecordEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGiltHeatRecord(record: GiltHeatRecordEntity): Long
 
     @Query("UPDATE gilt_heat_records SET status = :status WHERE id = :id")
     suspend fun updateGiltHeatStatus(id: Long, status: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllBreedingEvents(events: List<BreedingEventEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllPregnancies(pregnancies: List<PregnancyEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFarrowingRecords(records: List<FarrowingRecordEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllWeaningRecords(records: List<WeaningRecordEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllGiltHeatRecords(records: List<GiltHeatRecordEntity>)
+
+    @Query("DELETE FROM breeding_events")
+    suspend fun deleteAllBreedingEvents()
+
+    @Query("DELETE FROM pregnancies")
+    suspend fun deleteAllPregnancies()
+
+    @Query("DELETE FROM farrowing_records")
+    suspend fun deleteAllFarrowingRecords()
+
+    @Query("DELETE FROM weaning_records")
+    suspend fun deleteAllWeaningRecords()
+
+    @Query("DELETE FROM gilt_heat_records")
+    suspend fun deleteAllGiltHeatRecords()
 }
 
 @Dao
@@ -298,14 +400,23 @@ interface AlertDao {
     @Query("SELECT * FROM alerts ORDER BY created_date DESC")
     fun getAllAlerts(): Flow<List<AlertEntity>>
 
+    @Query("SELECT * FROM alerts ORDER BY created_date DESC")
+    suspend fun getAllAlertsSync(): List<AlertEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAlert(alert: AlertEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllAlerts(alerts: List<AlertEntity>)
 
     @Query("UPDATE alerts SET status = 'Done' WHERE id = :alertId")
     suspend fun markAlertDone(alertId: Long)
 
     @Query("UPDATE alerts SET status = 'Snoozed', snoozed_until = :snoozedUntil WHERE id = :alertId")
     suspend fun snoozeAlert(alertId: Long, snoozedUntil: Long)
+
+    @Query("DELETE FROM alerts")
+    suspend fun deleteAllAlerts()
 }
 
 @Dao
@@ -319,6 +430,9 @@ interface MarketDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBuyer(buyer: BuyerEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllBuyers(buyers: List<BuyerEntity>)
+
     @Update
     suspend fun updateBuyer(buyer: BuyerEntity)
 
@@ -326,11 +440,23 @@ interface MarketDao {
     @Query("SELECT * FROM sales ORDER BY date DESC")
     fun getAllSales(): Flow<List<SaleEntity>>
 
+    @Query("SELECT * FROM sales ORDER BY date DESC")
+    suspend fun getAllSalesSync(): List<SaleEntity>
+
     @Query("SELECT * FROM sales WHERE date >= :startDate ORDER BY date DESC")
     suspend fun getSalesSince(startDate: Long): List<SaleEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSale(sale: SaleEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllSales(sales: List<SaleEntity>)
+
+    @Query("DELETE FROM buyers")
+    suspend fun deleteAllBuyers()
+
+    @Query("DELETE FROM sales")
+    suspend fun deleteAllSales()
 }
 
 @Dao
@@ -346,5 +472,11 @@ interface ExpenseDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertExpense(expense: ExpenseEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllExpenses(expenses: List<ExpenseEntity>)
+
+    @Query("DELETE FROM expenses")
+    suspend fun deleteAllExpenses()
 }
 

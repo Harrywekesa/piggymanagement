@@ -1,7 +1,10 @@
 package com.phms.app.ui.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.phms.app.data.backup.BackupResult
 import com.phms.app.data.local.entity.*
 import com.phms.app.data.repository.FarmSettings
 import com.phms.app.data.repository.PHMSRepository
@@ -820,6 +823,28 @@ class MainViewModel(
                 breeding = breedingSummary
             )
         }
+    }
+
+    // Backup & Restore
+    private val _backupStatus = MutableStateFlow<BackupResult?>(null)
+    val backupStatus: StateFlow<BackupResult?> = _backupStatus.asStateFlow()
+
+    fun exportBackup(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            val result = repository.exportBackup(context, uri)
+            _backupStatus.value = result
+        }
+    }
+
+    fun importBackup(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            val result = repository.importBackup(context, uri)
+            _backupStatus.value = result
+        }
+    }
+
+    fun clearBackupStatus() {
+        _backupStatus.value = null
     }
 }
 
