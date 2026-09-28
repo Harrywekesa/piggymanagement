@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.phms.app.ui.viewmodel.MainViewModel
@@ -79,9 +80,19 @@ fun HealthScreen(viewModel: MainViewModel) {
         Text("Recent Health Events (${healthEvents.size})", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
         Spacer(Modifier.height(8.dp))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(healthEvents) { event ->
-                HealthEventRow(event, dateFormat)
+        if (healthEvents.isEmpty()) {
+            Box(Modifier.fillMaxWidth().padding(top = 32.dp), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Icon(Icons.Default.MedicalServices, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(48.dp))
+                    Text("No Health Events Logged", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Tap 'Log Health Event' above to record vaccinations, treatments, or vet checkups.", color = Color(0xFF8B949E), fontSize = 12.sp, textAlign = TextAlign.Center)
+                }
+            }
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(healthEvents) { event ->
+                    HealthEventRow(event, dateFormat)
+                }
             }
         }
     }
@@ -131,7 +142,10 @@ fun HealthScreen(viewModel: MainViewModel) {
                             onSelect = { selectedPigId = it }
                         )
                     } else if (targetScope == "Single Pig" && eventType == "Gilt/Sow Serviced" && eligiblePigs.isEmpty()) {
-                        Text("⚠️ No female pigs (Sows / Gilts) in active herd to service.", color = Color(0xFFFF9800), fontSize = 12.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.Warning, null, tint = Color(0xFFFF9800), modifier = Modifier.size(16.dp))
+                            Text("No female pigs (Sows / Gilts) in active herd to service.", color = Color(0xFFFF9800), fontSize = 12.sp)
+                        }
                     }
 
                     if (targetScope == "Category") {
