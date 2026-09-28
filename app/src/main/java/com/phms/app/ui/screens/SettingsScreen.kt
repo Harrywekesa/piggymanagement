@@ -11,8 +11,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Help
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -57,6 +59,10 @@ fun SettingsScreen(viewModel: MainViewModel) {
     val backupStatus by viewModel.backupStatus.collectAsState()
     var showRestoreConfirmDialog by remember { mutableStateOf<Uri?>(null) }
     var isProcessingBackup by remember { mutableStateOf(false) }
+
+    var showLoadDemoConfirmDialog by remember { mutableStateOf(false) }
+    var showResetConfirmDialog by remember { mutableStateOf(false) }
+    var isOperatingDemo by remember { mutableStateOf(false) }
 
     LaunchedEffect(backupStatus) {
         backupStatus?.let { status ->
@@ -255,6 +261,58 @@ fun SettingsScreen(viewModel: MainViewModel) {
             }
         }
 
+        // Demo Mode & Farm Reset
+        item {
+            SectionCard("Demo Mode & Farm Reset") {
+                Text(
+                    "Switch between sample simulation data (for testing, exhibitions, or ASK show judging) and resetting to a completely clean farm.",
+                    color = Color(0xFF8B949E),
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+                Spacer(Modifier.height(12.dp))
+
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = { showLoadDemoConfirmDialog = true },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3A4B)),
+                        shape = RoundedCornerShape(10.dp),
+                        enabled = !isOperatingDemo
+                    ) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color(0xFF00B4D8), modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Load Demo Herd", color = Color(0xFF90E0EF), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    OutlinedButton(
+                        onClick = { showResetConfirmDialog = true },
+                        modifier = Modifier.weight(1f),
+                        border = BorderStroke(1.dp, Color(0xFFE53935)),
+                        shape = RoundedCornerShape(10.dp),
+                        enabled = !isOperatingDemo
+                    ) {
+                        Icon(Icons.Default.DeleteForever, contentDescription = null, tint = Color(0xFFFF5252), modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Reset Farm", color = Color(0xFFFF5252), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (isOperatingDemo) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF00B4D8), strokeWidth = 2.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Updating farm records...", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+
         // About & Developer Details & Feedback
         item {
             val appVersionName = remember(context) {
@@ -342,6 +400,76 @@ fun SettingsScreen(viewModel: MainViewModel) {
             },
             dismissButton = {
                 OutlinedButton(onClick = { showRestoreConfirmDialog = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showLoadDemoConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showLoadDemoConfirmDialog = false },
+            icon = { Icon(Icons.Default.PlayArrow, null, tint = Color(0xFF00B4D8)) },
+            title = { Text("Load Sample Demo Herd?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "This will populate your database with 35 realistic pigs across all stages (Piglets, Weaners, Growers, Finishers, Sows, Boars), 5 pens, breeding events, and feed records.\n\nIdeal for exploring app features or demonstrating at exhibitions.",
+                    color = Color(0xFFC9D1D9),
+                    fontSize = 13.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLoadDemoConfirmDialog = false
+                        isOperatingDemo = true
+                        viewModel.loadDemoFarm {
+                            isOperatingDemo = false
+                            Toast.makeText(context, "Sample demo farm loaded successfully!", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0077B6))
+                ) {
+                    Text("Load Demo Data", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showLoadDemoConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showResetConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirmDialog = false },
+            icon = { Icon(Icons.Default.DeleteForever, null, tint = Color(0xFFFF5252)) },
+            title = { Text("Reset Farm to Empty?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "This will permanently delete all pigs, pens, feeding logs, health records, breeding events, and sales transactions.\n\nGrowth stages and community buyer contacts will remain.\n\nAre you sure you want to clear all farm records?",
+                    color = Color(0xFFC9D1D9),
+                    fontSize = 13.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showResetConfirmDialog = false
+                        isOperatingDemo = true
+                        viewModel.resetFarmData {
+                            isOperatingDemo = false
+                            Toast.makeText(context, "Farm data reset to clean state.", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935))
+                ) {
+                    Text("Reset & Clear All", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showResetConfirmDialog = false }) {
                     Text("Cancel")
                 }
             }

@@ -2,6 +2,7 @@ package com.phms.app.data.repository
 
 import android.content.Context
 import android.net.Uri
+import androidx.room.withTransaction
 import com.phms.app.data.backup.BackupManager
 import com.phms.app.data.backup.BackupResult
 import com.phms.app.data.local.database.AppDatabase
@@ -9,7 +10,9 @@ import com.phms.app.data.local.entity.*
 import com.phms.app.domain.engine.OutbreakDetector
 import com.phms.app.domain.engine.PromotionEngine
 import com.phms.app.domain.engine.WithdrawalTracker
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 class PHMSRepository(private val db: AppDatabase) {
 
@@ -306,6 +309,27 @@ class PHMSRepository(private val db: AppDatabase) {
     // Seed Demo Data
     suspend fun seedDemoData() {
         com.phms.app.data.seed.DemoDataSeeder.seedDatabase(db)
+    }
+
+    // Reset Farm Data (clears active herd and records, preserves lookup tables & community buyers)
+    suspend fun resetFarmData() = withContext(Dispatchers.IO) {
+        db.withTransaction {
+            pigDao.deleteAllWeightRecords()
+            feedDao.deleteAllFeedingLogs()
+            feedDao.deleteAllFeedPurchases()
+            healthDao.deleteAllHealthEvents()
+            breedingDao.deleteAllBreedingEvents()
+            breedingDao.deleteAllPregnancies()
+            breedingDao.deleteAllFarrowingRecords()
+            breedingDao.deleteAllWeaningRecords()
+            breedingDao.deleteAllGiltHeatRecords()
+            marketDao.deleteAllSales()
+            expenseDao.deleteAllExpenses()
+            alertDao.deleteAllAlerts()
+            pigDao.deleteAllPigs()
+            batchDao.deleteAllBatches()
+            penDao.deleteAllPens()
+        }
     }
 
     // Community Buyers Directory — seed once per fresh install

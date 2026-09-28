@@ -846,6 +846,21 @@ class MainViewModel(
     fun clearBackupStatus() {
         _backupStatus.value = null
     }
+
+    // Demo Data & Farm Data Reset
+    fun loadDemoFarm(onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.seedDemoData()
+            onComplete()
+        }
+    }
+
+    fun resetFarmData(onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.resetFarmData()
+            onComplete()
+        }
+    }
 }
 
 data class HerdReportSummary(

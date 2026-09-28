@@ -77,14 +77,36 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    repeat(3) { i ->
-                        Box(
-                            modifier = Modifier
-                                .size(if (i == step) 20.dp else 8.dp, 8.dp)
-                                .clip(CircleShape)
-                                .background(if (i == step) Color(0xFF4CAF50) else Color(0xFF30363D))
-                        )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        repeat(3) { i ->
+                            Box(
+                                modifier = Modifier
+                                    .size(if (i == step) 20.dp else 8.dp, 8.dp)
+                                    .clip(CircleShape)
+                                    .background(if (i == step) Color(0xFF4CAF50) else Color(0xFF30363D))
+                            )
+                        }
+                    }
+                    TextButton(
+                        onClick = {
+                            val currentSettings = viewModel.farmSettings.value
+                            viewModel.saveFarmSettings(
+                                currentSettings.copy(
+                                    isOnboarded = true,
+                                    showTourOnFirstOpen = false
+                                )
+                            )
+                            navController.navigate("dashboard") {
+                                popUpTo("onboarding") { inclusive = true }
+                            }
+                        },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text("Skip", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -93,31 +115,152 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
 
             when (step) {
                 0 -> {
-                    // STEP 0: Feature Overview
+                    // STEP 0: Farm Mode Selection (Sample Farm vs Real Farm)
+                    var isLoadingDemo by remember { mutableStateOf(false) }
+
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(120.dp)
+                                .size(88.dp)
                                 .clip(CircleShape)
-                                .background(Brush.radialGradient(listOf(Color(0xFF4CAF50).copy(alpha = 0.3f), Color.Transparent)))
+                                .background(Brush.radialGradient(listOf(Color(0xFF4CAF50).copy(alpha = 0.25f), Color.Transparent)))
                                 .border(2.dp, Color(0xFF4CAF50), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("🐖", fontSize = 56.sp)
+                            Text("🐖", fontSize = 44.sp)
                         }
-                        Spacer(Modifier.height(24.dp))
-                        Text("Welcome to Digital Pig Farm Manager", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                        Spacer(Modifier.height(10.dp))
-                        Text(
-                            "An offline-first application for precision pig husbandry, health tracking, least-cost feed formulation (kg/g), market linkage, and P&L financial analytics.",
-                            color = Color(0xFF8B949E), fontSize = 14.sp, textAlign = TextAlign.Center, lineHeight = 20.sp
-                        )
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Welcome to Digital Pig Farm", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                "Choose how you'd like to get started today:",
+                                color = Color(0xFF8B949E), fontSize = 13.sp, textAlign = TextAlign.Center
+                            )
+                        }
+
+                        // Option A: Explore Sample Farm
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = !isLoadingDemo) {
+                                    isLoadingDemo = true
+                                    viewModel.loadDemoFarm {
+                                        viewModel.saveFarmSettings(
+                                            viewModel.farmSettings.value.copy(
+                                                farmName = "Demo Model Pig Farm",
+                                                farmerName = "Demo Manager",
+                                                farmLocation = "Kiminini, Trans Nzoia",
+                                                isOnboarded = true,
+                                                showTourOnFirstOpen = true
+                                            )
+                                        )
+                                        navController.navigate("dashboard") {
+                                            popUpTo("onboarding") { inclusive = true }
+                                        }
+                                    }
+                                },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            border = BorderStroke(1.5.dp, Color(0xFF4CAF50))
+                        ) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Icon(Icons.Default.Visibility, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                                        Text("Explore Sample Farm", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    }
+                                    Surface(
+                                        color = Color(0xFF1B5E20),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text("Recommended for Testing", color = Color(0xFF81C784), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                    }
+                                }
+                                Text(
+                                    "Pre-loaded with 35 realistic pigs across all growth stages, 5 housing pens, breeding events, feed formulations, and financial P&L records.",
+                                    color = Color(0xFF8B949E),
+                                    fontSize = 12.sp,
+                                    lineHeight = 17.sp
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Button(
+                                    onClick = {
+                                        isLoadingDemo = true
+                                        viewModel.loadDemoFarm {
+                                            viewModel.saveFarmSettings(
+                                                viewModel.farmSettings.value.copy(
+                                                    farmName = "Demo Model Pig Farm",
+                                                    farmerName = "Demo Manager",
+                                                    farmLocation = "Kiminini, Trans Nzoia",
+                                                    isOnboarded = true,
+                                                    showTourOnFirstOpen = true
+                                                )
+                                            )
+                                            navController.navigate("dashboard") {
+                                                popUpTo("onboarding") { inclusive = true }
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                                    shape = RoundedCornerShape(10.dp),
+                                    enabled = !isLoadingDemo
+                                ) {
+                                    if (isLoadingDemo) {
+                                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Loading Sample Herd...", fontSize = 13.sp)
+                                    } else {
+                                        Icon(Icons.Default.PlayArrow, null, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("Load Sample Farm & Open App", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+
+                        // Option B: Real Farm Setup
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { step = 1 },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                        ) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Icon(Icons.Default.AddBusiness, contentDescription = null, tint = Color(0xFF00B4D8), modifier = Modifier.size(20.dp))
+                                    Text("Start Fresh with My Real Farm", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                }
+                                Text(
+                                    "Starts with an empty herd (0 pigs). Continue to enter your farm profile name, Kenya county location, and initial housing pens.",
+                                    color = Color(0xFF8B949E),
+                                    fontSize = 12.sp,
+                                    lineHeight = 17.sp
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                OutlinedButton(
+                                    onClick = { step = 1 },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    border = BorderStroke(1.dp, Color(0xFF00B4D8)),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text("Set Up My Farm Profile →", color = Color(0xFF00B4D8), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
                     }
                 }
                 1 -> {
