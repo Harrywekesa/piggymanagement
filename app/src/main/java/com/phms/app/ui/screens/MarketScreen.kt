@@ -243,7 +243,82 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
         var subCounty by remember { mutableStateOf("Nyali") }
         var ward by remember { mutableStateOf("Frere Town") }
         var notes by remember { mutableStateOf("") }
-        var shareToAllFarmers by remember { mutableStateOf(true) } // default ON — encourage sharing
+        var shareToAllFarmers by remember { mutableStateOf(false) } // default OFF — require explicit consent
+        var showConsentDialog by remember { mutableStateOf(false) }
+
+        // ── Sharing consent dialog ────────────────────────────────────────────
+        if (showConsentDialog) {
+            AlertDialog(
+                onDismissRequest = { showConsentDialog = false },
+                containerColor = Color(0xFF161B22),
+                icon = {
+                    Icon(
+                        Icons.Default.Public,
+                        contentDescription = null,
+                        tint = Color(0xFF00B4D8),
+                        modifier = Modifier.size(32.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        "Share to National Directory",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2137)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                "By enabling this, the buyer's name, phone number, and location will be published to a shared directory visible to ALL pig farmers using this app across Kenya.",
+                                color = Color(0xFF90CAF9),
+                                fontSize = 13.sp,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                        Text(
+                            "This helps farmers across Kenya discover trusted pig buyers. Only share buyers you have personally dealt with.",
+                            color = Color(0xFF8B949E),
+                            fontSize = 12.sp
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.Info, null, tint = Color(0xFF6E7681), modifier = Modifier.size(14.dp))
+                            Text(
+                                "You can turn this off to keep the buyer private to your phone only.",
+                                color = Color(0xFF6E7681),
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            shareToAllFarmers = true
+                            showConsentDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B4D8))
+                    ) {
+                        Text("Yes, Share to Directory", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = {
+                            shareToAllFarmers = false
+                            showConsentDialog = false
+                        },
+                        border = BorderStroke(1.dp, Color(0xFF30363D))
+                    ) {
+                        Text("Keep Private", color = Color(0xFF8B949E))
+                    }
+                }
+            )
+        }
 
         AlertDialog(
             onDismissRequest = { showAddBuyerDialog = false },
@@ -331,7 +406,15 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                             }
                             Switch(
                                 checked = shareToAllFarmers,
-                                onCheckedChange = { shareToAllFarmers = it },
+                                onCheckedChange = { newValue ->
+                                    if (newValue) {
+                                        // Show consent dialog before enabling sharing
+                                        showConsentDialog = true
+                                    } else {
+                                        // Turning off — no consent needed
+                                        shareToAllFarmers = false
+                                    }
+                                },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
                                     checkedTrackColor = Color(0xFF00B4D8)

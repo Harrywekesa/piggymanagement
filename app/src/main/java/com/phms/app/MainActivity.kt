@@ -111,13 +111,26 @@ fun PHMSApp(viewModel: MainViewModel) {
                     alertCount = criticalAlertCount,
                     onItemClick = { item ->
                         val target = item.route
-                        if (target != currentRoute) {
-                            navController.navigate(target) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                        val isOnMoreSubRoute = currentRoute in MORE_SUB_ROUTES
+                        when {
+                            // Already on this exact route — do nothing
+                            target == currentRoute -> { /* no-op */ }
+
+                            // Tapping More while inside a More sub-screen (Settings/Health/etc.)
+                            // → just pop back to the More card grid, don't restore state
+                            target == "more" && isOnMoreSubRoute -> {
+                                navController.popBackStack("more", inclusive = false)
+                            }
+
+                            // Normal top-level tab switch
+                            else -> {
+                                navController.navigate(target) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
                         }
                     }
