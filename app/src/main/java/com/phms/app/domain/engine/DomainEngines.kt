@@ -87,16 +87,19 @@ class PromotionEngine(
             val weightReady = latestWeight >= nextStage.min_weight_kg
 
             if (ageReady || weightReady) {
-                // Generate promotion alert
-                alertDao.insertAlert(
-                    AlertEntity(
-                        type = "Promotion Ready",
-                        priority = "Medium",
-                        related_pig_id = pig.id,
-                        message = "Pig Tag #${pig.tag_number} is ready for promotion from ${currentStage.name} to ${nextStage.name} (Weight: ${latestWeight}kg, Age: ${ageWeeks}w).",
-                        created_date = currentTimeMs
+                // Deduplicate: Don't insert if active promotion alert already exists for this pig
+                val existingAlert = alertDao.getActiveAlertForPig("Promotion Ready", pig.id)
+                if (existingAlert == null) {
+                    alertDao.insertAlert(
+                        AlertEntity(
+                            type = "Promotion Ready",
+                            priority = "Medium",
+                            related_pig_id = pig.id,
+                            message = "Pig Tag #${pig.tag_number} is ready for promotion from ${currentStage.name} to ${nextStage.name} (Weight: ${latestWeight}kg, Age: ${ageWeeks}w).",
+                            created_date = currentTimeMs
+                        )
                     )
-                )
+                }
             }
         }
     }
@@ -173,15 +176,18 @@ class PromotionEngine(
         if (pig.current_stage_id < targetStageId) {
             promotePig(pigId, targetStageId, null, user = "System (Weight Auto)", notes = "Auto-promoted upon reaching ${weightKg}kg")
             if (targetStageId == 4L) {
-                alertDao.insertAlert(
-                    AlertEntity(
-                        type = "Market Ready",
-                        priority = "High",
-                        related_pig_id = pigId,
-                        message = "Pig #${pig.tag_number} reached ${weightKg}kg (Finisher stage) and is ready for market!",
-                        created_date = System.currentTimeMillis()
+                val existingAlert = alertDao.getActiveAlertForPig("Market Ready", pigId)
+                if (existingAlert == null) {
+                    alertDao.insertAlert(
+                        AlertEntity(
+                            type = "Market Ready",
+                            priority = "High",
+                            related_pig_id = pigId,
+                            message = "Pig #${pig.tag_number} reached ${weightKg}kg (Finisher stage) and is ready for market!",
+                            created_date = System.currentTimeMillis()
+                        )
                     )
-                )
+                }
             }
             return targetStageId
         }

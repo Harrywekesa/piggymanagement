@@ -313,6 +313,9 @@ interface BreedingDao {
     @Query("SELECT * FROM pregnancies WHERE status = 'Active' ORDER BY expected_farrowing_date ASC")
     fun getActivePregnancies(): Flow<List<PregnancyEntity>>
 
+    @Query("SELECT * FROM pregnancies WHERE status = 'Active' ORDER BY expected_farrowing_date ASC")
+    suspend fun getActivePregnanciesSync(): List<PregnancyEntity>
+
     @Query("SELECT * FROM pregnancies ORDER BY insemination_date DESC")
     suspend fun getAllPregnanciesSync(): List<PregnancyEntity>
 
@@ -402,6 +405,18 @@ interface AlertDao {
 
     @Query("SELECT * FROM alerts ORDER BY created_date DESC")
     suspend fun getAllAlertsSync(): List<AlertEntity>
+
+    @Query("SELECT * FROM alerts WHERE status = 'Active'")
+    suspend fun getActiveAlertsSync(): List<AlertEntity>
+
+    @Query("SELECT * FROM alerts WHERE type = :type AND related_pig_id = :pigId AND status = 'Active' LIMIT 1")
+    suspend fun getActiveAlertForPig(type: String, pigId: Long): AlertEntity?
+
+    @Query("SELECT * FROM alerts WHERE type = :type AND message = :message AND status = 'Active' LIMIT 1")
+    suspend fun getActiveAlertByTypeAndMessage(type: String, message: String): AlertEntity?
+
+    @Query("SELECT * FROM alerts WHERE type = :type AND message LIKE '%' || :keyword || '%' AND status = 'Active' LIMIT 1")
+    suspend fun getActiveAlertByKeyword(type: String, keyword: String): AlertEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAlert(alert: AlertEntity): Long
