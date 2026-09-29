@@ -420,7 +420,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
             title = { Text("Load Sample Demo Herd?", fontWeight = FontWeight.Bold) },
             text = {
                 Text(
-                    "This will populate your database with 35 realistic pigs across all stages (Piglets, Weaners, Growers, Finishers, Sows, Boars), 5 pens, breeding events, and feed records.\n\nIdeal for exploring app features or demonstrating at exhibitions.",
+                    "This will populate your database with 35 realistic pigs across all stages, 5 pens, breeding events, feed records, and the Kenya buyers directory.\n\nIdeal for exploring app features or demonstrating at exhibitions.",
                     color = Color(0xFFC9D1D9),
                     fontSize = 13.sp
                 )
@@ -455,7 +455,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
             title = { Text("Reset Farm to Empty?", fontWeight = FontWeight.Bold) },
             text = {
                 Text(
-                    "This will permanently delete all pigs, pens, feeding logs, health records, breeding events, and sales transactions.\n\nGrowth stages and community buyer contacts will remain.\n\nAre you sure you want to clear all farm records?",
+                    "This will permanently delete all pigs, pens, feeding logs, health records, breeding events, sales transactions, and the buyers directory.\n\nGrowth stages will remain.\n\nAre you sure you want to clear all farm records?",
                     color = Color(0xFFC9D1D9),
                     fontSize = 13.sp
                 )

@@ -1,6 +1,7 @@
 package com.phms.app.ui.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -135,7 +136,12 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
             when (selectedTab) {
                 0 -> { // Financials
                     item {
-                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                        Card(
+                            Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                        ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text("Profit & Loss Statement (${r?.periodLabel ?: selectedRange})", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 HorizontalDivider(color = Color(0xFF21262D))
@@ -163,7 +169,12 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                     } else {
                         items(filteredSales) { sale ->
                             val buyer = buyers.find { it.id == sale.buyer_id }
-                            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                            Card(
+                                Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                            ) {
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Column(Modifier.weight(1f)) {
                                         Text(buyer?.name ?: "Unknown Buyer", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
@@ -199,7 +210,12 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                         }
                     }
                     item {
-                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                        Card(
+                            Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                        ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Reproductive Output in Selected Period", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 HorizontalDivider(color = Color(0xFF21262D))
@@ -227,7 +243,12 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                         }
                     }
                     item {
-                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                        Card(
+                            Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                        ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Disease Prevalence Breakdown", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 HorizontalDivider(color = Color(0xFF21262D))
@@ -257,7 +278,12 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                         }
                     }
                     item {
-                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                        Card(
+                            Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                        ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Feed Consumption Summary", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 HorizontalDivider(color = Color(0xFF21262D))
@@ -269,7 +295,12 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                     }
                     item {
                         val activeHerdPigs by viewModel.activePigs.collectAsState()
-                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                        Card(
+                            Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                        ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text("Individual Pig ADG & FCR Performance Leaderboard", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 Text("Individual growth rate (ADG) & feed conversion ratio (FCR) per pig:", color = Color(0xFF8B949E), fontSize = 11.sp)
@@ -414,7 +445,8 @@ fun MetricCard(title: String, value: String, icon: ImageVector, accentColor: Col
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

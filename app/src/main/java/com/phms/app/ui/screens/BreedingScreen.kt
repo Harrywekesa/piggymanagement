@@ -132,7 +132,8 @@ fun BreedingScreen(viewModel: MainViewModel) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                border = BorderStroke(1.dp, Color(0xFF30363D))
                             ) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -205,7 +206,8 @@ fun BreedingScreen(viewModel: MainViewModel) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                border = BorderStroke(1.dp, Color(0xFF30363D))
                             ) {
                                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -255,7 +257,8 @@ fun BreedingScreen(viewModel: MainViewModel) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                border = BorderStroke(1.dp, Color(0xFF30363D))
                             ) {
                                 Row(Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -288,7 +291,8 @@ fun BreedingScreen(viewModel: MainViewModel) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                border = BorderStroke(1.dp, Color(0xFF30363D))
                             ) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

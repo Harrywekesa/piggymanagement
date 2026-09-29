@@ -90,7 +90,12 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
         }
         item { Text("Market-Ready Stock (${marketPigs.size})", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White) }
         items(marketPigs) { pig ->
-            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+            Card(
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                border = BorderStroke(1.dp, Color(0xFF30363D))
+            ) {
                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         Modifier.size(44.dp).clip(CircleShape).background(Color(0xFF21262D)),
@@ -163,7 +168,12 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
             }
         } else {
             items(filteredBuyers) { buyer ->
-                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                Card(
+                    Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                    border = BorderStroke(1.dp, Color(0xFF30363D))
+                ) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -210,7 +220,12 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
             item { Text("Recent Sales (${sales.size})", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White) }
             items(sales.take(10)) { sale ->
                 val buyer = buyers.find { it.id == sale.buyer_id }
-                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                Card(
+                    Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                    border = BorderStroke(1.dp, Color(0xFF30363D))
+                ) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Receipt, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(28.dp))
                         Spacer(Modifier.width(12.dp))

@@ -117,7 +117,7 @@ fun MoreScreen(navController: NavController) {
                         .clickable { navController.navigate(module.route) },
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                    border = BorderStroke(1.dp, Color(0xFF21262D))
+                    border = BorderStroke(1.dp, Color(0xFF30363D))
                 ) {
                     Column(
                         modifier = Modifier.padding(14.dp),

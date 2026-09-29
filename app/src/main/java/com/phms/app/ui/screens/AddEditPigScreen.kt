@@ -448,8 +448,9 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
 fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(title, color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)

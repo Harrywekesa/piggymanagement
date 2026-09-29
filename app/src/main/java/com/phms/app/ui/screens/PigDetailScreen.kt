@@ -457,7 +457,8 @@ fun InfoSection(title: String, content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(title, color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 13.sp)
@@ -487,7 +488,8 @@ fun HealthEventRow(event: HealthEventEntity, dateFormat: SimpleDateFormat) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -554,7 +556,8 @@ fun StageHistoryRow(history: PigStageHistoryEntity, stageMap: Map<Long, GrowthSt
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.TrendingUp, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(28.dp))
@@ -596,7 +599,8 @@ fun StatCard(label: String, value: String, icon: ImageVector, modifier: Modifier
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
     ) {
         Column(
             modifier = Modifier.padding(12.dp),

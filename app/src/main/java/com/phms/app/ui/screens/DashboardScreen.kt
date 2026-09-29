@@ -85,7 +85,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                 }
             }
         }
-        // KPI CARDS
+        // HERO SECTION HEADER
         item {
             Row(
                 Modifier.fillMaxWidth(),
@@ -105,44 +105,143 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                 }
             }
         }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DashKpiCard("Total Herd", "${pigs.size}", "Active Pigs", Icons.Default.Pets, Color(0xFF4CAF50), Modifier.weight(1f))
-                DashKpiCard("Market Ready", "$marketReadyCount", "90kg+ Target", Icons.Default.ShoppingCart, Color(0xFFFFB300), Modifier.weight(1f))
-            }
-        }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DashKpiCard(
-                    "Active Alerts", "${alerts.size}", "Action Required",
-                    Icons.Default.Notifications,
-                    if (alerts.isNotEmpty()) Color(0xFFFF5252) else Color(0xFF4CAF50),
-                    Modifier.weight(1f)
-                )
-                DashKpiCard(
-                    "Est. Net Profit", "KSh ${pnl?.netProfit?.toInt() ?: 0}",
-                    "30-Day", Icons.AutoMirrored.Filled.TrendingUp, Color(0xFF4CAF50), Modifier.weight(1f)
-                )
-            }
-        }
+
+        // ── 1. DOMINANT HERO CARD (Herd Overview & Key Metrics) ───────────────
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                border = BorderStroke(1.5.dp, Color(0xFF2E7D32))
             ) {
-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Top Hero Row: Icon Badge, Big Number, and Quick Add Action
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFF1A3E22)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Pets,
+                                    contentDescription = null,
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                            Column {
+                                Text("Total Active Herd", color = Color(0xFF8B949E), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("${pigs.size}", fontSize = 38.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text("pigs", fontSize = 15.sp, color = Color(0xFF4CAF50), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                                }
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = { navController.navigate("add_edit_pig/-1") },
+                            border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Add Pig", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    HorizontalDivider(color = Color(0xFF21262D))
+
+                    // Embedded Sub-Metrics Row with clear card outlines
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        HeroSubMetricCard(
+                            label = "Market Ready",
+                            value = "$marketReadyCount",
+                            subtitle = "90kg+ Target",
+                            icon = Icons.Default.ShoppingCart,
+                            iconTint = Color(0xFFFFB74D),
+                            iconBg = Color(0xFF3E2D1A),
+                            modifier = Modifier.weight(1f),
+                            onClick = { navController.navigate("market") }
+                        )
+
+                        HeroSubMetricCard(
+                            label = "Active Alerts",
+                            value = "${alerts.size}",
+                            subtitle = if (alerts.isNotEmpty()) "Action needed" else "All clear",
+                            icon = Icons.Default.Notifications,
+                            iconTint = if (alerts.isNotEmpty()) Color(0xFFFF5252) else Color(0xFF81C784),
+                            iconBg = if (alerts.isNotEmpty()) Color(0xFF3E1A1A) else Color(0xFF1A3E22),
+                            modifier = Modifier.weight(1f),
+                            onClick = { navController.navigate("alerts") }
+                        )
+
+                        HeroSubMetricCard(
+                            label = "30-Day Net",
+                            value = "KSh ${(pnl?.netProfit ?: 0.0).toInt()}",
+                            subtitle = if ((pnl?.netProfit ?: 0.0) >= 0) "Profitable" else "Deficit",
+                            icon = Icons.AutoMirrored.Filled.TrendingUp,
+                            iconTint = if ((pnl?.netProfit ?: 0.0) >= 0) Color(0xFF81C784) else Color(0xFFE57373),
+                            iconBg = Color(0xFF1A2B3E),
+                            modifier = Modifier.weight(1f),
+                            onClick = { navController.navigate("reports") }
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── 2. FINANCIAL P&L CARD (Clear Outline) ──────────────────────────────
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                border = BorderStroke(1.dp, Color(0xFF30363D))
+            ) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(18.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF1A3E22)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(18.dp))
+                            }
                             Text("30-Day Financial P&L", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
                         }
-                        Text(
-                            "Net: KSh ${pnl?.netProfit?.toInt() ?: 0}",
-                            fontWeight = FontWeight.Bold,
-                            color = if ((pnl?.netProfit ?: 0.0) >= 0) Color(0xFF81C784) else Color(0xFFE57373),
-                            fontSize = 14.sp
-                        )
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if ((pnl?.netProfit ?: 0.0) >= 0) Color(0xFF1B3E22) else Color(0xFF3E1A1A),
+                            border = BorderStroke(1.dp, if ((pnl?.netProfit ?: 0.0) >= 0) Color(0xFF2E7D32) else Color(0xFF8C1D1D))
+                        ) {
+                            Text(
+                                "Net: KSh ${pnl?.netProfit?.toInt() ?: 0}",
+                                fontWeight = FontWeight.Bold,
+                                color = if ((pnl?.netProfit ?: 0.0) >= 0) Color(0xFF81C784) else Color(0xFFE57373),
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
                     HorizontalDivider(color = Color(0xFF21262D))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -159,22 +258,22 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
             }
         }
 
-        // QUICK ACTIONS
+        // ── 3. QUICK ACTIONS (Module Card Design with Outlines) ────────────────
         item {
-            Text("Quick Actions", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Quick Actions", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DashQuickAction("Pigs", Icons.Default.Pets, { navController.navigate("pigs") }, Modifier.weight(1f))
-                DashQuickAction("Feed", Icons.Default.Grass, { navController.navigate("feed") }, Modifier.weight(1f))
-                DashQuickAction("Health", Icons.Default.LocalHospital, { navController.navigate("health") }, Modifier.weight(1f))
-                DashQuickAction("Market", Icons.Default.ShoppingCart, { navController.navigate("market") }, Modifier.weight(1f))
+                DashQuickAction("Pigs", Icons.Default.Pets, Color(0xFF81C784), Color(0xFF1A3E22), { navController.navigate("pigs") }, Modifier.weight(1f))
+                DashQuickAction("Feed", Icons.Default.Grass, Color(0xFFFFD54F), Color(0xFF3E3A1A), { navController.navigate("feed") }, Modifier.weight(1f))
+                DashQuickAction("Health", Icons.Default.LocalHospital, Color(0xFFE57373), Color(0xFF3E1A1A), { navController.navigate("health") }, Modifier.weight(1f))
+                DashQuickAction("Market", Icons.Default.ShoppingCart, Color(0xFFFFB74D), Color(0xFF3E2D1A), { navController.navigate("market") }, Modifier.weight(1f))
             }
         }
 
-        // ALERTS PREVIEW
+        // ── 4. ALERTS PREVIEW ──────────────────────────────────────────────────
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Recent Alerts (${alerts.size})", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Recent Alerts (${alerts.size})", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 TextButton(onClick = { navController.navigate("alerts") }) {
                     Text("View All", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
                 }
@@ -182,7 +281,12 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
         }
         if (alerts.isEmpty()) {
             item {
-                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                    border = BorderStroke(1.dp, Color(0xFF30363D))
+                ) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50))
                         Text("All caught up! No active alerts.", color = Color(0xFF8B949E))
@@ -195,15 +299,15 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
             }
         }
 
-        // RECENT PIGS PREVIEW
-        item { Text("Recent Pigs", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White) }
+        // ── 5. RECENT PIGS PREVIEW ─────────────────────────────────────────────
+        item { Text("Recent Pigs", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White) }
         items(pigs.take(3)) { pig ->
             CompactPigRow(pig = pig, onClick = { navController.navigate("pig_detail/${pig.id}") })
         }
         if (pigs.isNotEmpty()) {
             item {
                 TextButton(onClick = { navController.navigate("pigs") }, modifier = Modifier.fillMaxWidth()) {
-                    Text("View All ${pigs.size} Pigs →", color = Color(0xFF4CAF50))
+                    Text("View All ${pigs.size} Pigs →", color = Color(0xFF4CAF50), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -212,28 +316,58 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
 }
 
 @Composable
-fun DashKpiCard(title: String, value: String, subtitle: String, icon: ImageVector, color: Color, modifier: Modifier = Modifier) {
+fun HeroSubMetricCard(
+    label: String,
+    value: String,
+    subtitle: String,
+    icon: ImageVector,
+    iconTint: Color,
+    iconBg: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
+) {
     Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+        modifier = modifier.clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1117)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.height(8.dp))
-            Text(value, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = color)
-            Text(title, fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Medium)
-            Text(subtitle, fontSize = 11.sp, color = Color(0xFF6E7681))
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(iconBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
+            }
+            Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1)
+            Column {
+                Text(label, fontSize = 11.sp, color = Color(0xFFC9D1D9), fontWeight = FontWeight.Medium, maxLines = 1)
+                Text(subtitle, fontSize = 9.sp, color = Color(0xFF8B949E), maxLines = 1)
+            }
         }
     }
 }
 
 @Composable
-fun DashQuickAction(label: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun DashQuickAction(
+    label: String,
+    icon: ImageVector,
+    iconTint: Color,
+    iconBg: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Card(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
     ) {
         Column(
             modifier = Modifier.padding(10.dp).fillMaxWidth(),
@@ -241,12 +375,15 @@ fun DashQuickAction(label: String, icon: ImageVector, onClick: () -> Unit, modif
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Box(
-                modifier = Modifier.size(38.dp).clip(CircleShape).background(Color(0xFF1B5E20)),
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
             }
-            Text(label, fontSize = 11.sp, color = Color(0xFFE6EDF3), fontWeight = FontWeight.Medium)
+            Text(label, fontSize = 12.sp, color = Color(0xFFE6EDF3), fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -255,10 +392,11 @@ fun DashQuickAction(label: String, icon: ImageVector, onClick: () -> Unit, modif
 fun CompactPigRow(pig: PigEntity, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
     ) {
-        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
                 modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF21262D)),
                 contentAlignment = Alignment.Center
@@ -273,7 +411,34 @@ fun CompactPigRow(pig: PigEntity, onClick: () -> Unit) {
                 Text("#${pig.tag_number}", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 Text("${pig.breed} • ${if (pig.sex == "M") "Boar" else "Sow"}", color = Color(0xFF8B949E), fontSize = 11.sp)
             }
-            Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF30363D), modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF8B949E), modifier = Modifier.size(18.dp))
         }
     }
 }
+
+@Composable
+fun DashKpiCard(title: String, value: String, subtitle: String, icon: ImageVector, color: Color, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = color)
+            Text(title, fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Medium)
+            Text(subtitle, fontSize = 11.sp, color = Color(0xFF6E7681))
+        }
+    }
+}
+

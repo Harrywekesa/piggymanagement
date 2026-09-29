@@ -349,7 +349,7 @@ fun HelpCenterScreen(
                                 .clickable { expandedFaqId = if (isExpanded) null else faq.id },
                             shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                            border = if (isExpanded) BorderStroke(1.dp, Color(0xFF4CAF50)) else null
+                            border = if (isExpanded) BorderStroke(1.dp, Color(0xFF4CAF50)) else BorderStroke(1.dp, Color(0xFF30363D))
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
                                 Row(

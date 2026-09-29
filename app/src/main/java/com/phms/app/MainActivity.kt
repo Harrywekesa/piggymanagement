@@ -121,6 +121,19 @@ fun PHMSApp(viewModel: MainViewModel) {
                             // Already on this exact route — do nothing
                             target == currentRoute -> { /* no-op */ }
 
+                            // Tapping Dashboard / Home from ANY other screen: pop straight back to root!
+                            target == "dashboard" -> {
+                                val popped = navController.popBackStack("dashboard", inclusive = false)
+                                if (!popped) {
+                                    navController.navigate("dashboard") {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            inclusive = false
+                                        }
+                                        launchSingleTop = true
+                                    }
+                                }
+                            }
+
                             // Tapping More while on ANY sub-route under More (Help Center, Settings, Health, etc.)
                             target == "more" && isMoreSubRoute(currentRoute) -> {
                                 navController.popBackStack("more", inclusive = false)

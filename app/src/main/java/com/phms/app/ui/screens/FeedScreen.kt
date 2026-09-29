@@ -128,7 +128,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                            border = if (isLow) BorderStroke(1.dp, Color(0xFFFF5252)) else null
+                            border = if (isLow) BorderStroke(1.dp, Color(0xFFFF5252)) else BorderStroke(1.dp, Color(0xFF30363D))
                         ) {
                             Column(Modifier.padding(14.dp)) {
                                 Row(
@@ -194,7 +194,8 @@ fun FeedScreen(viewModel: MainViewModel) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            border = BorderStroke(1.dp, Color(0xFF30363D))
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text("Balanced Feed Formulation", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -350,7 +351,8 @@ fun FeedScreen(viewModel: MainViewModel) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                border = BorderStroke(1.dp, Color(0xFF30363D))
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

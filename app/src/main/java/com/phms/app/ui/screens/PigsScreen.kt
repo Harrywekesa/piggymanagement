@@ -157,7 +157,9 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                border = BorderStroke(1.dp, Color(0xFF30363D))
                             ) {
                                 Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(Icons.Default.Home, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(48.dp))
@@ -350,7 +352,8 @@ fun PigListCard(pig: PigEntity, stageName: String, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
     ) {
         Row(
             modifier = Modifier.padding(12.dp),

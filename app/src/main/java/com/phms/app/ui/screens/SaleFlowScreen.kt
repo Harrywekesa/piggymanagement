@@ -1,5 +1,6 @@
 package com.phms.app.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -124,7 +125,8 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                             item {
                                 Card(
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                    border = BorderStroke(1.dp, Color(0xFF30363D))
                                 ) {
                                     Column(Modifier.padding(16.dp)) {
                                         OutlinedTextField(
@@ -174,7 +176,8 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                         item {
                             Card(
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                border = BorderStroke(1.dp, Color(0xFF30363D))
                             ) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     OutlinedTextField(
@@ -244,7 +247,8 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                             item {
                                 Card(
                                     shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                    border = BorderStroke(1.dp, Color(0xFF30363D))
                                 ) {
                                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                         Text("New Buyer", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
@@ -324,7 +328,8 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                         item {
                             Card(
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                border = BorderStroke(1.dp, Color(0xFF30363D))
                             ) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     ConfirmRow("Pigs to Sell", "${selectedPigIds.size} pigs")
@@ -487,9 +492,7 @@ fun SalePigCard(pig: PigEntity, isSelected: Boolean, onToggle: () -> Unit) {
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) Color(0xFF1B3A1B) else Color(0xFF161B22)
         ),
-        border = if (isSelected) CardDefaults.outlinedCardBorder().copy(
-            brush = androidx.compose.ui.graphics.SolidColor(Color(0xFF4CAF50))
-        ) else null
+        border = if (isSelected) BorderStroke(1.dp, Color(0xFF4CAF50)) else BorderStroke(1.dp, Color(0xFF30363D))
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -529,7 +532,8 @@ fun BuyerSelectCard(buyer: BuyerEntity, isSelected: Boolean, onClick: () -> Unit
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) Color(0xFF1B3A1B) else Color(0xFF161B22)
-        )
+        ),
+        border = if (isSelected) BorderStroke(1.dp, Color(0xFF4CAF50)) else BorderStroke(1.dp, Color(0xFF30363D))
     ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(

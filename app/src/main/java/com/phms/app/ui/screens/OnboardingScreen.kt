@@ -282,7 +282,8 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
 
                         Card(
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            border = BorderStroke(1.dp, Color(0xFF30363D))
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 FormField("Farm Name *", farmName, { farmName = it }, placeholder = "e.g. Wekesa Commercial Pig Farm")
@@ -317,7 +318,8 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
 
                         Card(
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22))
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            border = BorderStroke(1.dp, Color(0xFF30363D))
                         ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text("Selected Farm Pens (${selectedPens.size})", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
