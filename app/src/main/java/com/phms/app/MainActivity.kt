@@ -57,7 +57,12 @@ val primaryNavItems = listOf(
     NavItem("more", "More", Icons.Default.GridView)
 )
 
-val MORE_SUB_ROUTES = setOf("health", "breeding", "market", "reports", "settings", "help_center")
+val MORE_SUB_ROUTES = setOf("health", "breeding", "market", "reports", "settings", "sale_flow")
+
+fun isMoreSubRoute(route: String?): Boolean {
+    if (route == null) return false
+    return route in MORE_SUB_ROUTES || route.startsWith("help_center")
+}
 
 val TOP_LEVEL_ROUTES = setOf(
     "dashboard", "pigs", "alerts", "feed", "more",
@@ -70,7 +75,7 @@ fun PHMSApp(viewModel: MainViewModel) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val isOnboarded by viewModel.isOnboarded.collectAsState(initial = true)
+    val isOnboarded by viewModel.isOnboarded.collectAsState(initial = viewModel.isOnboarded.value)
     val farmSettings by viewModel.farmSettings.collectAsState()
     val activePigs by viewModel.activePigs.collectAsState()
     val activeAlerts by viewModel.activeAlerts.collectAsState()
@@ -88,10 +93,11 @@ fun PHMSApp(viewModel: MainViewModel) {
     // Routes where bottom nav should show
     val showBottomBar = currentRoute != null && (
             currentRoute in TOP_LEVEL_ROUTES ||
-            TOP_LEVEL_ROUTES.any { currentRoute.startsWith(it) }
+            TOP_LEVEL_ROUTES.any { currentRoute.startsWith(it) } ||
+            isMoreSubRoute(currentRoute)
     )
     val showHeader = currentRoute != null && currentRoute != "onboarding" && !currentRoute.startsWith("pig_detail") &&
-            !currentRoute.startsWith("add_edit_pig") && !currentRoute.startsWith("sale_flow") && currentRoute != "help_center"
+            !currentRoute.startsWith("add_edit_pig") && !currentRoute.startsWith("sale_flow") && !currentRoute.startsWith("help_center")
 
     Scaffold(
         containerColor = Color(0xFF0D1117),
@@ -111,15 +117,26 @@ fun PHMSApp(viewModel: MainViewModel) {
                     alertCount = criticalAlertCount,
                     onItemClick = { item ->
                         val target = item.route
-                        val isOnMoreSubRoute = currentRoute in MORE_SUB_ROUTES
                         when {
                             // Already on this exact route — do nothing
                             target == currentRoute -> { /* no-op */ }
 
-                            // Tapping More while inside a More sub-screen (Settings/Health/etc.)
-                            // → just pop back to the More card grid, don't restore state
-                            target == "more" && isOnMoreSubRoute -> {
+                            // Tapping More while on ANY sub-route under More (Help Center, Settings, Health, etc.)
+                            target == "more" && isMoreSubRoute(currentRoute) -> {
                                 navController.popBackStack("more", inclusive = false)
+                            }
+
+                            // Tapping More from anywhere else (e.g. Dashboard, Pigs, Alerts, Feed)
+                            target == "more" -> {
+                                val popped = navController.popBackStack("more", inclusive = false)
+                                if (!popped) {
+                                    navController.navigate("more") {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                    }
+                                }
                             }
 
                             // Normal top-level tab switch
@@ -267,7 +284,7 @@ fun PHMSBottomNav(
     ) {
         primaryNavItems.forEach { item ->
             val selected = when (item.route) {
-                "more" -> currentRoute == "more" || currentRoute in MORE_SUB_ROUTES
+                "more" -> currentRoute == "more" || isMoreSubRoute(currentRoute)
                 else -> currentRoute == item.route || currentRoute?.startsWith(item.route + "/") == true
             }
             NavigationBarItem(

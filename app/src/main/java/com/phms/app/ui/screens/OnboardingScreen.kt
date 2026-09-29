@@ -100,8 +100,12 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                     showTourOnFirstOpen = false
                                 )
                             )
+                            defaultPenPresets.take(3).forEach { (penName, capacity) ->
+                                viewModel.createPen(name = penName, capacity = capacity, notes = "Default setup")
+                            }
                             navController.navigate("dashboard") {
-                                popUpTo("onboarding") { inclusive = true }
+                                popUpTo(0) { inclusive = true }
+                                launchSingleTop = true
                             }
                         },
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
@@ -133,7 +137,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                 .border(2.dp, Color(0xFF4CAF50), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("🐖", fontSize = 44.sp)
+                            Icon(Icons.Default.Pets, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(44.dp))
                         }
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -162,7 +166,8 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                             )
                                         )
                                         navController.navigate("dashboard") {
-                                            popUpTo("onboarding") { inclusive = true }
+                                            popUpTo(0) { inclusive = true }
+                                            launchSingleTop = true
                                         }
                                     }
                                 },
@@ -208,7 +213,8 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                                 )
                                             )
                                             navController.navigate("dashboard") {
-                                                popUpTo("onboarding") { inclusive = true }
+                                                popUpTo(0) { inclusive = true }
+                                                launchSingleTop = true
                                             }
                                         }
                                     },
@@ -415,7 +421,8 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                             viewModel.createPen(name = penName, capacity = capacity, notes = "Configured during farm onboarding")
                         }
                         navController.navigate("dashboard") {
-                            popUpTo("onboarding") { inclusive = true }
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
                         }
                     }
                 },
@@ -423,7 +430,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                 shape = RoundedCornerShape(12.dp),
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
             ) {
-                Text(if (step < 2) "Next →" else "Complete Setup 🎉", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(if (step < 2) "Next →" else "Complete Setup", fontSize = 15.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
