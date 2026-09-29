@@ -312,7 +312,7 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                         ) {
                             Column(Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text("🌍", fontSize = 16.sp)
+                                    Icon(Icons.Default.Public, contentDescription = null, tint = if (shareToAllFarmers) Color(0xFF00B4D8) else Color(0xFF8B949E), modifier = Modifier.size(16.dp))
                                     Text(
                                         "Share with ALL farmers in Kenya",
                                         color = if (shareToAllFarmers) Color(0xFF00B4D8) else Color(0xFF8B949E),
@@ -362,7 +362,7 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                         )
                         showAddBuyerDialog = false
                         val msg = if (shareToAllFarmers)
-                            "Buyer saved and shared with all farmers in Kenya! 🌍"
+                            "Buyer saved and shared with all farmers in Kenya!"
                         else
                             "Buyer registered on your phone only."
                         Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
@@ -370,7 +370,12 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(if (shareToAllFarmers) "Save & Share 🌍" else "Save Buyer")
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (shareToAllFarmers) {
+                            Icon(Icons.Default.Public, contentDescription = null, modifier = Modifier.size(14.dp))
+                        }
+                        Text(if (shareToAllFarmers) "Save & Share" else "Save Buyer")
+                    }
                 }
             },
             dismissButton = {
