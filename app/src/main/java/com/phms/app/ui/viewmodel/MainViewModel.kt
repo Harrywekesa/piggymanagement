@@ -12,6 +12,7 @@ import com.phms.app.data.repository.SettingsRepository
 import com.phms.app.domain.calculator.PnLCalculator
 import com.phms.app.domain.calculator.PnLSummary
 import com.phms.app.domain.engine.WithdrawalTracker
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -116,7 +117,7 @@ class MainViewModel(
     }
 
     fun loadPnL(startDateMs: Long? = null) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val now = System.currentTimeMillis()
             val from = startDateMs ?: (now - TimeUnit.DAYS.toMillis(30))
             _pnlSummary.value = PnLCalculator.computePnL(
@@ -552,7 +553,7 @@ class MainViewModel(
     // ── Breeding & Reproduction ──────────────────────────────────────────────
 
     fun loadFarrowingRecords() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _farrowingRecords.value = repository.breedingDao.getAllFarrowingRecordsSync()
         }
     }

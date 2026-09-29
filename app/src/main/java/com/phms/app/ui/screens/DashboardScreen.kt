@@ -44,7 +44,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
     val pnl by viewModel.pnlSummary.collectAsState()
     val updateInfo by viewModel.appUpdateInfo.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
-    val marketReadyCount = pigs.count { it.current_stage_id == 5L }
+    val marketReadyCount = remember(pigs) { pigs.count { it.current_stage_id == 5L } }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -138,7 +138,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                             Text("30-Day Financial P&L", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
                         }
                         Text(
-                            "Net: KSh ${String.format("%.0f", pnl?.netProfit ?: 0.0)}",
+                            "Net: KSh ${pnl?.netProfit?.toInt() ?: 0}",
                             fontWeight = FontWeight.Bold,
                             color = if ((pnl?.netProfit ?: 0.0) >= 0) Color(0xFF81C784) else Color(0xFFE57373),
                             fontSize = 14.sp
@@ -147,12 +147,12 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                     HorizontalDivider(color = Color(0xFF21262D))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
-                            Text("Revenue: KSh ${String.format("%.0f", pnl?.totalRevenue ?: 0.0)}", color = Color(0xFF81C784), fontSize = 11.sp)
-                            Text("Feed: KSh ${String.format("%.0f", pnl?.feedCost ?: 0.0)}", color = Color(0xFFE57373), fontSize = 11.sp)
+                            Text("Revenue: KSh ${pnl?.totalRevenue?.toInt() ?: 0}", color = Color(0xFF81C784), fontSize = 11.sp)
+                            Text("Feed: KSh ${pnl?.feedCost?.toInt() ?: 0}", color = Color(0xFFE57373), fontSize = 11.sp)
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("Health: KSh ${String.format("%.0f", pnl?.healthCost ?: 0.0)}", color = Color(0xFFE57373), fontSize = 11.sp)
-                            Text("Overheads: KSh ${String.format("%.0f", pnl?.otherExpensesCost ?: 0.0)}", color = Color(0xFFE57373), fontSize = 11.sp)
+                            Text("Health: KSh ${pnl?.healthCost?.toInt() ?: 0}", color = Color(0xFFE57373), fontSize = 11.sp)
+                            Text("Overheads: KSh ${pnl?.otherExpensesCost?.toInt() ?: 0}", color = Color(0xFFE57373), fontSize = 11.sp)
                         }
                     }
                 }

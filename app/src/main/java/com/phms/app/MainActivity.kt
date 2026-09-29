@@ -57,6 +57,13 @@ val primaryNavItems = listOf(
     NavItem("more", "More", Icons.Default.GridView)
 )
 
+val MORE_SUB_ROUTES = setOf("health", "breeding", "market", "reports", "settings", "help_center")
+
+val TOP_LEVEL_ROUTES = setOf(
+    "dashboard", "pigs", "alerts", "feed", "more",
+    "health", "breeding", "market", "reports", "settings", "help_center"
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PHMSApp(viewModel: MainViewModel) {
@@ -68,8 +75,7 @@ fun PHMSApp(viewModel: MainViewModel) {
     val activePigs by viewModel.activePigs.collectAsState()
     val activeAlerts by viewModel.activeAlerts.collectAsState()
 
-    var showMoreSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val criticalAlertCount = remember(activeAlerts) { activeAlerts.count { it.priority == "Critical" } }
 
     // Auto-launch Guided Tour on first launch after onboarding
     LaunchedEffect(isOnboarded, farmSettings.showTourOnFirstOpen) {
@@ -80,10 +86,10 @@ fun PHMSApp(viewModel: MainViewModel) {
     }
 
     // Routes where bottom nav should show
-    val topLevelRoutes = primaryNavItems.map { it.route } +
-            listOf("health", "breeding", "market", "reports", "settings", "help_center")
-    val showBottomBar = currentRoute in topLevelRoutes ||
-            topLevelRoutes.any { currentRoute?.startsWith(it) == true }
+    val showBottomBar = currentRoute != null && (
+            currentRoute in TOP_LEVEL_ROUTES ||
+            TOP_LEVEL_ROUTES.any { currentRoute.startsWith(it) }
+    )
     val showHeader = currentRoute != null && currentRoute != "onboarding" && !currentRoute.startsWith("pig_detail") &&
             !currentRoute.startsWith("add_edit_pig") && !currentRoute.startsWith("sale_flow") && currentRoute != "help_center"
 
@@ -102,14 +108,14 @@ fun PHMSApp(viewModel: MainViewModel) {
             if (showBottomBar) {
                 PHMSBottomNav(
                     currentRoute = currentRoute,
-                    alertCount = activeAlerts.count { it.priority == "Critical" },
+                    alertCount = criticalAlertCount,
                     onItemClick = { item ->
-                        showMoreSheet = false
-                        if (item.route == "more") {
-                            showMoreSheet = true
-                        } else {
-                            navController.navigate(item.route) {
-                                popUpTo("dashboard") { saveState = true }
+                        val target = item.route
+                        if (target != currentRoute) {
+                            navController.navigate(target) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -129,6 +135,7 @@ fun PHMSApp(viewModel: MainViewModel) {
             composable("pigs") { PigsScreen(viewModel, navController) }
             composable("alerts") { AlertsScreen(viewModel) }
             composable("feed") { FeedScreen(viewModel) }
+            composable("more") { MoreScreen(navController) }
             composable("health") { HealthScreen(viewModel) }
             composable("breeding") { BreedingScreen(viewModel) }
             composable("market") {
@@ -160,26 +167,6 @@ fun PHMSApp(viewModel: MainViewModel) {
             composable("sale_flow") {
                 SaleFlowScreen(viewModel = viewModel, navController = navController)
             }
-        }
-    }
-
-    if (showMoreSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showMoreSheet = false },
-            sheetState = sheetState,
-            containerColor = Color(0xFF161B22),
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-        ) {
-            MoreMenuSheet(
-                onNavigate = { route ->
-                    showMoreSheet = false
-                    navController.navigate(route) {
-                        popUpTo("dashboard") { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
         }
     }
 }
@@ -267,8 +254,8 @@ fun PHMSBottomNav(
     ) {
         primaryNavItems.forEach { item ->
             val selected = when (item.route) {
-                "more" -> currentRoute in listOf("health", "breeding", "market", "reports", "settings", "help_center")
-                else -> currentRoute?.startsWith(item.route) == true
+                "more" -> currentRoute == "more" || currentRoute in MORE_SUB_ROUTES
+                else -> currentRoute == item.route || currentRoute?.startsWith(item.route + "/") == true
             }
             NavigationBarItem(
                 selected = selected,
@@ -302,50 +289,5 @@ fun PHMSBottomNav(
                 )
             )
         }
-    }
-}
-
-@Composable
-fun MoreMenuSheet(onNavigate: (String) -> Unit) {
-    val moreItems = listOf(
-        Triple("dashboard", Icons.Default.Home, "Dashboard Overview"),
-        Triple("pigs", Icons.Default.Pets, "Pigs & Herd Directory"),
-        Triple("health", Icons.Default.LocalHospital, "Health & Vet"),
-        Triple("breeding", Icons.Default.Favorite, "Breeding"),
-        Triple("market", Icons.Default.ShoppingCart, "Market & Sales"),
-        Triple("reports", Icons.Default.BarChart, "Reports"),
-        Triple("settings", Icons.Default.Settings, "Settings"),
-        Triple("help_center", Icons.Default.HelpOutline, "Help Center & Tour 🧭")
-    )
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            "More Modules",
-            color = Color(0xFFE6EDF3),
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        moreItems.forEach { (route, icon, label) ->
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFF21262D),
-                onClick = { onNavigate(route) }
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Icon(icon, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(24.dp))
-                    Text(label, color = Color(0xFFE6EDF3), fontSize = 16.sp)
-                    Spacer(Modifier.weight(1f))
-                    Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF6E7681), modifier = Modifier.size(20.dp))
-                }
-            }
-        }
-        Spacer(Modifier.height(16.dp))
     }
 }
