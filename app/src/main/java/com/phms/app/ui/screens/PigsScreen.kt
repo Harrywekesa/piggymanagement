@@ -66,12 +66,12 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                     Tab(
                         selected = mainTab == 0,
                         onClick = { mainTab = 0 },
-                        text = { Text("🐷 Pig Herd (${pigs.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                        text = { Text("Pig Herd (${pigs.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
                     )
                     Tab(
                         selected = mainTab == 1,
                         onClick = { mainTab = 1 },
-                        text = { Text("🏡 Pens Directory (${pens.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                        text = { Text("Pens Directory (${pens.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
                     )
                 }
             }
@@ -377,7 +377,7 @@ fun PigListCard(pig: PigEntity, stageName: String, onClick: () -> Unit) {
                     )
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🐷", fontSize = 18.sp)
+                        Icon(Icons.Default.Pets, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
                         Text(
                             pig.tag_number.take(4),
                             color = Color.White,

@@ -12,7 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.DeleteForever
-import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Warning
@@ -119,11 +121,16 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                 border = BorderStroke(1.dp, Color(0xFF4CAF50)),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Text("✏️ Edit Profile", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Edit Profile", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                         HorizontalDivider(color = Color(0xFF21262D))
-                        Text("📍 Location: ${if (farmSettings.farmLocation.isNotBlank()) farmSettings.farmLocation else "$farmWard, $farmSubCounty, $farmCounty"}", color = Color(0xFF81C784), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(14.dp))
+                            Text("Location: ${if (farmSettings.farmLocation.isNotBlank()) farmSettings.farmLocation else "$farmWard, $farmSubCounty, $farmCounty"}", color = Color(0xFF81C784), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        }
                         Text("Currency: ${farmSettings.currencySymbol}", color = Color(0xFF8B949E), fontSize = 12.sp)
                     }
                 } else {
@@ -363,7 +370,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1565C0)),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Icon(Icons.Default.Help, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.AutoMirrored.Filled.Help, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
                         Text("Replay Tour", fontSize = 12.sp)
                     }

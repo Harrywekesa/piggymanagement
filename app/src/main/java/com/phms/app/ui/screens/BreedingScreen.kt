@@ -58,14 +58,20 @@ fun BreedingScreen(viewModel: MainViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD81B60)),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("🔥 Record Gilt Heat", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(Icons.Default.LocalFireDepartment, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Text("Record Gilt Heat", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
                 Button(
                     onClick = { showGiltServiceDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("🐖 Record Gilt Served", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Text("Record Gilt Served", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
                 Button(
                     onClick = {
@@ -135,7 +141,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                                                 Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF880E4F)),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text("🐖", fontSize = 20.sp)
+                                                Icon(Icons.Default.Pets, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                                             }
                                             Column {
                                                 Text("Sow Tag #${sow?.tag_number ?: preg.sow_id}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -204,7 +210,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text("🐖", fontSize = 20.sp)
+                                            Icon(Icons.Default.Pets, contentDescription = null, tint = Color(0xFF880E4F), modifier = Modifier.size(22.dp))
                                             Column {
                                                 Text("Tag #${sow.tag_number}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                                 Text(sow.breed, color = Color(0xFF8B949E), fontSize = 12.sp)
@@ -253,7 +259,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                             ) {
                                 Row(Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text("🐗", fontSize = 20.sp)
+                                        Icon(Icons.Default.Pets, contentDescription = null, tint = Color(0xFF64B5F6), modifier = Modifier.size(22.dp))
                                         Column {
                                             Text("Boar Tag #${boar.tag_number}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                             Text(boar.breed, color = Color(0xFF8B949E), fontSize = 12.sp)
@@ -479,7 +485,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
         AlertDialog(
             onDismissRequest = { showGiltHeatDialog = false },
             containerColor = Color(0xFF161B22),
-            title = { Text("🔥 Record Gilt Heat Observation", color = Color.White) },
+            title = { Text("Record Gilt Heat Observation", color = Color.White) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Select a female pig/gilt to record heat symptoms. The app will auto-alert you in 21 days for the next heat cycle if not served.", color = Color(0xFF8B949E), fontSize = 12.sp)
@@ -550,7 +556,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
         AlertDialog(
             onDismissRequest = { showGiltServiceDialog = false },
             containerColor = Color(0xFF161B22),
-            title = { Text("🐖 Record Gilt Served / Mating Event", color = Color.White) },
+            title = { Text("Record Gilt Served / Mating Event", color = Color.White) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Record mating event for a gilt. Starts 114-day gestation tracking and schedules Day 110 & Day 114 farrowing alerts.", color = Color(0xFF8B949E), fontSize = 12.sp)

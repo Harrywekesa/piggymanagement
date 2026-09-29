@@ -195,7 +195,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                                 )
                             } else {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("📸", fontSize = 32.sp)
+                                Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color(0xFF6E7681), modifier = Modifier.size(32.dp))
                                     Text("Tap to add photo", color = Color(0xFF6E7681), fontSize = 10.sp)
                                 }
                             }

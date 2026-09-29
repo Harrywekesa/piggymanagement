@@ -83,7 +83,9 @@ fun FeedScreen(viewModel: MainViewModel) {
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text("🥣 Log Feeding", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Icon(Icons.Default.Restaurant, contentDescription = null, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Log Feeding", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -94,8 +96,8 @@ fun FeedScreen(viewModel: MainViewModel) {
             contentColor = Color(0xFF4CAF50)
         ) {
             Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Inventory", fontSize = 12.sp) })
-            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Formulator 🌾", fontSize = 12.sp) })
-            Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Feeding Logs 📋", fontSize = 12.sp) })
+            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Formulator", fontSize = 12.sp) })
+            Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Feeding Logs", fontSize = 12.sp) })
         }
         Spacer(Modifier.height(12.dp))
 
@@ -325,11 +327,11 @@ fun FeedScreen(viewModel: MainViewModel) {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         items(feedingLogs) { log ->
                             val ing = ingredients.find { it.id == log.ingredient_id }
-                            val targetIcon = when (log.target_scope) {
-                                "Single Pig" -> "🐖"
-                                "Pen" -> "📦"
-                                "Category" -> "🐗"
-                                else -> "🐷"
+                            val targetIcon: androidx.compose.ui.graphics.vector.ImageVector = when (log.target_scope) {
+                                "Single Pig" -> Icons.Default.Pets
+                                "Pen" -> Icons.Default.Home
+                                "Category" -> Icons.Default.Groups
+                                else -> Icons.Default.Pets
                             }
                             val targetTitle = when (log.target_scope) {
                                 "Single Pig" -> {
@@ -353,7 +355,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                         Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF1B5E20)), contentAlignment = Alignment.Center) {
-                                            Text(targetIcon, fontSize = 20.sp)
+                                            Icon(targetIcon, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(22.dp))
                                         }
                                         Spacer(Modifier.width(12.dp))
                                         Column(Modifier.weight(1f)) {
@@ -382,7 +384,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                                             color = Color(0xFF21262D)
                                         ) {
                                             Text(
-                                                "📝 ${log.notes}",
+                                                log.notes ?: "",
                                                 color = Color(0xFFC9D1D9),
                                                 fontSize = 11.sp,
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -585,7 +587,7 @@ fun FeedScreen(viewModel: MainViewModel) {
         AlertDialog(
             onDismissRequest = { showLogFeedingDialog = false },
             containerColor = Color(0xFF161B22),
-            title = { Text("🥣 Log Daily Feeding & Deduct Stock", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            title = { Text("Log Daily Feeding & Deduct Stock", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = {
                 Column(
                     modifier = Modifier
@@ -827,7 +829,7 @@ fun UneditableMeasurementBox(
         trailingIcon = {
             Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF1B5E20)) {
                 Text(
-                    "🔒 Auto-Calc",
+                    "Auto-Calc",
                     color = Color(0xFF81C784),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,

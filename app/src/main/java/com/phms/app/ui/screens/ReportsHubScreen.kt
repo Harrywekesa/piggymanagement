@@ -94,25 +94,25 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
             StringDropdownSelector(
                 label = "Select Report Category *",
                 options = listOf(
-                    "💵 Financial Reports",
-                    "🐖 Herd & Count Reports",
-                    "🩺 Health & Mortality Reports",
-                    "🌾 Feed & FCR Growth Reports",
-                    "💕 Breeding & Reproduction Reports"
+                    "Financial Reports",
+                    "Herd & Count Reports",
+                    "Health & Mortality Reports",
+                    "Feed & FCR Growth Reports",
+                    "Breeding & Reproduction Reports"
                 ),
                 selectedOption = when (selectedTab) {
-                    0 -> "💵 Financial Reports"
-                    1 -> "🐖 Herd & Count Reports"
-                    2 -> "🩺 Health & Mortality Reports"
-                    3 -> "🌾 Feed & FCR Growth Reports"
-                    else -> "💕 Breeding & Reproduction Reports"
+                    0 -> "Financial Reports"
+                    1 -> "Herd & Count Reports"
+                    2 -> "Health & Mortality Reports"
+                    3 -> "Feed & FCR Growth Reports"
+                    else -> "Breeding & Reproduction Reports"
                 },
                 onSelect = { category ->
                     selectedTab = when (category) {
-                        "💵 Financial Reports" -> 0
-                        "🐖 Herd & Count Reports" -> 1
-                        "🩺 Health & Mortality Reports" -> 2
-                        "🌾 Feed & FCR Growth Reports" -> 3
+                        "Financial Reports" -> 0
+                        "Herd & Count Reports" -> 1
+                        "Health & Mortality Reports" -> 2
+                        "Feed & FCR Growth Reports" -> 3
                         else -> 4
                     }
                 }
