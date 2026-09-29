@@ -123,7 +123,10 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Buyers Directory 🌍", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.Public, contentDescription = null, tint = Color(0xFF00B4D8), modifier = Modifier.size(18.dp))
+                            Text("Buyers Directory", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                        }
                         Text("Shared across all Kenya pig farmers", fontSize = 11.sp, color = Color(0xFF00B4D8))
                     }
                     IconButton(onClick = {
@@ -178,7 +181,10 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
                                 }
                             }
                             val locText = listOfNotNull(buyer.ward, buyer.sub_county, buyer.county ?: buyer.location).filter { it.isNotBlank() }.joinToString(", ")
-                            Text(if (locText.isNotBlank()) "📍 $locText" else "📍 Location N/A", color = Color(0xFF81C784), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(13.dp))
+                                Text(locText.ifBlank { "Location N/A" }, color = Color(0xFF81C784), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            }
                             Text("${buyer.type} • ${buyer.phone}", color = Color(0xFF8B949E), fontSize = 11.sp)
                         }
                         if (!buyer.phone.isNullOrBlank()) {
