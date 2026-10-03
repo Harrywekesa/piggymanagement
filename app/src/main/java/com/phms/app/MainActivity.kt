@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -106,7 +107,8 @@ fun PHMSApp(viewModel: MainViewModel) {
                 PHMSHeader(
                     farmName = farmSettings.farmName,
                     pigCount = activePigs.size,
-                    alertCount = activeAlerts.size
+                    alertCount = activeAlerts.size,
+                    navController = navController
                 )
             }
         },
@@ -176,7 +178,7 @@ fun PHMSApp(viewModel: MainViewModel) {
             composable("onboarding") { OnboardingScreen(viewModel, navController) }
             composable("dashboard") { DashboardScreen(viewModel, navController) }
             composable("pigs") { PigsScreen(viewModel, navController) }
-            composable("alerts") { AlertsScreen(viewModel) }
+            composable("alerts") { AlertsScreen(viewModel, navController) }
             composable("feed") { FeedScreen(viewModel) }
             composable("more") { MoreScreen(navController) }
             composable("health") { HealthScreen(viewModel) }
@@ -215,7 +217,7 @@ fun PHMSApp(viewModel: MainViewModel) {
 }
 
 @Composable
-fun PHMSHeader(farmName: String, pigCount: Int, alertCount: Int) {
+fun PHMSHeader(farmName: String, pigCount: Int, alertCount: Int, navController: androidx.navigation.NavController) {
     val today = remember {
         SimpleDateFormat("EEE, d MMM yyyy", Locale.getDefault()).format(Date())
     }
@@ -250,9 +252,16 @@ fun PHMSHeader(farmName: String, pigCount: Int, alertCount: Int) {
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Pigs count pill → navigate to Pigs tab
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = Color(0x33FFFFFF)
+                        color = Color(0x33FFFFFF),
+                        modifier = Modifier.clickable {
+                            navController.navigate("pigs") {
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -263,10 +272,17 @@ fun PHMSHeader(farmName: String, pigCount: Int, alertCount: Int) {
                             Text("$pigCount pigs", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         }
                     }
+                    // Alerts pill → navigate to Alerts tab
                     if (alertCount > 0) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFFB71C1C)
+                            color = Color(0xFFB71C1C),
+                            modifier = Modifier.clickable {
+                                navController.navigate("alerts") {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),

@@ -859,6 +859,9 @@ class MainViewModel(
     fun resetFarmData(onComplete: () -> Unit = {}) {
         viewModelScope.launch {
             repository.resetFarmData()
+            // Immediately re-seed the community buyers directory so the
+            // Buyers tab is not blank after reset (no need to wait for next app launch)
+            repository.seedCommunityBuyers()
             onComplete()
         }
     }

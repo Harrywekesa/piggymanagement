@@ -295,7 +295,11 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
             }
         } else {
             items(alerts.take(4)) { alert ->
-                AlertItemCard(alert = alert, onDone = { viewModel.markAlertDone(alert.id) })
+                AlertItemCard(
+                    alert = alert,
+                    onDone = { viewModel.markAlertDone(alert.id) },
+                    onNavigateToPig = { pigId -> navController.navigate("pig_detail/$pigId") }
+                )
             }
         }
 
