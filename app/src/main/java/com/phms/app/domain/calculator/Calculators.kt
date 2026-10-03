@@ -50,8 +50,7 @@ object PnLCalculator {
         healthDao: HealthDao,
         marketDao: MarketDao,
         pigDao: PigDao,
-        expenseDao: ExpenseDao? = null,
-        laborEstimate: Double = 5000.0 // Default farm monthly labor estimate
+        expenseDao: ExpenseDao? = null
     ): PnLSummary {
         // Sales revenue
         val sales = marketDao.getSalesSince(startDateMs)
@@ -67,16 +66,16 @@ object PnLCalculator {
             .filter { it.date >= startDateMs }
             .sumOf { it.cost ?: 0.0 }
 
-        // Other non-feed non-health expenses (e.g. equipment, labor)
+        // Other non-feed non-health expenses (e.g. equipment, labor — must be entered as Expense records)
         val otherExpensesCost: Double = expenseDao?.getExpensesSince(startDateMs)
             ?.filter { it.category != "Feed" && it.category != "Health" }
             ?.sumOf { it.amount } ?: 0.0
 
-        val netProfit = totalRevenue - (feedCost + healthCost + otherExpensesCost + laborEstimate)
+        val netProfit = totalRevenue - (feedCost + healthCost + otherExpensesCost)
 
         val activePigs = pigDao.getActivePigsSync()
         val activeCount = activePigs.size
-        val totalCosts = feedCost + healthCost + otherExpensesCost + laborEstimate
+        val totalCosts = feedCost + healthCost + otherExpensesCost
         val costPerPig = if (activeCount > 0) totalCosts / activeCount else 0.0
 
         return PnLSummary(
@@ -84,7 +83,7 @@ object PnLCalculator {
             feedCost = feedCost,
             healthCost = healthCost,
             otherExpensesCost = otherExpensesCost,
-            estimatedLaborCost = laborEstimate,
+            estimatedLaborCost = 0.0, // No longer auto-estimated; record labor via Expenses
             netProfit = netProfit,
             activePigCount = activeCount,
             costPerPig = costPerPig

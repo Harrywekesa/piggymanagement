@@ -200,6 +200,9 @@ interface FeedDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFormula(formula: FeedFormulaEntity): Long
 
+    @Query("DELETE FROM feed_formulas")
+    suspend fun deleteAllFormulas()
+
     // Feeding Logs
     @Query("SELECT * FROM feeding_logs ORDER BY date DESC")
     fun getAllFeedingLogs(): Flow<List<FeedingLogEntity>>

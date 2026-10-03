@@ -312,12 +312,14 @@ class PHMSRepository(private val db: AppDatabase) {
         seedCommunityBuyers()
     }
 
-    // Reset Farm Data (clears active herd, records, and buyers directory; preserves growth stages)
+    // Reset Farm Data (clears active herd, records, and personal buyers; preserves growth stages + community directory)
     suspend fun resetFarmData() = withContext(Dispatchers.IO) {
         db.withTransaction {
             pigDao.deleteAllWeightRecords()
             feedDao.deleteAllFeedingLogs()
             feedDao.deleteAllFeedPurchases()
+            feedDao.deleteAllIngredients()   // clear feed inventory stock
+            feedDao.deleteAllFormulas()      // clear custom feed formulas
             healthDao.deleteAllHealthEvents()
             breedingDao.deleteAllBreedingEvents()
             breedingDao.deleteAllPregnancies()
@@ -325,7 +327,7 @@ class PHMSRepository(private val db: AppDatabase) {
             breedingDao.deleteAllWeaningRecords()
             breedingDao.deleteAllGiltHeatRecords()
             marketDao.deleteAllSales()
-            marketDao.deleteAllBuyers()
+            marketDao.deleteAllBuyers()      // wipe all buyers; community ones re-seeded below
             expenseDao.deleteAllExpenses()
             alertDao.deleteAllAlerts()
             pigDao.deleteAllPigs()
