@@ -33,12 +33,9 @@ object FirestoreBuyerSync {
         try {
             val snapshot = sharedBuyersCollection.get().await()
             if (snapshot.isEmpty) {
-                // If Firestore is empty, seed it with the community buyers from local DB so everyone gets them
-                val localCommunityBuyers = marketDao.getAllBuyersSync().filter { it.is_community }
-                for (b in localCommunityBuyers) {
-                    pushBuyerToCloud(b)
-                }
-                Log.d(TAG, "Seeded ${localCommunityBuyers.size} community buyers to Firestore.")
+                // If Firestore is empty (e.g. cleared by admin in Firebase console), prune all local community buyers
+                marketDao.deleteCommunityBuyers()
+                Log.d(TAG, "Firestore shared_buyers is empty. Cleared local community buyers.")
             } else {
                 val cloudBuyers = snapshot.documents.mapNotNull { doc ->
                     val name = doc.getString("name") ?: return@mapNotNull null
@@ -58,6 +55,15 @@ object FirestoreBuyerSync {
                         is_community = true,
                         is_synced = true
                     )
+                }
+
+                // Prune: remove local community buyers that are no longer in Firestore
+                val cloudPhones = cloudBuyers.map { it.phone }.toSet()
+                val localCommunityBuyers = marketDao.getAllBuyersSync().filter { it.is_community }
+                for (local in localCommunityBuyers) {
+                    if (local.phone !in cloudPhones) {
+                        marketDao.deleteBuyer(local)
+                    }
                 }
 
                 // Upsert: for each cloud buyer, insert only if no local buyer with same phone exists

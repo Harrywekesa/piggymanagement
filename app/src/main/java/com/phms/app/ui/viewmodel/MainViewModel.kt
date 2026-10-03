@@ -61,14 +61,7 @@ class MainViewModel(
 
     init {
         checkForAppUpdates()
-        seedCommunityBuyers()
         syncBuyersFromCloud()
-    }
-
-    private fun seedCommunityBuyers() {
-        viewModelScope.launch {
-            repository.seedCommunityBuyersIfNeeded()
-        }
     }
 
     fun syncBuyersFromCloud() {
@@ -859,9 +852,8 @@ class MainViewModel(
     fun resetFarmData(onComplete: () -> Unit = {}) {
         viewModelScope.launch {
             repository.resetFarmData()
-            // Immediately re-seed the community buyers directory so the
-            // Buyers tab is not blank after reset (no need to wait for next app launch)
-            repository.seedCommunityBuyers()
+            // Community buyers will repopulate on next app launch via seedCommunityBuyersIfNeeded()
+            // Do NOT re-seed here — the directory should be empty immediately after reset
             onComplete()
         }
     }

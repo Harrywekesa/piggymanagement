@@ -454,6 +454,12 @@ interface MarketDao {
     @Update
     suspend fun updateBuyer(buyer: BuyerEntity)
 
+    @Delete
+    suspend fun deleteBuyer(buyer: BuyerEntity)
+
+    @Query("DELETE FROM buyers WHERE is_community = 1")
+    suspend fun deleteCommunityBuyers()
+
     // Sales
     @Query("SELECT * FROM sales ORDER BY date DESC")
     fun getAllSales(): Flow<List<SaleEntity>>
