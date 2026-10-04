@@ -61,6 +61,37 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
 
     var showPhotoOptionDialog by remember { mutableStateOf(false) }
 
+    val standardBreeds = remember {
+        listOf(
+            "Large White",
+            "Landrace",
+            "Duroc",
+            "Hampshire",
+            "Pietrain",
+            "Camborough",
+            "Large White × Landrace (F1)",
+            "Duroc Cross",
+            "Indigenous / Local Cross",
+            "Other (Custom)"
+        )
+    }
+    var selectedBreedOption by remember(breed) {
+        mutableStateOf(
+            if (breed in standardBreeds) breed
+            else if (breed.isNotBlank()) "Other (Custom)"
+            else "Large White"
+        )
+    }
+    var customBreedText by remember(breed) {
+        mutableStateOf(if (breed.isNotBlank() && breed !in standardBreeds) breed else "")
+    }
+
+    LaunchedEffect(Unit) {
+        if (pigId == -1L && breed.isBlank()) {
+            breed = "Large White"
+        }
+    }
+
     // Populate form if editing
     LaunchedEffect(pig) {
         pig?.let { p ->
@@ -232,7 +263,63 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                 SectionCard("Basic Information") {
                     FormField("Tag / Ear Number *", tagNumber, { tagNumber = it })
                     Spacer(Modifier.height(12.dp))
-                    FormField("Breed", breed, { breed = it }, placeholder = "e.g. Large White, Landrace, Duroc")
+                    // Breed — dropdown with common Kenya pig breeds + "Other" option
+                    Text("Breed", color = Color(0xFF8B949E), fontSize = 13.sp)
+                    Spacer(Modifier.height(4.dp))
+                    var breedExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = breedExpanded,
+                        onExpandedChange = { breedExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedBreedOption,
+                            onValueChange = {},
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = breedExpanded) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF4CAF50),
+                                unfocusedBorderColor = Color(0xFF30363D),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = breedExpanded,
+                            onDismissRequest = { breedExpanded = false }
+                        ) {
+                            standardBreeds.forEach { b ->
+                                DropdownMenuItem(
+                                    text = { Text(b, color = Color.White) },
+                                    onClick = {
+                                        selectedBreedOption = b
+                                        breedExpanded = false
+                                        if (b != "Other (Custom)") {
+                                            breed = b
+                                            customBreedText = ""
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    if (selectedBreedOption == "Other (Custom)") {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = customBreedText,
+                            onValueChange = { customBreedText = it; breed = it },
+                            label = { Text("Custom Breed Name") },
+                            placeholder = { Text("e.g. Berkshire, F2 cross…") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF4CAF50),
+                                focusedLabelColor = Color(0xFF4CAF50),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                unfocusedBorderColor = Color(0xFF30363D)
+                            )
+                        )
+                    }
                     Spacer(Modifier.height(12.dp))
                     Text("Sex", color = Color(0xFF8B949E), fontSize = 13.sp)
                     Spacer(Modifier.height(4.dp))

@@ -60,15 +60,29 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
     val effectiveBuyerId = selectedBuyerId ?: savedNewBuyerId
 
     val selectedPigs = marketReadyPigs.filter { it.id in selectedPigIds }
-    val pigWeightsMap by produceState<Map<Long, Double>>(initialValue = emptyMap(), key1 = selectedPigIds.toList()) {
+
+    // manualWeightsMap: user-editable weight overrides keyed by pig ID (text for field binding)
+    val manualWeightStrings = remember { mutableStateMapOf<Long, String>() }
+
+    // Seed from DB when selection changes
+    val pigDbWeights by produceState<Map<Long, Double>>(initialValue = emptyMap(), key1 = selectedPigIds.toList()) {
         val map = mutableMapOf<Long, Double>()
         selectedPigs.forEach { pig ->
-            val loggedWeight = viewModel.repository.pigDao.getWeightsForPigSync(pig.id).firstOrNull()?.weight_kg ?: 85.0
-            map[pig.id] = loggedWeight
+            val logged = viewModel.repository.pigDao.getWeightsForPigSync(pig.id).firstOrNull()?.weight_kg ?: 85.0
+            map[pig.id] = logged
+            // Pre-fill manual field with DB weight only if not already set by user
+            if (!manualWeightStrings.containsKey(pig.id)) {
+                manualWeightStrings[pig.id] = String.format("%.1f", logged)
+            }
         }
         value = map
     }
-    val totalWeight = selectedPigs.sumOf { pig -> pigWeightsMap[pig.id] ?: 85.0 }
+
+    // Effective weight per pig: use manual entry if valid, else DB value
+    fun effectiveWeight(pigId: Long): Double =
+        manualWeightStrings[pigId]?.toDoubleOrNull() ?: pigDbWeights[pigId] ?: 85.0
+
+    val totalWeight = selectedPigs.sumOf { effectiveWeight(it.id) }
     val price = pricePerKg.toDoubleOrNull() ?: 0.0
     val totalAmount = totalWeight * price
 
@@ -171,7 +185,9 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
 
                     SaleStep.SET_PRICE -> {
                         item {
-                            Text("Set Sale Price", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Set Sale Price & Weights", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Spacer(Modifier.height(2.dp))
+                            Text("Enter the actual weighed weight for each pig at point of sale.", color = Color(0xFF8B949E), fontSize = 12.sp)
                         }
                         item {
                             Card(
@@ -197,18 +213,48 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                                         )
                                     )
                                     HorizontalDivider(color = Color(0xFF21262D))
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("Pigs Selected", color = Color(0xFF8B949E))
-                                        Text("${selectedPigIds.size}", color = Color.White, fontWeight = FontWeight.Bold)
+                                    Text("Enter actual scale weight per pig:", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                    // Editable per-pig weight fields
+                                    selectedPigs.forEach { pig ->
+                                        Row(
+                                            Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Column(Modifier.weight(1f)) {
+                                                Text("#${pig.tag_number}", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                                Text(pig.breed, color = Color(0xFF6E7681), fontSize = 11.sp)
+                                            }
+                                            OutlinedTextField(
+                                                value = manualWeightStrings[pig.id] ?: "",
+                                                onValueChange = { v ->
+                                                    manualWeightStrings[pig.id] = v
+                                                },
+                                                label = { Text("kg") },
+                                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                                                ),
+                                                modifier = Modifier.width(100.dp),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    focusedBorderColor = Color(0xFF4CAF50),
+                                                    focusedLabelColor = Color(0xFF4CAF50),
+                                                    focusedTextColor = Color.White,
+                                                    unfocusedTextColor = Color.White,
+                                                    unfocusedBorderColor = Color(0xFF30363D)
+                                                ),
+                                                singleLine = true
+                                            )
+                                        }
                                     }
+                                    HorizontalDivider(color = Color(0xFF21262D))
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("Est. Total Weight", color = Color(0xFF8B949E))
-                                        Text("~${String.format("%.0f", totalWeight)} kg", color = Color.White, fontWeight = FontWeight.Bold)
+                                        Text("Total Weight", color = Color(0xFF8B949E))
+                                        Text("${String.format("%.1f", totalWeight)} kg", color = Color.White, fontWeight = FontWeight.Bold)
                                     }
                                     if (price > 0) {
                                         HorizontalDivider(color = Color(0xFF21262D))
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text("Estimated Total", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                            Text("Total Amount", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             Text("KSh ${String.format("%,.0f", totalAmount)}", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                         }
                                     }
