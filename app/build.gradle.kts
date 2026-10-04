@@ -13,8 +13,8 @@ android {
         applicationId = "com.phms.app"
         minSdk = 21
         targetSdk = 34
-        versionCode = 8
-        versionName = "1.0.5"
+        versionCode = 9
+        versionName = "1.0.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -29,6 +29,18 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            // Name the output APK: PHMS-v1.0.6.apk
+        }
+    }
+
+    // Rename output APK to PHMS-v{versionName}.apk
+    applicationVariants.all {
+        val variant = this
+        variant.outputs.all {
+            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            output.outputFileName = "PHMS-v${variant.versionName}.apk"
         }
     }
 
