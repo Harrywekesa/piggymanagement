@@ -23,6 +23,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.phms.app.data.local.entity.*
+import com.phms.app.domain.engine.SwineFeedingGuideItem
+import com.phms.app.domain.engine.SwineFeedingKey
 import com.phms.app.ui.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -36,7 +38,7 @@ fun FeedScreen(viewModel: MainViewModel) {
     val pigs by viewModel.activePigs.collectAsState()
     val pens by viewModel.pens.collectAsState()
     val stages by viewModel.stages.collectAsState()
-    var selectedTab by remember { mutableIntStateOf(0) } // 0: Inventory, 1: Formulator, 2: Feeding Logs
+    var selectedTab by remember { mutableIntStateOf(0) } // 0: Feeding Key, 1: Inventory, 2: Formulator, 3: Feeding Logs
 
     var showAddInventoryDialog by remember { mutableStateOf(false) }
     var showLogFeedingDialog by remember { mutableStateOf(false) }
@@ -95,14 +97,19 @@ fun FeedScreen(viewModel: MainViewModel) {
             containerColor = Color(0xFF161B22),
             contentColor = Color(0xFF4CAF50)
         ) {
-            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Inventory", fontSize = 12.sp) })
-            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Formulator", fontSize = 12.sp) })
-            Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Feeding Logs", fontSize = 12.sp) })
+            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Feeding Key", fontSize = 11.sp, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) })
+            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Inventory", fontSize = 11.sp, fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) })
+            Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Formulator", fontSize = 11.sp, fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) })
+            Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("Feeding Logs", fontSize = 11.sp, fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) })
         }
         Spacer(Modifier.height(12.dp))
 
         when (selectedTab) {
-            0 -> { // INVENTORY
+            0 -> { // FEEDING KEY
+                SwineFeedingKeyTab(pigs = pigs)
+            }
+
+            1 -> { // INVENTORY
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -186,7 +193,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                 }
             }
 
-            1 -> { // FORMULATOR
+            2 -> { // FORMULATOR
                 var showCustomRatioInputs by remember { mutableStateOf(false) }
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -319,7 +326,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                 }
             }
 
-            2 -> { // FEEDING LOGS
+            3 -> { // FEEDING LOGS
                 if (feedingLogs.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("No daily feeding logs yet. Tap 'Log Feeding' to track daily consumption.", color = Color(0xFF6E7681), textAlign = TextAlign.Center)
@@ -586,6 +593,18 @@ fun FeedScreen(viewModel: MainViewModel) {
         val totalFeedKg = amountPerPig * numPigs
         val chosenIng = ingredients.find { it.id == selectedIngId }
 
+        val recGuide = remember(targetScope, selectedCategory, selectedPigId) {
+            when (targetScope) {
+                "Single Pig" -> {
+                    val p = pigs.find { it.id == selectedPigId }
+                    val ageW = if (p != null) ((System.currentTimeMillis() - p.birth_date) / (1000L * 60 * 60 * 24 * 7)).toInt() else null
+                    SwineFeedingKey.getRecommendation(weightKg = null, ageWeeks = ageW, categoryName = null)
+                }
+                "Category" -> SwineFeedingKey.getRecommendation(weightKg = null, ageWeeks = null, categoryName = selectedCategory)
+                else -> SwineFeedingKey.getRecommendation(weightKg = null, ageWeeks = null, categoryName = "Growers")
+            }
+        }
+
         AlertDialog(
             onDismissRequest = { showLogFeedingDialog = false },
             containerColor = Color(0xFF161B22),
@@ -733,6 +752,36 @@ fun FeedScreen(viewModel: MainViewModel) {
 
                     // STEP 4: Quantity & Live Calculation
                     Text("3. Quantity & Calculations", color = Color(0xFF81C784), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+
+                    // Feeding Key Recommendation helper banner
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF1B281B),
+                        border = BorderStroke(1.dp, Color(0xFF2E7D32)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Key Guide: ${recGuide.category}", color = Color(0xFF81C784), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text("${recGuide.dailyFeedRange} • ${recGuide.feedType}", color = Color.White, fontSize = 11.sp)
+                                Text("${recGuide.dailyMeals} • ${recGuide.crudeProtein}", color = Color(0xFF8B949E), fontSize = 10.sp)
+                            }
+                            Spacer(Modifier.width(6.dp))
+                            Button(
+                                onClick = { amountPerPigStr = recGuide.dailyFeedRationKg.toString() },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text("Use ${recGuide.dailyFeedRationKg} kg", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
+                    }
+
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) {
                             FormField("Kg / Pig", amountPerPigStr, { amountPerPigStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
@@ -904,3 +953,302 @@ fun UneditableRationListItem(
         }
     }
 }
+
+@Composable
+fun SwineFeedingKeyTab(pigs: List<PigEntity>) {
+    var calcWeightStr by remember { mutableStateOf("") }
+    var calcAgeStr by remember { mutableStateOf("") }
+    var calcCategory by remember { mutableStateOf<String?>("Growers") }
+    var herdCountStr by remember { mutableStateOf("10") }
+
+    val weightVal = calcWeightStr.toDoubleOrNull()
+    val ageVal = calcAgeStr.toIntOrNull()
+    val rec = remember(weightVal, ageVal, calcCategory) {
+        SwineFeedingKey.getRecommendation(weightVal, ageVal, calcCategory)
+    }
+
+    val herdCount = herdCountStr.toIntOrNull() ?: 1
+    val totalHerdDailyKg = rec.dailyFeedRationKg * herdCount
+    val bags70kg = totalHerdDailyKg / 70.0
+
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // 1. Interactive Recommendation Calculator Card
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                border = BorderStroke(1.dp, Color(0xFF2E7D32))
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(
+                                Modifier.size(36.dp).clip(CircleShape).background(Color(0xFF1B5E20)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Calculate, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                            }
+                            Column {
+                                Text("Feed Requirement Calculator", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text("Interactive guide by weight, age, or category", color = Color(0xFF8B949E), fontSize = 11.sp)
+                            }
+                        }
+                    }
+
+                    // Category Filter Chips
+                    Text("Select Pig Category / Stage:", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(
+                            "Piglets", "Weaners", "Growers", "Finishers", "Market Ready",
+                            "Pregnant Sow", "Lactating Sow", "Gilt", "Boar"
+                        ).forEach { cat ->
+                            FilterChip(
+                                selected = calcCategory == cat,
+                                onClick = {
+                                    calcCategory = if (calcCategory == cat) null else cat
+                                },
+                                label = { Text(cat, fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF1B5E20),
+                                    selectedLabelColor = Color(0xFF4CAF50),
+                                    containerColor = Color(0xFF21262D),
+                                    labelColor = Color(0xFF8B949E)
+                                )
+                            )
+                        }
+                    }
+
+                    // Weight and Age overrides
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(Modifier.weight(1f)) {
+                            FormField(
+                                label = "Weight (kg, optional)",
+                                value = calcWeightStr,
+                                onValueChange = {
+                                    calcWeightStr = it.filter { c -> c.isDigit() || c == '.' }
+                                    if (it.isNotBlank()) calcCategory = null
+                                },
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                                placeholder = "e.g. 45"
+                            )
+                        }
+                        Box(Modifier.weight(1f)) {
+                            FormField(
+                                label = "Age (weeks, optional)",
+                                value = calcAgeStr,
+                                onValueChange = {
+                                    calcAgeStr = it.filter { c -> c.isDigit() }
+                                    if (it.isNotBlank()) calcCategory = null
+                                },
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                                placeholder = "e.g. 14"
+                            )
+                        }
+                    }
+
+                    // Result box
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFF122316),
+                        border = BorderStroke(1.dp, Color(0xFF2E7D32)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(rec.category, color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Text("Typical: ${rec.weightRange} • ${rec.ageRange}", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                }
+                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF1B5E20)) {
+                                    Text(
+                                        "${rec.dailyFeedRationKg} kg / day",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+
+                            HorizontalDivider(color = Color(0xFF1F3D24))
+
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Feed Type:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                Text(rec.feedType, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Crude Protein (CP):", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                Text(rec.crudeProtein, color = Color(0xFF81C784), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Feeding Schedule:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                Text(rec.dailyMeals, color = Color.White, fontSize = 11.sp)
+                            }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Water Requirement:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                Text(rec.waterReqLiters, color = Color(0xFF64B5F6), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+
+                            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF192A1D)) {
+                                Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(16.dp))
+                                    Text(rec.managementGuide, color = Color(0xFFC9D1D9), fontSize = 11.sp)
+                                }
+                            }
+
+                            // Batch / Herd Daily Feed projection
+                            HorizontalDivider(color = Color(0xFF1F3D24))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Calculate for herd size:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    listOf("5", "10", "20", "50").forEach { presetCount ->
+                                        FilterChip(
+                                            selected = herdCountStr == presetCount,
+                                            onClick = { herdCountStr = presetCount },
+                                            label = { Text("$presetCount pigs", fontSize = 10.sp) },
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = Color(0xFF2E7D32),
+                                                selectedLabelColor = Color.White,
+                                                containerColor = Color(0xFF1F242C),
+                                                labelColor = Color(0xFF8B949E)
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF0E170E)) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp).fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("$herdCount pigs daily requirement:", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                    Text(
+                                        "${String.format("%.1f", totalHerdDailyKg)} kg / day (~${String.format("%.2f", bags70kg)} 70kg bags)",
+                                        color = Color(0xFF4CAF50),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Section header for full master table
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Standard Swine Feeding Key Table",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
+                Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF161B22)) {
+                    Text(
+                        "${SwineFeedingKey.table.size} Growth Categories",
+                        color = Color(0xFF8B949E),
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
+
+        // 2. Full Table of Categories
+        items(SwineFeedingKey.table) { item ->
+            SwineFeedingGuideCard(item)
+        }
+    }
+}
+
+@Composable
+fun SwineFeedingGuideCard(item: SwineFeedingGuideItem) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+        border = BorderStroke(1.dp, Color(0xFF30363D))
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(item.category, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Weight: ${item.weightRange} • Age: ${item.ageRange}", color = Color(0xFF8B949E), fontSize = 11.sp)
+                }
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFF1B5E20)
+                ) {
+                    Text(
+                        "${item.dailyFeedRationKg} kg/day",
+                        color = Color(0xFF81C784),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            HorizontalDivider(color = Color(0xFF21262D))
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Feed Type & CP:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                Text("${item.feedType} (${item.crudeProtein})", color = Color(0xFFC9D1D9), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+            }
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Daily Ration Range:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                Text(item.dailyFeedRange, color = Color(0xFF4CAF50), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Meals & Water:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                Text("${item.dailyMeals} • ${item.waterReqLiters}", color = Color(0xFF64B5F6), fontSize = 11.sp)
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(6.dp),
+                color = Color(0xFF21262D)
+            ) {
+                Text(
+                    item.managementGuide,
+                    color = Color(0xFF8B949E),
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                )
+            }
+        }
+    }
+}
+

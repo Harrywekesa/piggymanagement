@@ -298,10 +298,11 @@ class MainViewModel(
         photoPath: String? = null,
         originFarm: String? = null, sellerContact: String? = null,
         purchasePrice: Double? = null, transportCost: Double? = null,
-        damId: Long? = null, sireId: Long? = null
+        damId: Long? = null, sireId: Long? = null,
+        initialWeightKg: Double? = null
     ) {
         viewModelScope.launch {
-            repository.savePig(
+            val newId = repository.savePig(
                 PigEntity(
                     tag_number = tag, breed = breed, sex = sex,
                     birth_date = birthDateMs, source = source,
@@ -313,6 +314,9 @@ class MainViewModel(
                     dam_id = damId, sire_id = sireId
                 )
             )
+            if (initialWeightKg != null && initialWeightKg > 0.0) {
+                repository.addWeightRecord(newId, initialWeightKg)
+            }
         }
     }
 

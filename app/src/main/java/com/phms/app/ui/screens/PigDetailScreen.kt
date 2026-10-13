@@ -1,12 +1,14 @@
 package com.phms.app.ui.screens
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import com.phms.app.domain.engine.SwineFeedingKey
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -271,7 +273,15 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
             // ---- ACTION BUTTONS ----
             item {
                 Spacer(Modifier.height(16.dp))
-                ActionButtonsRow(pig = p, viewModel = viewModel, navController = navController, stages = stages, pens = pens, allPigs = allPigs)
+                ActionButtonsRow(
+                    pig = p,
+                    viewModel = viewModel,
+                    navController = navController,
+                    stages = stages,
+                    pens = pens,
+                    allPigs = allPigs,
+                    onTabSelected = { selectedTab = it }
+                )
             }
         }
 
@@ -357,11 +367,15 @@ fun OverviewTab(
     latestWeight: Double?,
     ageWeeks: Long
 ) {
-    val feedReq = com.phms.app.domain.engine.FeedCalculator.getDailyRequirement(
-        weightKg = latestWeight ?: 10.0,
-        stageId = pig.current_stage_id,
-        sex = pig.sex
-    )
+    val feedRec = remember(latestWeight, ageWeeks, pig.current_stage_id, pig.sex) {
+        val stageHint = currentStage?.name ?: if (pig.sex == "M") "Boar" else "Sow"
+        SwineFeedingKey.getRecommendation(
+            weightKg = latestWeight,
+            ageWeeks = ageWeeks.toInt(),
+            categoryName = stageHint
+        )
+    }
+    var showFeedingKeyDialog by remember { mutableStateOf(false) }
 
     val damPig = allPigs.find { it.id == pig.dam_id }
     val sirePig = allPigs.find { it.id == pig.sire_id }
@@ -371,35 +385,68 @@ fun OverviewTab(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Daily Feed Recommendation Card
+        // Daily Feed Recommendation Card with Feeding Key
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF1B281B)),
             border = BorderStroke(1.dp, Color(0xFF2E7D32))
         ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF2E7D32).copy(alpha = 0.3f)),
-                    contentAlignment = Alignment.Center
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Grass, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(26.dp))
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Daily Feed Ration", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Text("${feedReq.dailyKg} kg / day", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF2E7D32).copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Grass, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(26.dp))
                     }
-                    Spacer(Modifier.height(2.dp))
-                    Text(feedReq.feedType, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                    Text(feedReq.description, color = Color(0xFFA5D6A7), fontSize = 11.sp)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Daily Feed Ration (${feedRec.stageName})", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("${feedRec.dailyFeedRationKg} kg/day", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        }
+                        Spacer(Modifier.height(2.dp))
+                        Text(feedRec.feedType, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Text(feedRec.dailyFeedRange, color = Color(0xFFA5D6A7), fontSize = 11.sp)
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFF122013)
+                ) {
+                    Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Protein Required:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                            Text(feedRec.crudeProtein, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Feeding Schedule:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                            Text(feedRec.dailyMeals, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Water Required:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                            Text(feedRec.waterReqLiters, color = Color(0xFF81C784), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = { showFeedingKeyDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, Color(0xFF4CAF50))
+                ) {
+                    Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("View Full Swine Feeding Key Table", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -436,7 +483,8 @@ fun OverviewTab(
 
         InfoSection("Growth & Stage") {
             InfoRow("Birth Date", dateFormat.format(Date(pig.birth_date)))
-            InfoRow("Age", "$ageWeeks weeks")
+            val monthsApprox = String.format(Locale.getDefault(), "%.1f", ageWeeks / 4.3)
+            InfoRow("Age", "$ageWeeks weeks (~$monthsApprox months)")
             InfoRow("Current Stage", currentStage?.name ?: "–")
             InfoRow("Latest Weight", if (latestWeight != null) "${latestWeight} kg" else "Not recorded")
         }
@@ -448,6 +496,58 @@ fun OverviewTab(
                 Text(pig.notes, color = Color(0xFF8B949E), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
             }
         }
+    }
+
+    if (showFeedingKeyDialog) {
+        AlertDialog(
+            onDismissRequest = { showFeedingKeyDialog = false },
+            containerColor = Color(0xFF161B22),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color(0xFF4CAF50))
+                    Text("Swine Feeding Key & Guide", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Veterinary daily feed allowances by weight, age, and breeding category:",
+                        color = Color(0xFF8B949E), fontSize = 12.sp
+                    )
+                    SwineFeedingKey.table.forEach { item ->
+                        val isCurrentMatch = item.stageName.equals(currentStage?.name, true) ||
+                            (pig.sex == "M" && item.category.contains("Boar")) ||
+                            (pig.sex == "F" && (item.category.contains("Sow") || item.category.contains("Gilt")))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isCurrentMatch) Color(0xFF1B3A1B) else Color(0xFF0D1117)
+                            ),
+                            border = BorderStroke(1.dp, if (isCurrentMatch) Color(0xFF4CAF50) else Color(0xFF30363D))
+                        ) {
+                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Text(item.category, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF2E7D32)) {
+                                        Text("${item.dailyFeedRationKg} kg/day", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                    }
+                                }
+                                Text("Weight: ${item.weightRange} • Age: ${item.ageRange}", color = Color(0xFF81C784), fontSize = 11.sp)
+                                Text("Feed: ${item.feedType} (${item.crudeProtein})", color = Color(0xFFE6EDF3), fontSize = 11.sp)
+                                Text("Schedule: ${item.dailyMeals} • Water: ${item.waterReqLiters}", color = Color(0xFF8B949E), fontSize = 10.sp)
+                                Text(item.managementGuide, color = Color(0xFFA5D6A7), fontSize = 10.sp)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { showFeedingKeyDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))) {
+                    Text("Close")
+                }
+            }
+        )
     }
 }
 
@@ -660,8 +760,10 @@ fun ActionButtonsRow(
     navController: NavController,
     stages: List<GrowthStageEntity>,
     pens: List<PenEntity>,
-    allPigs: List<PigEntity>
+    allPigs: List<PigEntity>,
+    onTabSelected: (Int) -> Unit = {}
 ) {
+    val context = LocalContext.current
     var showLogWeightDialog by remember { mutableStateOf(false) }
     var showLogHealthDialog by remember { mutableStateOf(false) }
     var showStatusDialog by remember { mutableStateOf(false) }
@@ -739,17 +841,13 @@ fun ActionButtonsRow(
         var diseaseName by remember { mutableStateOf("Routine Check / Treatment") }
         var isCustomDisease by remember { mutableStateOf(false) }
         var customDiseaseText by remember { mutableStateOf("") }
-        var ageWeeksStr by remember { mutableStateOf("") }
+        val pigAgeWeeks = remember(pig.birth_date) {
+            maxOf(1L, TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - pig.birth_date) / (24 * 7))
+        }
+        var ageWeeksStr by remember { mutableStateOf(pigAgeWeeks.toString()) }
         var weightKgStr by remember { mutableStateOf("") }
         var selectedBoarId by remember { mutableStateOf<Long?>(null) }
         val boars = allPigs.filter { it.sex.equals("M", true) }
-
-        // Pre-fill age from birth date
-        LaunchedEffect(Unit) {
-            val ageMs = System.currentTimeMillis() - pig.birth_date
-            val weeks = (ageMs / (1000L * 60 * 60 * 24 * 7)).toInt()
-            if (ageWeeksStr.isBlank()) ageWeeksStr = maxOf(1, weeks).toString()
-        }
 
         AlertDialog(
             onDismissRequest = { showLogHealthDialog = false },
@@ -840,7 +938,7 @@ fun ActionButtonsRow(
                         FormField("Custom Disease Name", customDiseaseText, { customDiseaseText = it }, placeholder = "Type disease diagnosis...")
                     }
 
-                    FormField("Product / Medication Description *", product, { product = it }, placeholder = "e.g. Oxytetracycline 20%, Iron injection")
+                    FormField("Product / Medication Description", product, { product = it }, placeholder = "e.g. Oxytetracycline 20%, Iron injection (Defaults to event type)")
 
                     if (eventType == "Gilt/Sow Serviced" && boars.isNotEmpty()) {
                         Text("Servicing Boar (Optional for AI)", color = Color(0xFF8B949E), fontSize = 12.sp)
@@ -873,43 +971,45 @@ fun ActionButtonsRow(
             confirmButton = {
                 Button(
                     onClick = {
-                        val finalDisease = if (isCustomDisease) customDiseaseText.ifBlank { "Unspecified Disease" } else diseaseName
-                        if (product.isNotBlank()) {
-                            val targetPig = if (targetScope == "Single Pig") selectedHealthPigId else null
-                            if (eventType == "Gilt/Sow Serviced" && targetPig != null) {
-                                viewModel.logGiltServiceFromHealth(
-                                    sowId = targetPig,
-                                    boarId = selectedBoarId,
-                                    notes = notes
-                                )
-                            } else if (eventType == "Mortality / Death" && targetPig != null) {
-                                viewModel.logMortalityEvent(
-                                    pigId = targetPig,
-                                    diseaseName = finalDisease,
-                                    ageWeeks = ageWeeksStr.toIntOrNull(),
-                                    weightKg = weightKgStr.toDoubleOrNull(),
-                                    notes = notes,
-                                    cost = costStr.toDoubleOrNull() ?: 0.0
-                                )
-                            } else {
-                                viewModel.logGroupHealthEvent(
-                                    targetScope = targetScope,
-                                    targetPigId = targetPig,
-                                    targetCategory = if (targetScope == "Category") targetCategory else null,
-                                    type = eventType,
-                                    product = product,
-                                    dosage = dosage,
-                                    cost = costStr.toDoubleOrNull() ?: 0.0,
-                                    vetName = vetName,
-                                    notes = notes,
-                                    withdrawalDays = withdrawalDaysStr.toIntOrNull() ?: 0,
-                                    diseaseName = finalDisease,
-                                    ageWeeks = ageWeeksStr.toIntOrNull(),
-                                    weightKg = weightKgStr.toDoubleOrNull()
-                                )
-                            }
-                            showLogHealthDialog = false
+                        val finalDisease = if (isCustomDisease) customDiseaseText.ifBlank { "Routine Check / Treatment" } else diseaseName
+                        val finalProduct = product.ifBlank { "$eventType - $finalDisease" }
+                        val effectivePigId = if (targetScope == "Single Pig") (selectedHealthPigId ?: pig.id) else null
+
+                        if (eventType == "Gilt/Sow Serviced" && effectivePigId != null) {
+                            viewModel.logGiltServiceFromHealth(
+                                sowId = effectivePigId,
+                                boarId = selectedBoarId,
+                                notes = notes
+                            )
+                        } else if (eventType == "Mortality / Death" && effectivePigId != null) {
+                            viewModel.logMortalityEvent(
+                                pigId = effectivePigId,
+                                diseaseName = finalDisease,
+                                ageWeeks = ageWeeksStr.toIntOrNull() ?: pigAgeWeeks.toInt(),
+                                weightKg = weightKgStr.toDoubleOrNull(),
+                                notes = notes,
+                                cost = costStr.toDoubleOrNull() ?: 0.0
+                            )
+                        } else {
+                            viewModel.logGroupHealthEvent(
+                                targetScope = targetScope,
+                                targetPigId = effectivePigId,
+                                targetCategory = if (targetScope == "Category") targetCategory else null,
+                                type = eventType,
+                                product = finalProduct,
+                                dosage = dosage.ifBlank { "Standard Dose" },
+                                cost = costStr.toDoubleOrNull() ?: 0.0,
+                                vetName = vetName.ifBlank { "Farm Operator" },
+                                notes = notes,
+                                withdrawalDays = withdrawalDaysStr.toIntOrNull() ?: 0,
+                                diseaseName = finalDisease,
+                                ageWeeks = ageWeeksStr.toIntOrNull() ?: pigAgeWeeks.toInt(),
+                                weightKg = weightKgStr.toDoubleOrNull()
+                            )
                         }
+                        showLogHealthDialog = false
+                        onTabSelected(1) // Takes user directly to the Health tab where new event is displayed!
+                        Toast.makeText(context, "Health event recorded for Pig #${pig.tag_number}", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                 ) { Text("Save Event") }

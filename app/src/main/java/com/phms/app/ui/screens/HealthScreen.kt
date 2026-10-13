@@ -1,5 +1,7 @@
 package com.phms.app.ui.screens
 
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +24,7 @@ import java.util.*
 
 @Composable
 fun HealthScreen(viewModel: MainViewModel) {
+    val context = LocalContext.current
     val healthEvents by viewModel.allHealthEvents.collectAsState()
     val pigs by viewModel.activePigs.collectAsState()
     var showGroupHealthDialog by remember { mutableStateOf(false) }
@@ -105,6 +108,9 @@ fun HealthScreen(viewModel: MainViewModel) {
         var weightKgStr by remember { mutableStateOf("") }
         var selectedBoarId by remember { mutableStateOf<Long?>(null) }
         val boars = pigs.filter { it.sex.equals("M", true) }
+        val eligiblePigs = remember(eventType, pigs) {
+            if (eventType == "Gilt/Sow Serviced") pigs.filter { it.sex.equals("F", true) } else pigs
+        }
 
         // Pre-fill age if single pig selected
         LaunchedEffect(selectedPigId) {
@@ -130,9 +136,6 @@ fun HealthScreen(viewModel: MainViewModel) {
                         onSelect = { targetScope = it }
                     )
 
-                    val eligiblePigs = remember(eventType, pigs) {
-                        if (eventType == "Gilt/Sow Serviced") pigs.filter { it.sex.equals("F", true) } else pigs
-                    }
                     if (targetScope == "Single Pig" && eligiblePigs.isNotEmpty()) {
                         Text(if (eventType == "Gilt/Sow Serviced") "Select Female Sow/Gilt *" else "Select Animal *", color = Color(0xFF8B949E), fontSize = 12.sp)
                         DropdownSelector(
@@ -236,43 +239,51 @@ fun HealthScreen(viewModel: MainViewModel) {
             confirmButton = {
                 Button(
                     onClick = {
-                        val finalDisease = if (isCustomDisease) customDiseaseText.ifBlank { "Unspecified Disease" } else diseaseName
-                        if (product.isNotBlank()) {
-                            val targetPig = if (targetScope == "Single Pig") selectedPigId else null
-                            if (eventType == "Gilt/Sow Serviced" && targetPig != null) {
-                                viewModel.logGiltServiceFromHealth(
-                                    sowId = targetPig,
-                                    boarId = selectedBoarId,
-                                    notes = notes
-                                )
-                            } else if (eventType == "Mortality / Death" && targetPig != null) {
-                                viewModel.logMortalityEvent(
-                                    pigId = targetPig,
-                                    diseaseName = finalDisease,
-                                    ageWeeks = ageWeeksStr.toIntOrNull(),
-                                    weightKg = weightKgStr.toDoubleOrNull(),
-                                    notes = notes,
-                                    cost = costStr.toDoubleOrNull() ?: 0.0
-                                )
-                            } else {
-                                viewModel.logGroupHealthEvent(
-                                    targetScope = targetScope,
-                                    targetPigId = targetPig,
-                                    targetCategory = if (targetScope == "Category") targetCategory else null,
-                                    type = eventType,
-                                    product = product,
-                                    dosage = dosage,
-                                    cost = costStr.toDoubleOrNull() ?: 0.0,
-                                    vetName = vetName,
-                                    notes = notes,
-                                    withdrawalDays = withdrawalDaysStr.toIntOrNull() ?: 0,
-                                    diseaseName = finalDisease,
-                                    ageWeeks = ageWeeksStr.toIntOrNull(),
-                                    weightKg = weightKgStr.toDoubleOrNull()
-                                )
-                            }
-                            showGroupHealthDialog = false
+                        val finalDisease = if (isCustomDisease) customDiseaseText.ifBlank { "Routine Check / Treatment" } else diseaseName
+                        val finalProduct = product.ifBlank { "$eventType - $finalDisease" }
+                        val effectivePigId = if (targetScope == "Single Pig") {
+                            if (eligiblePigs.any { it.id == selectedPigId }) selectedPigId else eligiblePigs.firstOrNull()?.id
+                        } else null
+
+                        if (targetScope == "Single Pig" && eligiblePigs.isEmpty()) {
+                            Toast.makeText(context, "No pigs available in herd for this event", Toast.LENGTH_SHORT).show()
+                            return@Button
                         }
+
+                        if (eventType == "Gilt/Sow Serviced" && effectivePigId != null) {
+                            viewModel.logGiltServiceFromHealth(
+                                sowId = effectivePigId,
+                                boarId = selectedBoarId,
+                                notes = notes
+                            )
+                        } else if (eventType == "Mortality / Death" && effectivePigId != null) {
+                            viewModel.logMortalityEvent(
+                                pigId = effectivePigId,
+                                diseaseName = finalDisease,
+                                ageWeeks = ageWeeksStr.toIntOrNull(),
+                                weightKg = weightKgStr.toDoubleOrNull(),
+                                notes = notes,
+                                cost = costStr.toDoubleOrNull() ?: 0.0
+                            )
+                        } else {
+                            viewModel.logGroupHealthEvent(
+                                targetScope = targetScope,
+                                targetPigId = effectivePigId,
+                                targetCategory = if (targetScope == "Category") targetCategory else null,
+                                type = eventType,
+                                product = finalProduct,
+                                dosage = dosage.ifBlank { "Standard Dose" },
+                                cost = costStr.toDoubleOrNull() ?: 0.0,
+                                vetName = vetName.ifBlank { "Farm Operator" },
+                                notes = notes,
+                                withdrawalDays = withdrawalDaysStr.toIntOrNull() ?: 0,
+                                diseaseName = finalDisease,
+                                ageWeeks = ageWeeksStr.toIntOrNull(),
+                                weightKg = weightKgStr.toDoubleOrNull()
+                            )
+                        }
+                        Toast.makeText(context, "Health event recorded successfully", Toast.LENGTH_SHORT).show()
+                        showGroupHealthDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                 ) { Text("Save Event") }

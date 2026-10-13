@@ -26,6 +26,8 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.phms.app.data.local.entity.PigEntity
 import com.phms.app.ui.viewmodel.MainViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +60,10 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
     var sellerContact by remember { mutableStateOf("") }
     var purchasePriceStr by remember { mutableStateOf("") }
     var transportCostStr by remember { mutableStateOf("") }
+
+    var ageWeeksStr by remember { mutableStateOf("") }
+    var birthDateMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var initialWeightStr by remember { mutableStateOf("") }
 
     var showPhotoOptionDialog by remember { mutableStateOf(false) }
 
@@ -92,6 +98,23 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
         }
     }
 
+    LaunchedEffect(selectedStageId, isEdit) {
+        if (!isEdit && ageWeeksStr.isBlank()) {
+            val defaultWeeks = when (selectedStageId) {
+                1L -> 2L
+                2L -> 6L
+                3L -> 12L
+                4L -> 20L
+                5L -> 26L
+                6L, 7L -> 36L
+                8L -> 28L
+                else -> 8L
+            }
+            ageWeeksStr = defaultWeeks.toString()
+            birthDateMs = System.currentTimeMillis() - (defaultWeeks * 7L * 24 * 60 * 60 * 1000L)
+        }
+    }
+
     // Populate form if editing
     LaunchedEffect(pig) {
         pig?.let { p ->
@@ -110,6 +133,9 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
             sellerContact = p.seller_contact ?: ""
             purchasePriceStr = p.purchase_price?.toString() ?: ""
             transportCostStr = p.transport_cost?.toString() ?: ""
+            birthDateMs = p.birth_date
+            val weeks = maxOf(0L, (System.currentTimeMillis() - p.birth_date) / (1000L * 60 * 60 * 24 * 7))
+            ageWeeksStr = weeks.toString()
         }
     }
 
@@ -375,9 +401,9 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                 }
             }
 
-            // Stage & Assignment
+            // Growth Stage, Age & Birth Date
             item {
-                SectionCard("Farm Assignment") {
+                SectionCard("Growth Stage, Age & Birth Date") {
                     if (stages.isNotEmpty()) {
                         Text("Growth Stage *", color = Color(0xFF8B949E), fontSize = 13.sp)
                         Spacer(Modifier.height(4.dp))
@@ -385,10 +411,156 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                             label = "Stage",
                             options = stages.map { it.id to it.name },
                             selectedId = selectedStageId,
-                            onSelect = { selectedStageId = it ?: 1L }
+                            onSelect = { newStageId ->
+                                selectedStageId = newStageId ?: 1L
+                                if (!isEdit) {
+                                    val defaultWeeks = when (selectedStageId) {
+                                        1L -> 2L
+                                        2L -> 6L
+                                        3L -> 12L
+                                        4L -> 20L
+                                        5L -> 26L
+                                        6L, 7L -> 36L
+                                        8L -> 28L
+                                        else -> 8L
+                                    }
+                                    ageWeeksStr = defaultWeeks.toString()
+                                    birthDateMs = System.currentTimeMillis() - (defaultWeeks * 7L * 24 * 60 * 60 * 1000L)
+                                }
+                            }
+                        )
+                        Spacer(Modifier.height(12.dp))
+                    }
+
+                    // Age input
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(Modifier.weight(1f)) {
+                            FormField(
+                                label = "Age in Weeks *",
+                                value = ageWeeksStr,
+                                onValueChange = { input ->
+                                    ageWeeksStr = input
+                                    val w = input.toLongOrNull()
+                                    if (w != null && w >= 0) {
+                                        birthDateMs = System.currentTimeMillis() - (w * 7L * 24 * 60 * 60 * 1000L)
+                                    }
+                                },
+                                placeholder = "e.g. 12",
+                                keyboardType = KeyboardType.Number
+                            )
+                        }
+                        val ageW = ageWeeksStr.toDoubleOrNull() ?: 0.0
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFF1B3A1B),
+                            modifier = Modifier.weight(1f).padding(top = 8.dp)
+                        ) {
+                            Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Approx. Age", color = Color(0xFF81C784), fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                                Text("${String.format(Locale.getDefault(), "%.1f", ageW / 4.3)} months", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                    Text("Quick Age Presets:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf(
+                            "Piglet (2w)" to 2L,
+                            "Weaner (6w)" to 6L,
+                            "Grower (12w)" to 12L,
+                            "Finisher (20w)" to 20L,
+                            "Market (26w)" to 26L,
+                            "Adult Sow (36w)" to 36L,
+                            "Adult Boar (40w)" to 40L
+                        ).forEach { (lbl, weeks) ->
+                            FilterChip(
+                                selected = ageWeeksStr == weeks.toString(),
+                                onClick = {
+                                    ageWeeksStr = weeks.toString()
+                                    birthDateMs = System.currentTimeMillis() - (weeks * 7L * 24 * 60 * 60 * 1000L)
+                                },
+                                label = { Text(lbl, fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF1B5E20),
+                                    selectedLabelColor = Color(0xFF4CAF50)
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // Date of birth display & picker
+                    val birthDateFormat = remember { SimpleDateFormat("d MMMM yyyy", Locale.getDefault()) }
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFF21262D),
+                        border = BorderStroke(1.dp, Color(0xFF30363D)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Calculated Birth Date", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                Text(birthDateFormat.format(Date(birthDateMs)), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    val cal = Calendar.getInstance().apply { timeInMillis = birthDateMs }
+                                    android.app.DatePickerDialog(
+                                        context,
+                                        { _, y, m, d ->
+                                            val pickedCal = Calendar.getInstance().apply {
+                                                set(Calendar.YEAR, y)
+                                                set(Calendar.MONTH, m)
+                                                set(Calendar.DAY_OF_MONTH, d)
+                                            }
+                                            val pickedMs = pickedCal.timeInMillis
+                                            birthDateMs = pickedMs
+                                            val calcWeeks = maxOf(0L, (System.currentTimeMillis() - pickedMs) / (1000L * 60 * 60 * 24 * 7))
+                                            ageWeeksStr = calcWeeks.toString()
+                                        },
+                                        cal.get(Calendar.YEAR),
+                                        cal.get(Calendar.MONTH),
+                                        cal.get(Calendar.DAY_OF_MONTH)
+                                    ).show()
+                                },
+                                border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Icon(Icons.Default.CalendarToday, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Pick Date", color = Color(0xFF4CAF50), fontSize = 12.sp)
+                            }
+                        }
+                    }
+
+                    if (!isEdit) {
+                        Spacer(Modifier.height(12.dp))
+                        FormField(
+                            label = "Current / Initial Weight (kg) [Optional]",
+                            value = initialWeightStr,
+                            onValueChange = { initialWeightStr = it },
+                            placeholder = "e.g. 24.5",
+                            keyboardType = KeyboardType.Number
                         )
                     }
-                    Spacer(Modifier.height(12.dp))
+                }
+            }
+
+            // Pen & Batch Assignment
+            item {
+                SectionCard("Pen & Batch Assignment") {
                     // Pen
                     Text("Pen Assignment", color = Color(0xFF8B949E), fontSize = 13.sp)
                     Spacer(Modifier.height(4.dp))
@@ -476,12 +648,28 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                         if (tagNumber.isNotBlank()) {
                             val priceVal = purchasePriceStr.toDoubleOrNull()
                             val transVal = transportCostStr.toDoubleOrNull()
+                            val finalBirthDate = if (ageWeeksStr.isNotBlank()) {
+                                birthDateMs
+                            } else {
+                                val defaultWeeks = when (selectedStageId) {
+                                    1L -> 2L
+                                    2L -> 6L
+                                    3L -> 12L
+                                    4L -> 20L
+                                    5L -> 26L
+                                    6L, 7L -> 36L
+                                    8L -> 28L
+                                    else -> 8L
+                                }
+                                System.currentTimeMillis() - (defaultWeeks * 7L * 24 * 60 * 60 * 1000L)
+                            }
                             if (isEdit && pig != null) {
                                 viewModel.updatePig(
                                     pig!!.copy(
                                         tag_number = tagNumber,
                                         breed = breed,
                                         sex = sex,
+                                        birth_date = finalBirthDate,
                                         source = source,
                                         notes = notes.ifBlank { null },
                                         current_stage_id = selectedStageId,
@@ -505,13 +693,15 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                                     penId = selectedPenId,
                                     batchId = selectedBatchId,
                                     stageId = selectedStageId,
+                                    birthDateMs = finalBirthDate,
                                     damId = selectedDamId,
                                     sireId = selectedSireId,
                                     photoPath = photoPath,
                                     originFarm = originFarm.ifBlank { null },
                                     sellerContact = sellerContact.ifBlank { null },
                                     purchasePrice = priceVal,
-                                    transportCost = transVal
+                                    transportCost = transVal,
+                                    initialWeightKg = initialWeightStr.toDoubleOrNull()
                                 )
                             }
                             navController.popBackStack()

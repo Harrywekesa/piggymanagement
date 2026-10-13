@@ -195,6 +195,180 @@ class PromotionEngine(
     }
 }
 
+data class SwineFeedingGuideItem(
+    val category: String,
+    val stageName: String,
+    val ageRange: String,
+    val weightRange: String,
+    val dailyFeedRationKg: Double,
+    val dailyFeedRange: String,
+    val feedType: String,
+    val crudeProtein: String,
+    val dailyMeals: String,
+    val waterReqLiters: String,
+    val managementGuide: String
+)
+
+object SwineFeedingKey {
+    val table = listOf(
+        SwineFeedingGuideItem(
+            category = "Piglets (Suckling)",
+            stageName = "Piglet",
+            ageRange = "1 – 4 weeks (Day 7 to Weaning)",
+            weightRange = "1.5 – 7.0 kg",
+            dailyFeedRationKg = 0.3,
+            dailyFeedRange = "0.2 – 0.5 kg / pig / day",
+            feedType = "Creep Feed / Pre-Starter Pellets",
+            crudeProtein = "20% – 22% Crude Protein",
+            dailyMeals = "3–4 small fresh feeds daily",
+            waterReqLiters = "0.5 – 1.0 Liters / day",
+            managementGuide = "Introduce fresh creep feed in small pinches from day 7. High lactose and digestible milk proteins prepare piglet gut for weaning."
+        ),
+        SwineFeedingGuideItem(
+            category = "Weaners",
+            stageName = "Weaner",
+            ageRange = "4 – 10 weeks",
+            weightRange = "7.0 – 25.0 kg",
+            dailyFeedRationKg = 1.0,
+            dailyFeedRange = "0.8 – 1.4 kg / pig / day",
+            feedType = "Weaner Starter Pellets / Mash",
+            crudeProtein = "18% – 20% Crude Protein",
+            dailyMeals = "Ad libitum or 3 meals daily",
+            waterReqLiters = "2.0 – 4.0 Liters / day",
+            managementGuide = "Transition gradually over 5 days from creep to starter. Ensure constant clean drinking water to prevent post-weaning scours."
+        ),
+        SwineFeedingGuideItem(
+            category = "Growers",
+            stageName = "Grower",
+            ageRange = "10 – 16 weeks",
+            weightRange = "25.0 – 60.0 kg",
+            dailyFeedRationKg = 1.8,
+            dailyFeedRange = "1.5 – 2.2 kg / pig / day",
+            feedType = "Grower Mash / Pellets",
+            crudeProtein = "16% – 18% Crude Protein",
+            dailyMeals = "2 equal feeds (Morning 7am, Evening 5pm)",
+            waterReqLiters = "5.0 – 7.0 Liters / day",
+            managementGuide = "Maximum frame and muscle building phase. Target Average Daily Gain (ADG) 600–750g/day. Keep trough space clean."
+        ),
+        SwineFeedingGuideItem(
+            category = "Finishers (Porkers)",
+            stageName = "Finisher",
+            ageRange = "16 – 24 weeks",
+            weightRange = "60.0 – 90.0 kg",
+            dailyFeedRationKg = 2.6,
+            dailyFeedRange = "2.4 – 3.0 kg / pig / day",
+            feedType = "Finisher Meal",
+            crudeProtein = "14% – 16% Crude Protein",
+            dailyMeals = "2 feeds daily",
+            waterReqLiters = "7.0 – 10.0 Liters / day",
+            managementGuide = "High energy ration to achieve market slaughter weight rapidly. Avoid excess fat buildup by adhering to ration limits."
+        ),
+        SwineFeedingGuideItem(
+            category = "Market Ready (Heavy Baconers)",
+            stageName = "Market Ready",
+            ageRange = "24 – 28 weeks",
+            weightRange = "90.0 – 110.0+ kg",
+            dailyFeedRationKg = 3.0,
+            dailyFeedRange = "2.8 – 3.2 kg / pig / day",
+            feedType = "Finisher / Maintenance Mash",
+            crudeProtein = "13% – 14% Crude Protein",
+            dailyMeals = "2 feeds daily",
+            waterReqLiters = "8.0 – 12.0 Liters / day",
+            managementGuide = "Controlled feeding to maintain muscle without excessive lard thickness before slaughter."
+        ),
+        SwineFeedingGuideItem(
+            category = "Pregnant / Gestating Sows",
+            stageName = "Sow (Pregnant)",
+            ageRange = "Mature (Gestation 114 days)",
+            weightRange = "140.0 – 250.0 kg",
+            dailyFeedRationKg = 2.2,
+            dailyFeedRange = "2.0 – 2.5 kg / sow / day (2.8kg in late gestation)",
+            feedType = "Sow & Weaner (Gestation Ration)",
+            crudeProtein = "13% – 15% Crude Protein (High Fiber)",
+            dailyMeals = "1–2 feeds daily",
+            waterReqLiters = "12.0 – 18.0 Liters / day",
+            managementGuide = "Do not overfeed during early-to-mid pregnancy (fat sows farrow poorly). Increase feed to 2.8kg during final 3 weeks for piglet size."
+        ),
+        SwineFeedingGuideItem(
+            category = "Lactating Sows (Nursing)",
+            stageName = "Sow (Lactating)",
+            ageRange = "Nursing (Day 0 to Weaning ~28d)",
+            weightRange = "150.0 – 250.0 kg",
+            dailyFeedRationKg = 5.5,
+            dailyFeedRange = "4.0 – 7.0 kg / sow / day",
+            feedType = "Lactation Sow Feed",
+            crudeProtein = "16% – 18% Crude Protein (High Calcium/Energy)",
+            dailyMeals = "3 feeds daily",
+            waterReqLiters = "25.0 – 40.0 Liters / day",
+            managementGuide = "Golden Rule: 2.5 kg base feed + 0.5 kg for EVERY suckling piglet (e.g. 10 piglets = 7.5 kg/day). Water must never run dry!"
+        ),
+        SwineFeedingGuideItem(
+            category = "Gilts (Breeding Prep)",
+            stageName = "Gilt",
+            ageRange = "24 – 32 weeks (6 – 8 months)",
+            weightRange = "90.0 – 120.0 kg",
+            dailyFeedRationKg = 2.4,
+            dailyFeedRange = "2.2 – 2.6 kg / day (3.0kg flushing)",
+            feedType = "Gilt Developer / Sow & Weaner",
+            crudeProtein = "15% – 16% Crude Protein",
+            dailyMeals = "2 feeds daily",
+            waterReqLiters = "10.0 – 15.0 Liters / day",
+            managementGuide = "Flush with 3.0 kg/day 10–14 days before servicing to increase litter ovulation rate, then drop back to 2.2 kg immediately after mating."
+        ),
+        SwineFeedingGuideItem(
+            category = "Breeding Boars",
+            stageName = "Boar",
+            ageRange = "Mature (8+ months)",
+            weightRange = "150.0 – 300.0 kg",
+            dailyFeedRationKg = 2.5,
+            dailyFeedRange = "2.2 – 2.8 kg / boar / day",
+            feedType = "Boar / Breeder Mash",
+            crudeProtein = "14% – 15% Crude Protein",
+            dailyMeals = "2 feeds daily",
+            waterReqLiters = "12.0 – 20.0 Liters / day",
+            managementGuide = "Keep boars lean, muscular, and active. Overfeeding causes foot rot and lethargy during mounting. Boost feed during heavy servicing seasons."
+        )
+    )
+
+    fun getRecommendation(weightKg: Double?, ageWeeks: Int?, categoryName: String?): SwineFeedingGuideItem {
+        if (!categoryName.isNullOrBlank()) {
+            val catLower = categoryName.lowercase()
+            when {
+                catLower.contains("piglet") -> return table[0]
+                catLower.contains("weaner") -> return table[1]
+                catLower.contains("grower") -> return table[2]
+                catLower.contains("finisher") -> return table[3]
+                catLower.contains("market") -> return table[4]
+                catLower.contains("lactat") -> return table[6]
+                catLower.contains("sow") -> return table[5]
+                catLower.contains("gilt") -> return table[7]
+                catLower.contains("boar") -> return table[8]
+            }
+        }
+        if (weightKg != null && weightKg > 0) {
+            return when {
+                weightKg < 7.0 -> table[0]
+                weightKg < 25.0 -> table[1]
+                weightKg < 60.0 -> table[2]
+                weightKg < 90.0 -> table[3]
+                weightKg < 115.0 -> table[4]
+                else -> table[5]
+            }
+        }
+        if (ageWeeks != null && ageWeeks > 0) {
+            return when {
+                ageWeeks < 4 -> table[0]
+                ageWeeks < 10 -> table[1]
+                ageWeeks < 16 -> table[2]
+                ageWeeks < 24 -> table[3]
+                ageWeeks < 30 -> table[4]
+                else -> table[5]
+            }
+        }
+        return table[2] // default to Grower
+    }
+}
+
 object FeedCalculator {
     data class FeedRequirement(
         val dailyKg: Double,
@@ -203,27 +377,22 @@ object FeedCalculator {
     )
 
     fun getDailyRequirement(weightKg: Double, stageId: Long, sex: String = "M"): FeedRequirement {
-        return when {
-            sex.equals("F_Breeding", true) || sex.equals("Sow", true) -> {
-                FeedRequirement(3.5, "Lactating & Sow Feed", "High-energy sow ration split into 2 daily feeds")
-            }
-            weightKg < 15.0 || stageId == 1L -> {
-                val kg = (0.2 + (weightKg / 15.0) * 0.4).coerceIn(0.2, 0.6)
-                FeedRequirement((kg * 10).toInt() / 10.0, "Creep / Starter Pellets", "High-protein (20-22%) creep feed for young suckling piglets")
-            }
-            weightKg < 30.0 || stageId == 2L -> {
-                val kg = (0.8 + ((weightKg - 15.0) / 15.0) * 0.6).coerceIn(0.8, 1.4)
-                FeedRequirement((kg * 10).toInt() / 10.0, "Weaner Starter Feed", "Crude protein 18-20% starter ration for healthy growth")
-            }
-            weightKg < 60.0 || stageId == 3L -> {
-                val kg = (1.5 + ((weightKg - 30.0) / 30.0) * 0.9).coerceIn(1.5, 2.4)
-                FeedRequirement((kg * 10).toInt() / 10.0, "Grower Feed", "Balanced 16-18% protein grower mash for muscle development")
-            }
-            else -> {
-                val kg = (2.5 + ((weightKg - 60.0) / 40.0) * 1.0).coerceIn(2.5, 3.5)
-                FeedRequirement((kg * 10).toInt() / 10.0, "Finisher Meal", "Energy-dense 14-15% finisher meal for market weight gain")
-            }
+        val categoryHint = when {
+            sex.equals("F_Breeding", true) || sex.equals("Sow", true) -> "Sow"
+            sex.equals("M", true) && weightKg >= 90.0 -> "Boar"
+            stageId == 1L || weightKg < 7.0 -> "Piglet"
+            stageId == 2L || weightKg < 25.0 -> "Weaner"
+            stageId == 3L || weightKg < 60.0 -> "Grower"
+            stageId == 4L || weightKg < 90.0 -> "Finisher"
+            stageId == 5L -> "Market Ready"
+            stageId == 6L -> "Sow"
+            stageId == 7L -> "Boar"
+            stageId == 8L -> "Gilt"
+            else -> "Grower"
         }
+        val rec = SwineFeedingKey.getRecommendation(weightKg, null, categoryHint)
+        return FeedRequirement(rec.dailyFeedRationKg, rec.feedType, "${rec.crudeProtein} • ${rec.dailyMeals}")
     }
 }
+
 

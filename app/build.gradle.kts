@@ -13,8 +13,8 @@ android {
         applicationId = "com.phms.app"
         minSdk = 21
         targetSdk = 34
-        versionCode = 9
-        versionName = "1.0.6"
+        versionCode = 10
+        versionName = "1.0.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -31,7 +31,7 @@ android {
             )
         }
         debug {
-            // Name the output APK: PHMS-v1.0.6.apk
+            // Name the output APK: PHMS-v1.0.7.apk
         }
     }
 
