@@ -23,8 +23,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.phms.app.data.local.entity.*
+import com.phms.app.domain.engine.AutoFeedingCategoryPlan
 import com.phms.app.domain.engine.SwineFeedingGuideItem
 import com.phms.app.domain.engine.SwineFeedingKey
+import com.phms.app.domain.engine.TodayFeedingStatus
 import com.phms.app.ui.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -38,6 +40,8 @@ fun FeedScreen(viewModel: MainViewModel) {
     val pigs by viewModel.activePigs.collectAsState()
     val pens by viewModel.pens.collectAsState()
     val stages by viewModel.stages.collectAsState()
+    val todayFeedingStatus by viewModel.todayFeedingStatus.collectAsState()
+    val farmSettings by viewModel.farmSettings.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) } // 0: Feeding Key, 1: Inventory, 2: Formulator, 3: Feeding Logs
 
     var showAddInventoryDialog by remember { mutableStateOf(false) }
@@ -327,12 +331,206 @@ fun FeedScreen(viewModel: MainViewModel) {
             }
 
             3 -> { // FEEDING LOGS
-                if (feedingLogs.isEmpty()) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No daily feeding logs yet. Tap 'Log Feeding' to track daily consumption.", color = Color(0xFF6E7681), textAlign = TextAlign.Center)
+                val context = LocalContext.current
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    // ── Auto Daily Feeding Card ──────────────────────────────────────
+                    item {
+                        val status = todayFeedingStatus
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1117)),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF238636))
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                // Header row
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = Color(0xFF4CAF50),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        "Auto Daily Feeding",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    // Enabled/disabled badge
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (farmSettings.autoFeedingEnabled) Color(0xFF1B5E20) else Color(0xFF3D2B2B)
+                                    ) {
+                                        Text(
+                                            if (farmSettings.autoFeedingEnabled) "AUTO ON" else "AUTO OFF",
+                                            color = if (farmSettings.autoFeedingEnabled) Color(0xFF81C784) else Color(0xFFEF9A9A),
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.height(10.dp))
+
+                                if (status == null) {
+                                    Text(
+                                        "Loading feeding status...",
+                                        color = Color(0xFF8B949E),
+                                        fontSize = 12.sp
+                                    )
+                                } else {
+                                    // Today's summary row
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        // Already fed badge
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = if (status.isLoggedToday) Color(0xFF1B5E20) else Color(0xFF1B3A4B),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(10.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Text(
+                                                    if (status.isLoggedToday) "✓ Fed Today" else "Not Fed Yet",
+                                                    color = if (status.isLoggedToday) Color(0xFF81C784) else Color(0xFF56CCF2),
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                if (status.totalKgLoggedToday > 0.0) {
+                                                    Text(
+                                                        "${String.format("%.1f", status.totalKgLoggedToday)} kg total",
+                                                        color = Color(0xFFC9D1D9),
+                                                        fontSize = 11.sp
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        // Pigs count badge
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = Color(0xFF21262D),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(10.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Text(
+                                                    "${status.totalPigsFedToday} pigs",
+                                                    color = Color.White,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Text("in ${status.plans.size} categories", color = Color(0xFF8B949E), fontSize = 10.sp)
+                                            }
+                                        }
+                                    }
+
+                                    // Per-category breakdown
+                                    if (status.plans.isNotEmpty()) {
+                                        Spacer(Modifier.height(10.dp))
+                                        Text(
+                                            "Today's Feeding Plan",
+                                            color = Color(0xFF8B949E),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        status.plans.forEach { plan ->
+                                            val ingName = plan.matchedIngredient?.name
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                // Category dot
+                                                Box(
+                                                    Modifier
+                                                        .size(8.dp)
+                                                        .clip(CircleShape)
+                                                        .background(Color(0xFF4CAF50))
+                                                )
+                                                Spacer(Modifier.width(8.dp))
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        plan.categoryName,
+                                                        color = Color.White,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                    Text(
+                                                        "${plan.pigCount} pigs × ${String.format("%.2f", plan.rationPerPigKg)} kg",
+                                                        color = Color(0xFF8B949E),
+                                                        fontSize = 10.sp
+                                                    )
+                                                    if (ingName != null) {
+                                                        Text(
+                                                            "Feed: $ingName",
+                                                            color = Color(0xFF56CCF2),
+                                                            fontSize = 10.sp
+                                                        )
+                                                    }
+                                                }
+                                                Text(
+                                                    "${String.format("%.1f", plan.totalFeedKg)} kg",
+                                                    color = Color(0xFF4CAF50),
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 13.sp
+                                                )
+                                            }
+                                            Divider(color = Color(0xFF21262D), thickness = 0.5.dp)
+                                        }
+                                    }
+                                }
+
+                                Spacer(Modifier.height(12.dp))
+
+                                // Feed All Now button
+                                Button(
+                                    onClick = {
+                                        viewModel.triggerManualDailyFeeding()
+                                        Toast.makeText(context, "Daily feeding logged & stock deducted!", android.widget.Toast.LENGTH_LONG).show()
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (todayFeedingStatus?.isLoggedToday == true) Color(0xFF21262D) else Color(0xFF238636)
+                                    ),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        if (todayFeedingStatus?.isLoggedToday == true) "Re-Feed (Override)" else "Feed All Now (1 Tap)",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                            }
+                        }
                     }
-                } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+
+                    // ── Feeding Log History ──────────────────────────────────────────
+                    if (feedingLogs.isEmpty()) {
+                        item {
+                            Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
+                                Text("No daily feeding logs yet. Tap 'Log Feeding' to track daily consumption.", color = Color(0xFF6E7681), textAlign = TextAlign.Center)
+                            }
+                        }
+                    } else {
                         items(feedingLogs) { log ->
                             val ing = ingredients.find { it.id == log.ingredient_id }
                             val targetIcon: androidx.compose.ui.graphics.vector.ImageVector = when (log.target_scope) {
@@ -359,7 +557,8 @@ fun FeedScreen(viewModel: MainViewModel) {
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                                border = androidx.compose.foundation.BorderStroke(1.dp,
+                                    if (log.feeding_time == "Daily Ration") Color(0xFF1B3A1B) else Color(0xFF30363D))
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -372,6 +571,11 @@ fun FeedScreen(viewModel: MainViewModel) {
                                                 Text(feedTitle, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                                 Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF1B3A1B)) {
                                                     Text(log.target_scope, color = Color(0xFF81C784), fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                                                }
+                                                if (log.feeding_time == "Daily Ration") {
+                                                    Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF0D2818)) {
+                                                        Text("AUTO", color = Color(0xFF4CAF50), fontSize = 8.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
+                                                    }
                                                 }
                                             }
                                             Text("${log.feeding_time} • $targetTitle • ${log.num_pigs} pig(s)", color = Color(0xFF8B949E), fontSize = 12.sp)

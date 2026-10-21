@@ -395,4 +395,343 @@ object FeedCalculator {
     }
 }
 
+data class AutoFeedingCategoryPlan(
+    val categoryName: String,
+    val pigCount: Int,
+    val rationPerPigKg: Double,
+    val totalFeedKg: Double,
+    val recommendedFeedType: String,
+    val crudeProtein: String,
+    val matchedIngredient: FeedIngredientEntity?,
+    val willDeductStock: Boolean
+)
+
+data class AutoFeedingSummary(
+    val executed: Boolean,
+    val totalPigsFed: Int,
+    val totalFeedKg: Double,
+    val categoriesFed: Int,
+    val plans: List<AutoFeedingCategoryPlan>,
+    val message: String
+)
+
+data class TodayFeedingStatus(
+    val isLoggedToday: Boolean,
+    val totalKgLoggedToday: Double,
+    val totalPigsFedToday: Int,
+    val activePigsCount: Int,
+    val plannedCategoriesCount: Int,
+    val plannedTotalKg: Double,
+    val lastLoggedTimestamp: Long?,
+    val plans: List<AutoFeedingCategoryPlan> = emptyList()
+)
+
+object AutoFeedingEngine {
+
+    fun matchIngredientForCategory(category: String, ingredients: List<FeedIngredientEntity>): FeedIngredientEntity? {
+        val withStock = ingredients.filter { it.stock_kg > 0.0 }
+        if (withStock.isEmpty()) return null
+
+        // Priority 1: stage_category match
+        val stageMatch = withStock.find { ing ->
+            val sc = ing.stage_category?.lowercase() ?: ""
+            when (category) {
+                "Piglets" -> sc.contains("creep") || sc.contains("starter") || sc.contains("piglet")
+                "Weaners" -> sc.contains("weaner") || sc.contains("starter")
+                "Growers" -> sc.contains("grower")
+                "Finishers", "Market Ready" -> sc.contains("finisher")
+                "Pregnant Sows", "Lactating Sows", "Sows" -> sc.contains("sow")
+                "Gilts" -> sc.contains("gilt") || sc.contains("sow")
+                "Boars" -> sc.contains("boar") || sc.contains("breeder")
+                else -> false
+            }
+        }
+        if (stageMatch != null) return stageMatch
+
+        // Priority 2: name match
+        val nameMatch = withStock.find { ing ->
+            val nl = ing.name.lowercase()
+            when (category) {
+                "Piglets" -> nl.contains("creep") || nl.contains("starter") || nl.contains("piglet")
+                "Weaners" -> nl.contains("weaner") || nl.contains("starter")
+                "Growers" -> nl.contains("grower")
+                "Finishers", "Market Ready" -> nl.contains("finisher") || nl.contains("porker") || nl.contains("bacon")
+                "Pregnant Sows", "Lactating Sows", "Sows" -> nl.contains("sow") || nl.contains("lactat") || nl.contains("gestat")
+                "Gilts" -> nl.contains("gilt") || nl.contains("sow")
+                "Boars" -> nl.contains("boar") || nl.contains("breeder")
+                else -> false
+            }
+        }
+        if (nameMatch != null) return nameMatch
+
+        // Priority 3: "All Stages"
+        val allStagesMatch = withStock.find { it.stage_category?.equals("All Stages", ignoreCase = true) == true }
+        if (allStagesMatch != null) return allStagesMatch
+
+        // Priority 4: Commercial premix or highest stock
+        return withStock.firstOrNull { it.type == "Commercial Premix" } ?: withStock.maxByOrNull { it.stock_kg }
+    }
+
+    suspend fun classifyPigCategory(
+        pig: PigEntity,
+        stages: List<GrowthStageEntity>,
+        activePregnancies: List<PregnancyEntity>,
+        farrowingRecords: List<FarrowingRecordEntity>,
+        weaningRecords: List<WeaningRecordEntity>,
+        now: Long = System.currentTimeMillis()
+    ): String {
+        val stage = stages.find { it.id == pig.current_stage_id }
+        val stageName = stage?.name?.lowercase() ?: ""
+        val ageWeeks = ((now - pig.birth_date) / (1000L * 60 * 60 * 24 * 7)).toInt()
+
+        // 1. Boars
+        if (pig.sex.equals("M", true) && (stageName.contains("boar") || pig.current_stage_id == 7L || (ageWeeks >= 30 && pig.current_stage_id >= 4L))) {
+            return "Boars"
+        }
+
+        // 2. Female pigs: Lactating Sows, Pregnant Sows, Gilts
+        if (pig.sex.equals("F", true)) {
+            val recentFarrowing = farrowingRecords.firstOrNull { f ->
+                f.sow_id == pig.id && (now - f.farrowing_date) <= TimeUnit.DAYS.toMillis(35)
+            }
+            if (recentFarrowing != null) {
+                val hasWeaned = weaningRecords.any { w -> w.sow_id == pig.id && w.weaning_date >= recentFarrowing.farrowing_date }
+                if (!hasWeaned) {
+                    return "Lactating Sows"
+                }
+            }
+
+            if (activePregnancies.any { it.sow_id == pig.id }) {
+                return "Pregnant Sows"
+            }
+
+            if (stageName.contains("gilt") || pig.current_stage_id == 8L || (ageWeeks in 24..32 && pig.current_stage_id !in listOf(1L, 2L, 3L))) {
+                return "Gilts"
+            }
+
+            if (stageName.contains("sow") || pig.current_stage_id == 6L || ageWeeks >= 32) {
+                return "Pregnant Sows"
+            }
+        }
+
+        // 3. Growing stages
+        if (stageName.contains("piglet") || pig.current_stage_id == 1L || ageWeeks < 4) {
+            return "Piglets"
+        }
+        if (stageName.contains("weaner") || pig.current_stage_id == 2L || ageWeeks in 4..9) {
+            return "Weaners"
+        }
+        if (stageName.contains("market") || pig.current_stage_id == 5L) {
+            return "Market Ready"
+        }
+        if (stageName.contains("finisher") || pig.current_stage_id == 4L || ageWeeks in 16..24) {
+            return "Finishers"
+        }
+        if (stageName.contains("grower") || pig.current_stage_id == 3L || ageWeeks in 10..15) {
+            return "Growers"
+        }
+
+        return "Growers"
+    }
+
+    suspend fun prepareDailyFeedingPlan(
+        pigDao: PigDao,
+        feedDao: FeedDao,
+        growthStageDao: GrowthStageDao,
+        breedingDao: BreedingDao,
+        now: Long = System.currentTimeMillis()
+    ): List<AutoFeedingCategoryPlan> {
+        val activePigs = pigDao.getActivePigsSync()
+        if (activePigs.isEmpty()) return emptyList()
+
+        val stages = growthStageDao.getAllStagesSync()
+        val activePregnancies = breedingDao.getActivePregnanciesSync()
+        val farrowings = breedingDao.getAllFarrowingRecordsSync()
+        val weanings = breedingDao.getAllWeaningRecordsSync()
+        val ingredients = feedDao.getAllIngredientsSync()
+
+        val categoryGroups = activePigs.groupBy { pig ->
+            classifyPigCategory(pig, stages, activePregnancies, farrowings, weanings, now)
+        }
+
+        val plans = mutableListOf<AutoFeedingCategoryPlan>()
+
+        val preferredOrder = listOf(
+            "Piglets", "Weaners", "Growers", "Finishers", "Market Ready",
+            "Pregnant Sows", "Lactating Sows", "Gilts", "Boars"
+        )
+
+        for (cat in preferredOrder) {
+            val count = categoryGroups[cat]?.size ?: 0
+            if (count > 0) {
+                val rec = SwineFeedingKey.getRecommendation(weightKg = null, ageWeeks = null, categoryName = cat)
+                val totalKg = Math.round(rec.dailyFeedRationKg * count * 10.0) / 10.0
+                val matchedIng = matchIngredientForCategory(cat, ingredients)
+
+                plans.add(
+                    AutoFeedingCategoryPlan(
+                        categoryName = cat,
+                        pigCount = count,
+                        rationPerPigKg = rec.dailyFeedRationKg,
+                        totalFeedKg = totalKg,
+                        recommendedFeedType = rec.feedType,
+                        crudeProtein = rec.crudeProtein,
+                        matchedIngredient = matchedIng,
+                        willDeductStock = matchedIng != null
+                    )
+                )
+            }
+        }
+
+        return plans
+    }
+
+    suspend fun isDailyFeedingAlreadyLoggedForDate(
+        feedDao: FeedDao,
+        dateMs: Long = System.currentTimeMillis()
+    ): Boolean {
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = dateMs
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfDay = cal.timeInMillis
+        val todayLogs = feedDao.getFeedingLogsSince(startOfDay)
+        return todayLogs.any {
+            it.notes?.contains("Automated daily ration", ignoreCase = true) == true ||
+            it.feeding_time.equals("Daily Ration", ignoreCase = true)
+        }
+    }
+
+    suspend fun getTodayFeedingStatus(
+        feedDao: FeedDao,
+        pigDao: PigDao,
+        growthStageDao: GrowthStageDao,
+        breedingDao: BreedingDao,
+        dateMs: Long = System.currentTimeMillis()
+    ): TodayFeedingStatus {
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = dateMs
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfDay = cal.timeInMillis
+        val todayLogs = feedDao.getFeedingLogsSince(startOfDay)
+        val autoLogs = todayLogs.filter {
+            it.notes?.contains("Automated daily ration", ignoreCase = true) == true ||
+            it.feeding_time.equals("Daily Ration", ignoreCase = true)
+        }
+
+        val isLogged = autoLogs.isNotEmpty()
+        val totalKgLogged = autoLogs.sumOf { it.quantity_kg }
+        val totalPigsFed = autoLogs.sumOf { it.num_pigs }
+        val lastTimestamp = autoLogs.maxOfOrNull { it.date }
+
+        val plans = prepareDailyFeedingPlan(pigDao, feedDao, growthStageDao, breedingDao, dateMs)
+        val activePigs = pigDao.getActivePigsSync().size
+        val plannedTotalKg = plans.sumOf { it.totalFeedKg }
+
+        return TodayFeedingStatus(
+            isLoggedToday = isLogged,
+            totalKgLoggedToday = Math.round(totalKgLogged * 10.0) / 10.0,
+            totalPigsFedToday = totalPigsFed,
+            activePigsCount = activePigs,
+            plannedCategoriesCount = plans.size,
+            plannedTotalKg = Math.round(plannedTotalKg * 10.0) / 10.0,
+            lastLoggedTimestamp = lastTimestamp,
+            plans = plans
+        )
+    }
+
+    suspend fun executeDailyFeeding(
+        pigDao: PigDao,
+        feedDao: FeedDao,
+        growthStageDao: GrowthStageDao,
+        breedingDao: BreedingDao,
+        alertDao: AlertDao,
+        currentTimeMs: Long = System.currentTimeMillis(),
+        isManualTrigger: Boolean = false
+    ): AutoFeedingSummary {
+        val plans = prepareDailyFeedingPlan(pigDao, feedDao, growthStageDao, breedingDao, currentTimeMs)
+        if (plans.isEmpty()) {
+            return AutoFeedingSummary(
+                executed = false,
+                totalPigsFed = 0,
+                totalFeedKg = 0.0,
+                categoriesFed = 0,
+                plans = emptyList(),
+                message = "No active pigs in herd to feed."
+            )
+        }
+
+        val totalPigs = plans.sumOf { it.pigCount }
+        val totalFeedKg = Math.round(plans.sumOf { it.totalFeedKg } * 10.0) / 10.0
+
+        for (plan in plans) {
+            val feedTypeName = plan.matchedIngredient?.name ?: plan.recommendedFeedType
+            feedDao.insertFeedingLog(
+                FeedingLogEntity(
+                    date = currentTimeMs,
+                    feeding_time = "Daily Ration",
+                    feed_type = feedTypeName,
+                    quantity_kg = plan.totalFeedKg,
+                    num_pigs = plan.pigCount,
+                    target_scope = "Category",
+                    category = plan.categoryName,
+                    ingredient_id = plan.matchedIngredient?.id,
+                    notes = "Automated daily ration: ${plan.rationPerPigKg} kg/pig (${plan.crudeProtein})"
+                )
+            )
+
+            // Deduct stock if matched ingredient
+            if (plan.matchedIngredient != null) {
+                feedDao.deductStock(plan.matchedIngredient.id, plan.totalFeedKg)
+
+                // Check for low feed stock
+                val updatedIng = feedDao.getIngredientById(plan.matchedIngredient.id)
+                if (updatedIng != null && updatedIng.stock_kg <= updatedIng.reorder_level) {
+                    val alertType = "Low Feed"
+                    val msg = "${updatedIng.name} stock is LOW (${String.format("%.1f", updatedIng.stock_kg)} kg remaining, reorder level: ${updatedIng.reorder_level} kg)."
+                    val existing = alertDao.getActiveAlertByKeyword(alertType, updatedIng.name)
+                    if (existing == null) {
+                        alertDao.insertAlert(
+                            AlertEntity(
+                                type = alertType,
+                                priority = "High",
+                                message = msg,
+                                created_date = currentTimeMs
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+        // Insert notification alert
+        val triggerType = if (isManualTrigger) "Manual 1-Tap" else "Automatic"
+        alertDao.insertAlert(
+            AlertEntity(
+                type = "Daily Feeding Logged",
+                priority = "Low",
+                message = "$triggerType daily feeding completed: ${String.format("%.1f", totalFeedKg)} kg fed to $totalPigs pigs across ${plans.size} categories. Stock deducted.",
+                created_date = currentTimeMs
+            )
+        )
+
+        return AutoFeedingSummary(
+            executed = true,
+            totalPigsFed = totalPigs,
+            totalFeedKg = totalFeedKg,
+            categoriesFed = plans.size,
+            plans = plans,
+            message = "Daily feeding recorded: ${String.format("%.1f", totalFeedKg)} kg for $totalPigs pigs across ${plans.size} categories."
+        )
+    }
+}
+
+
 

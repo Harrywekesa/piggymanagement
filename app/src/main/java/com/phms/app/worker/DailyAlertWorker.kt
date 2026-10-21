@@ -6,6 +6,7 @@ import androidx.work.WorkerParameters
 import com.phms.app.data.local.database.AppDatabase
 import com.phms.app.data.local.entity.AlertEntity
 import com.phms.app.data.repository.SettingsRepository
+import com.phms.app.domain.engine.AutoFeedingEngine
 import com.phms.app.domain.engine.OutbreakDetector
 import com.phms.app.domain.engine.PromotionEngine
 import java.text.SimpleDateFormat
@@ -153,6 +154,22 @@ class DailyAlertWorker(
                         )
                     }
                 }
+            }
+        }
+
+        // 7. Auto Daily Feeding (gated by autoFeedingEnabled setting)
+        if (settings.autoFeedingEnabled) {
+            val alreadyLogged = AutoFeedingEngine.isDailyFeedingAlreadyLoggedForDate(db.feedDao(), now)
+            if (!alreadyLogged) {
+                AutoFeedingEngine.executeDailyFeeding(
+                    pigDao = db.pigDao(),
+                    feedDao = db.feedDao(),
+                    growthStageDao = db.growthStageDao(),
+                    breedingDao = db.breedingDao(),
+                    alertDao = db.alertDao(),
+                    currentTimeMs = now,
+                    isManualTrigger = false
+                )
             }
         }
 

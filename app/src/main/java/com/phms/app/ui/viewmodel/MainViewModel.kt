@@ -11,6 +11,8 @@ import com.phms.app.data.repository.PHMSRepository
 import com.phms.app.data.repository.SettingsRepository
 import com.phms.app.domain.calculator.PnLCalculator
 import com.phms.app.domain.calculator.PnLSummary
+import com.phms.app.domain.engine.AutoFeedingEngine
+import com.phms.app.domain.engine.TodayFeedingStatus
 import com.phms.app.domain.engine.WithdrawalTracker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -59,9 +61,14 @@ class MainViewModel(
     private val _appUpdateInfo = MutableStateFlow(com.phms.app.data.updater.AppUpdateInfo())
     val appUpdateInfo: StateFlow<com.phms.app.data.updater.AppUpdateInfo> = _appUpdateInfo.asStateFlow()
 
+    // Auto Daily Feeding status
+    private val _todayFeedingStatus = MutableStateFlow<TodayFeedingStatus?>(null)
+    val todayFeedingStatus: StateFlow<TodayFeedingStatus?> = _todayFeedingStatus.asStateFlow()
+
     init {
         checkForAppUpdates()
         syncBuyersFromCloud()
+        loadTodayFeedingStatus()
     }
 
     fun syncBuyersFromCloud() {
@@ -75,6 +82,32 @@ class MainViewModel(
             _appUpdateInfo.value = _appUpdateInfo.value.copy(isChecking = true)
             val info = com.phms.app.data.updater.GitHubUpdateChecker.checkForUpdates()
             _appUpdateInfo.value = info
+        }
+    }
+
+    fun loadTodayFeedingStatus() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _todayFeedingStatus.value = AutoFeedingEngine.getTodayFeedingStatus(
+                feedDao = repository.feedDao,
+                pigDao = repository.pigDao,
+                growthStageDao = repository.growthStageDao,
+                breedingDao = repository.breedingDao
+            )
+        }
+    }
+
+    fun triggerManualDailyFeeding() {
+        viewModelScope.launch(Dispatchers.IO) {
+            AutoFeedingEngine.executeDailyFeeding(
+                pigDao = repository.pigDao,
+                feedDao = repository.feedDao,
+                growthStageDao = repository.growthStageDao,
+                breedingDao = repository.breedingDao,
+                alertDao = repository.alertDao,
+                currentTimeMs = System.currentTimeMillis(),
+                isManualTrigger = true
+            )
+            loadTodayFeedingStatus()
         }
     }
 

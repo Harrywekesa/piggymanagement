@@ -19,6 +19,7 @@ data class FarmSettings(
     val alertPromotion: Boolean = true,
     val alertWithdrawal: Boolean = true,
     val alertOvercrowding: Boolean = true,
+    val autoFeedingEnabled: Boolean = true,
     val isOnboarded: Boolean = false,
     val showTourOnFirstOpen: Boolean = true
 )
@@ -44,6 +45,7 @@ class SettingsRepository(context: Context) {
         alertPromotion = prefs.getBoolean("alert_promotion", true),
         alertWithdrawal = prefs.getBoolean("alert_withdrawal", true),
         alertOvercrowding = prefs.getBoolean("alert_overcrowding", true),
+        autoFeedingEnabled = prefs.getBoolean("auto_feeding_enabled", true),
         isOnboarded = prefs.getBoolean("is_onboarded", false),
         showTourOnFirstOpen = prefs.getBoolean("show_tour_on_first_open", true)
     )
@@ -63,6 +65,7 @@ class SettingsRepository(context: Context) {
             putBoolean("alert_promotion", s.alertPromotion)
             putBoolean("alert_withdrawal", s.alertWithdrawal)
             putBoolean("alert_overcrowding", s.alertOvercrowding)
+            putBoolean("auto_feeding_enabled", s.autoFeedingEnabled)
             putBoolean("is_onboarded", s.isOnboarded)
             putBoolean("show_tour_on_first_open", s.showTourOnFirstOpen)
         }.apply()

@@ -57,6 +57,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
     var alertLowFeed by remember(farmSettings.alertLowFeed) { mutableStateOf(farmSettings.alertLowFeed) }
     var alertPromotion by remember(farmSettings.alertPromotion) { mutableStateOf(farmSettings.alertPromotion) }
     var alertWithdrawal by remember(farmSettings.alertWithdrawal) { mutableStateOf(farmSettings.alertWithdrawal) }
+    var autoFeedingEnabled by remember(farmSettings.autoFeedingEnabled) { mutableStateOf(farmSettings.autoFeedingEnabled) }
 
     val backupStatus by viewModel.backupStatus.collectAsState()
     var showRestoreConfirmDialog by remember { mutableStateOf<Uri?>(null) }
@@ -207,6 +208,10 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 AlertToggle("Withdrawal Period Active", alertWithdrawal) {
                     alertWithdrawal = it
                     viewModel.saveFarmSettings(farmSettings.copy(alertWithdrawal = it))
+                }
+                AlertToggle("Auto Daily Feeding (Automated Logs)", autoFeedingEnabled) {
+                    autoFeedingEnabled = it
+                    viewModel.saveFarmSettings(farmSettings.copy(autoFeedingEnabled = it))
                 }
             }
         }
