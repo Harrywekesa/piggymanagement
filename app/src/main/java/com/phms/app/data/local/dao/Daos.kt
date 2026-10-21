@@ -244,6 +244,12 @@ interface FeedDao {
     @Query("DELETE FROM feeding_logs")
     suspend fun deleteAllFeedingLogs()
 
+    @Query("DELETE FROM feeding_logs WHERE date >= :startOfDayMs AND date < :endOfDayMs AND feeding_time = 'Daily Ration'")
+    suspend fun deleteAutoFeedingLogsForDate(startOfDayMs: Long, endOfDayMs: Long)
+
+    @Query("SELECT * FROM feeding_logs WHERE date >= :startOfDayMs AND date < :endOfDayMs AND feeding_time = 'Daily Ration'")
+    suspend fun getAutoFeedingLogsForDate(startOfDayMs: Long, endOfDayMs: Long): List<FeedingLogEntity>
+
     @Query("DELETE FROM feed_purchases")
     suspend fun deleteAllFeedPurchases()
 }

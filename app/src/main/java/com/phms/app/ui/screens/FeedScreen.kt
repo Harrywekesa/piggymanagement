@@ -519,6 +519,83 @@ fun FeedScreen(viewModel: MainViewModel) {
                                         fontSize = 13.sp
                                     )
                                 }
+
+                                Spacer(Modifier.height(6.dp))
+
+                                // Log Past Days button
+                                var showBacklogPicker by remember { mutableStateOf(false) }
+                                OutlinedButton(
+                                    onClick = { showBacklogPicker = !showBacklogPicker },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF30363D))
+                                ) {
+                                    Icon(Icons.Default.History, contentDescription = null, tint = Color(0xFF8B949E), modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        if (showBacklogPicker) "Hide Past Days" else "Log a Past Day (Backlog)",
+                                        color = Color(0xFF8B949E),
+                                        fontSize = 12.sp
+                                    )
+                                }
+
+                                if (showBacklogPicker) {
+                                    Spacer(Modifier.height(8.dp))
+                                    val backlogDateFormat = remember { java.text.SimpleDateFormat("EEE, d MMM yyyy", java.util.Locale.getDefault()) }
+                                    val today = remember {
+                                        java.util.Calendar.getInstance().apply {
+                                            set(java.util.Calendar.HOUR_OF_DAY, 0)
+                                            set(java.util.Calendar.MINUTE, 0)
+                                            set(java.util.Calendar.SECOND, 0)
+                                            set(java.util.Calendar.MILLISECOND, 0)
+                                        }.timeInMillis
+                                    }
+                                    val pastDays = remember {
+                                        (1..30).map { daysAgo ->
+                                            today - daysAgo * 24 * 60 * 60 * 1000L
+                                        }
+                                    }
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text("Select a missed day to back-log:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                        pastDays.forEach { dayMs ->
+                                            // Check if this day already has logs in feedingLogs
+                                            val dayEnd = dayMs + 24 * 60 * 60 * 1000L
+                                            val alreadyLogged = feedingLogs.any { log ->
+                                                log.date >= dayMs && log.date < dayEnd && log.feeding_time == "Daily Ration"
+                                            }
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(if (alreadyLogged) Color(0xFF1B3A1B) else Color(0xFF21262D))
+                                                    .clickable {
+                                                        viewModel.triggerBacklogFeeding(dayMs)
+                                                        Toast.makeText(
+                                                            context,
+                                                            "${backlogDateFormat.format(java.util.Date(dayMs))} feeding logged!",
+                                                            android.widget.Toast.LENGTH_SHORT
+                                                        ).show()
+                                                    }
+                                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    backlogDateFormat.format(java.util.Date(dayMs)),
+                                                    color = Color.White,
+                                                    fontSize = 12.sp,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                if (alreadyLogged) {
+                                                    Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF1B5E20)) {
+                                                        Text("✓ Logged", color = Color(0xFF81C784), fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                                                    }
+                                                } else {
+                                                    Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

@@ -60,7 +60,14 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
         return
     }
     val p = pig!!
-    val ageWeeks = TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - p.birth_date) / (24 * 7)
+    val ageMs = System.currentTimeMillis() - p.birth_date
+    val ageDays = TimeUnit.MILLISECONDS.toDays(ageMs).coerceAtLeast(0)
+    val ageWeeks = (ageDays / 7).coerceAtLeast(0)
+    val ageDisplay = when {
+        ageDays < 14 -> "${ageDays}d old"
+        ageWeeks < 16 -> "${ageWeeks}wk old"
+        else -> "${String.format("%.1f", ageWeeks / 4.33)}mo old"
+    }
     val latestWeight = weights.firstOrNull()?.weight_kg
     val currentStage = stages.find { it.id == p.current_stage_id }
     val currentPen = pens.find { it.id == p.pen_id }
@@ -155,7 +162,7 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(p.breed, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                        Text("${if (p.sex == "M") "Boar" else "Sow"} • ${ageWeeks}w old", color = Color(0xFF8B949E), fontSize = 13.sp)
+                        Text("${if (p.sex == "M") "Boar" else "Sow"} • $ageDisplay", color = Color(0xFF8B949E), fontSize = 13.sp)
                     }
                 }
             }
@@ -483,8 +490,13 @@ fun OverviewTab(
 
         InfoSection("Growth & Stage") {
             InfoRow("Birth Date", dateFormat.format(Date(pig.birth_date)))
-            val monthsApprox = String.format(Locale.getDefault(), "%.1f", ageWeeks / 4.3)
-            InfoRow("Age", "$ageWeeks weeks (~$monthsApprox months)")
+            val ageDaysLocal = ageWeeks * 7
+            val ageDisplayLocal = when {
+                ageDaysLocal < 14 -> "${ageDaysLocal}d old"
+                ageWeeks < 16 -> "${ageWeeks}wk old"
+                else -> "${String.format("%.1f", ageWeeks / 4.33)}mo old"
+            }
+            InfoRow("Age", ageDisplayLocal)
             InfoRow("Current Stage", currentStage?.name ?: "–")
             InfoRow("Latest Weight", if (latestWeight != null) "${latestWeight} kg" else "Not recorded")
         }

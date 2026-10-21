@@ -111,6 +111,20 @@ class MainViewModel(
         }
     }
 
+    fun triggerBacklogFeeding(targetDateMs: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            AutoFeedingEngine.executeBacklogFeeding(
+                pigDao = repository.pigDao,
+                feedDao = repository.feedDao,
+                growthStageDao = repository.growthStageDao,
+                breedingDao = repository.breedingDao,
+                alertDao = repository.alertDao,
+                targetDateMs = targetDateMs
+            )
+            loadTodayFeedingStatus()
+        }
+    }
+
     private val _pnlSummary = MutableStateFlow<PnLSummary?>(null)
     val pnlSummary: StateFlow<PnLSummary?> = _pnlSummary.asStateFlow()
 

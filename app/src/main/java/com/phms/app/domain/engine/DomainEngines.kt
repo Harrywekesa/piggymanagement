@@ -668,6 +668,26 @@ object AutoFeedingEngine {
             )
         }
 
+        // ── Calculate start/end of target day ───────────────────────────────
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = currentTimeMs
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }
+        val startOfDay = cal.timeInMillis
+        val endOfDay = startOfDay + 24 * 60 * 60 * 1000L
+
+        // ── Remove any existing auto-feed logs for this day and restore stock ─
+        val existingLogs = feedDao.getAutoFeedingLogsForDate(startOfDay, endOfDay)
+        for (old in existingLogs) {
+            // Restore stock that was previously deducted for this log
+            if (old.ingredient_id != null && old.quantity_kg > 0.0) {
+                feedDao.addStock(old.ingredient_id, old.quantity_kg)
+            }
+        }
+        feedDao.deleteAutoFeedingLogsForDate(startOfDay, endOfDay)
+
+        // ── Insert fresh logs for today ──────────────────────────────────────
         val totalPigs = plans.sumOf { it.pigCount }
         val totalFeedKg = Math.round(plans.sumOf { it.totalFeedKg } * 10.0) / 10.0
 
@@ -687,11 +707,10 @@ object AutoFeedingEngine {
                 )
             )
 
-            // Deduct stock if matched ingredient
+            // Deduct stock
             if (plan.matchedIngredient != null) {
                 feedDao.deductStock(plan.matchedIngredient.id, plan.totalFeedKg)
 
-                // Check for low feed stock
                 val updatedIng = feedDao.getIngredientById(plan.matchedIngredient.id)
                 if (updatedIng != null && updatedIng.stock_kg <= updatedIng.reorder_level) {
                     val alertType = "Low Feed"
@@ -711,7 +730,6 @@ object AutoFeedingEngine {
             }
         }
 
-        // Insert notification alert
         val triggerType = if (isManualTrigger) "Manual 1-Tap" else "Automatic"
         alertDao.insertAlert(
             AlertEntity(
@@ -729,6 +747,32 @@ object AutoFeedingEngine {
             categoriesFed = plans.size,
             plans = plans,
             message = "Daily feeding recorded: ${String.format("%.1f", totalFeedKg)} kg for $totalPigs pigs across ${plans.size} categories."
+        )
+    }
+
+    /**
+     * Back-log feeding for a specific past date (e.g., missed days).
+     * Uses the current pig herd snapshot since historical counts aren't stored.
+     * Safely replaces any existing auto-feed logs for that date.
+     */
+    suspend fun executeBacklogFeeding(
+        pigDao: PigDao,
+        feedDao: FeedDao,
+        growthStageDao: GrowthStageDao,
+        breedingDao: BreedingDao,
+        alertDao: AlertDao,
+        targetDateMs: Long  // midnight of the target day
+    ): AutoFeedingSummary {
+        // Use noon of the target day as the log timestamp
+        val logTimestamp = targetDateMs + 12 * 60 * 60 * 1000L
+        return executeDailyFeeding(
+            pigDao = pigDao,
+            feedDao = feedDao,
+            growthStageDao = growthStageDao,
+            breedingDao = breedingDao,
+            alertDao = alertDao,
+            currentTimeMs = logTimestamp,
+            isManualTrigger = true
         )
     }
 }
