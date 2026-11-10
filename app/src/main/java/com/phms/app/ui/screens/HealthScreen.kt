@@ -40,6 +40,7 @@ fun HealthScreen(viewModel: MainViewModel) {
     var costStr by remember { mutableStateOf("") }
     var vetName by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+    var repeatIntervalDaysStr by remember { mutableStateOf("") }
 
     val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
 
@@ -228,6 +229,40 @@ fun HealthScreen(viewModel: MainViewModel) {
                         Box(Modifier.weight(1f)) { FormField("Withdrawal (Days)", withdrawalDaysStr, { withdrawalDaysStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
                     }
 
+                    // Repeat interval — shown only for Deworming, Vaccination, Vitamin
+                    if (eventType in listOf("Deworming", "Vaccination", "Vitamin")) {
+                        androidx.compose.material3.Surface(
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                            color = Color(0xFF0E2420)
+                        ) {
+                            Column(Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    androidx.compose.material3.Icon(
+                                        androidx.compose.material.icons.Icons.Default.Refresh,
+                                        null,
+                                        tint = Color(0xFF4CAF50),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Text("Repeat Schedule (optional)", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                                FormField(
+                                    label = "Repeat Every (Days)",
+                                    value = repeatIntervalDaysStr,
+                                    onValueChange = { repeatIntervalDaysStr = it.filter { c -> c.isDigit() } },
+                                    placeholder = "e.g. 90 for quarterly deworming",
+                                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                                )
+                                if (repeatIntervalDaysStr.isNotBlank() && (repeatIntervalDaysStr.toIntOrNull() ?: 0) > 0) {
+                                    Text(
+                                        "🔁 An alert will be created in ${repeatIntervalDaysStr} days reminding you to administer ${eventType.lowercase()} again.",
+                                        color = Color(0xFF8B949E),
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) { FormField("Total Cost (KSh)", costStr, { costStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
                         Box(Modifier.weight(1f)) { FormField("Vet / Operator", vetName, { vetName = it }, placeholder = "Dr. John / Self") }
@@ -279,7 +314,8 @@ fun HealthScreen(viewModel: MainViewModel) {
                                 withdrawalDays = withdrawalDaysStr.toIntOrNull() ?: 0,
                                 diseaseName = finalDisease,
                                 ageWeeks = ageWeeksStr.toIntOrNull(),
-                                weightKg = weightKgStr.toDoubleOrNull()
+                                weightKg = weightKgStr.toDoubleOrNull(),
+                                repeatIntervalDays = repeatIntervalDaysStr.toIntOrNull() ?: 0
                             )
                         }
                         Toast.makeText(context, "Health event recorded successfully", Toast.LENGTH_SHORT).show()

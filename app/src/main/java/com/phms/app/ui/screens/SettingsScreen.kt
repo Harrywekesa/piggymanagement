@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.automirrored.filled.Help
@@ -18,6 +20,12 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -258,6 +266,42 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     }
                 }
 
+                Spacer(Modifier.height(10.dp))
+
+                // Google Drive / Share backup
+                OutlinedButton(
+                    onClick = {
+                        isProcessingBackup = true
+                        viewModel.shareBackupFile(context)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, Color(0xFF1565C0)),
+                    shape = RoundedCornerShape(10.dp),
+                    enabled = !isProcessingBackup
+                ) {
+                    Icon(Icons.Default.Share, null, tint = Color(0xFF1E88E5), modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Save to Google Drive / WhatsApp", color = Color(0xFF1E88E5), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Email backup
+                OutlinedButton(
+                    onClick = {
+                        isProcessingBackup = true
+                        viewModel.emailBackup(context)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, Color(0xFF6A1B9A)),
+                    shape = RoundedCornerShape(10.dp),
+                    enabled = !isProcessingBackup
+                ) {
+                    Icon(Icons.Default.Email, null, tint = Color(0xFF8E24AA), modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Email Backup to Myself", color = Color(0xFF8E24AA), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                }
+
                 if (isProcessingBackup) {
                     Spacer(Modifier.height(8.dp))
                     Row(
@@ -273,53 +317,117 @@ fun SettingsScreen(viewModel: MainViewModel) {
             }
         }
 
-        // Demo Mode & Farm Reset
+        // Demo Mode & Farm Reset — collapsible developer tools
         item {
-            SectionCard("Demo Mode & Farm Reset") {
-                Text(
-                    "Switch between sample simulation data (for testing, exhibitions, or ASK show judging) and resetting to a completely clean farm.",
-                    color = Color(0xFF8B949E),
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp
-                )
-                Spacer(Modifier.height(12.dp))
-
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(
-                        onClick = { showLoadDemoConfirmDialog = true },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3A4B)),
-                        shape = RoundedCornerShape(10.dp),
-                        enabled = !isOperatingDemo
-                    ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color(0xFF00B4D8), modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Load Demo Herd", color = Color(0xFF90E0EF), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    OutlinedButton(
-                        onClick = { showResetConfirmDialog = true },
-                        modifier = Modifier.weight(1f),
-                        border = BorderStroke(1.dp, Color(0xFFE53935)),
-                        shape = RoundedCornerShape(10.dp),
-                        enabled = !isOperatingDemo
-                    ) {
-                        Icon(Icons.Default.DeleteForever, contentDescription = null, tint = Color(0xFFFF5252), modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Reset Farm", color = Color(0xFFFF5252), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                if (isOperatingDemo) {
-                    Spacer(Modifier.height(8.dp))
+            var showDeveloperTools by remember { mutableStateOf(false) }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                border = BorderStroke(1.dp, Color(0xFF30363D))
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // Collapsed header row — always visible
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showDeveloperTools = !showDeveloperTools }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF00B4D8), strokeWidth = 2.dp)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Updating farm records...", color = Color(0xFF8B949E), fontSize = 12.sp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = Color(0xFFFF8A65),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                "Developer Tools",
+                                color = Color(0xFFFF8A65),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = Color(0xFF2C1A0E)
+                            ) {
+                                Text(
+                                    "Demo & Reset",
+                                    color = Color(0xFFFF8A65),
+                                    fontSize = 10.sp,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Icon(
+                            if (showDeveloperTools) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (showDeveloperTools) "Collapse" else "Expand",
+                            tint = Color(0xFF8B949E),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    // Expandable content
+                    AnimatedVisibility(
+                        visible = showDeveloperTools,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            HorizontalDivider(color = Color(0xFF30363D))
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                "Switch between sample simulation data (for testing, exhibitions, or ASK show judging) and resetting to a completely clean farm.",
+                                color = Color(0xFF8B949E),
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
+                            )
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Button(
+                                    onClick = { showLoadDemoConfirmDialog = true },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3A4B)),
+                                    shape = RoundedCornerShape(10.dp),
+                                    enabled = !isOperatingDemo
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color(0xFF00B4D8), modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Load Demo Herd", color = Color(0xFF90E0EF), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                                OutlinedButton(
+                                    onClick = { showResetConfirmDialog = true },
+                                    modifier = Modifier.weight(1f),
+                                    border = BorderStroke(1.dp, Color(0xFFE53935)),
+                                    shape = RoundedCornerShape(10.dp),
+                                    enabled = !isOperatingDemo
+                                ) {
+                                    Icon(Icons.Default.DeleteForever, contentDescription = null, tint = Color(0xFFFF5252), modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Reset Farm", color = Color(0xFFFF5252), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            if (isOperatingDemo) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF00B4D8), strokeWidth = 2.dp)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Updating farm records...", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                }
+                            }
+                        }
                     }
                 }
             }

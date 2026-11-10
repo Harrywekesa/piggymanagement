@@ -105,14 +105,49 @@ fun AlertItemCard(
     }
 
     val hasPig = alert.related_pig_id != null && onNavigateToPig != null
+    var showDismissDialog by remember { mutableStateOf(false) }
+
+    // Confirmation dialog when user taps card body to dismiss
+    if (showDismissDialog) {
+        AlertDialog(
+            onDismissRequest = { showDismissDialog = false },
+            containerColor = Color(0xFF161B22),
+            title = {
+                Text("Mark as Addressed?", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(alert.type.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor)
+                    Text(alert.message, fontSize = 13.sp, color = Color(0xFFC9D1D9))
+                    Spacer(Modifier.height(4.dp))
+                    Text("This alert will be removed from your inbox.", fontSize = 12.sp, color = Color(0xFF8B949E))
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { onDone(); showDismissDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                ) {
+                    Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Addressed ✓", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showDismissDialog = false },
+                    border = BorderStroke(1.dp, Color(0xFF30363D))
+                ) {
+                    Text("Cancel", color = Color(0xFF8B949E))
+                }
+            }
+        )
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (hasPig) Modifier.clickable { onNavigateToPig!!(alert.related_pig_id!!) }
-                else Modifier
-            ),
+            .clickable { showDismissDialog = true }, // tap anywhere → dismiss dialog
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = bg),
         border = BorderStroke(1.dp, border)
@@ -128,17 +163,19 @@ fun AlertItemCard(
                     Text(alert.message, fontSize = 13.sp, color = Color.White)
                 }
                 Spacer(Modifier.width(8.dp))
+                // Quick-dismiss checkmark button (no dialog)
                 IconButton(onClick = onDone, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Default.Check, "Done", tint = Color(0xFF4CAF50))
                 }
             }
-            // "View Pig" chip shown when this alert is linked to a specific pig
+            // "View Pig" chip — tapping this navigates, does NOT trigger the dismiss dialog
             if (hasPig) {
                 Spacer(Modifier.height(8.dp))
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
                         .background(textColor.copy(alpha = 0.12f))
+                        .clickable(onClick = { onNavigateToPig!!(alert.related_pig_id!!) })
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)

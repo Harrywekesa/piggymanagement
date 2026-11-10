@@ -82,6 +82,14 @@ fun MoreScreen(navController: NavController) {
             icon = Icons.AutoMirrored.Filled.Help,
             iconTint = Color(0xFFBA68C8),
             iconBg = Color(0xFF331A3E)
+        ),
+        MoreModuleItem(
+            route = "educate",
+            title = "Educate Me",
+            subtitle = "Feeding key, ingredient guide & feed combinations",
+            icon = Icons.Default.School,
+            iconTint = Color(0xFF81C784),
+            iconBg = Color(0xFF1B3A1B)
         )
     )
 

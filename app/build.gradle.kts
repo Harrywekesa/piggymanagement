@@ -13,8 +13,8 @@ android {
         applicationId = "com.phms.app"
         minSdk = 21
         targetSdk = 34
-        versionCode = 12
-        versionName = "1.0.9"
+        versionCode = 14
+        versionName = "1.0.11"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -31,7 +31,7 @@ android {
             )
         }
         debug {
-            // Name the output APK: PHMS-v1.0.7.apk
+            // Name the output APK: PHMS-v1.0.10.apk
         }
     }
 
@@ -72,6 +72,7 @@ android {
 dependencies {
     // Core AndroidX
     implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
 

@@ -6,6 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.phms.app.data.local.dao.*
 import com.phms.app.data.local.entity.*
 import java.util.Date
@@ -16,6 +18,15 @@ class Converters {
 
     @TypeConverter
     fun dateToTimestamp(date: Date?): Long? = date?.time
+}
+
+// --- Safe Migrations (data is NEVER wiped on update) ---
+
+/** v7 → v8: Added repeat_interval_days column to health_events */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE health_events ADD COLUMN repeat_interval_days INTEGER NOT NULL DEFAULT 0")
+    }
 }
 
 @Database(
@@ -45,7 +56,7 @@ class Converters {
         ExpenseEntity::class,
         GiltHeatRecordEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -73,7 +84,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "phms_database"
                 )
-                .fallbackToDestructiveMigration()
+                .addMigrations(MIGRATION_7_8)
                 .build()
                 INSTANCE = instance
                 instance

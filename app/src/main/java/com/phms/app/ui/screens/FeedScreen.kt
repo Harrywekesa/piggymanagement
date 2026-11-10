@@ -2,6 +2,9 @@ package com.phms.app.ui.screens
 
 import android.widget.Toast
 import androidx.compose.animation.*
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,39 +45,64 @@ fun FeedScreen(viewModel: MainViewModel) {
     val stages by viewModel.stages.collectAsState()
     val todayFeedingStatus by viewModel.todayFeedingStatus.collectAsState()
     val farmSettings by viewModel.farmSettings.collectAsState()
-    var selectedTab by remember { mutableIntStateOf(0) } // 0: Feeding Key, 1: Inventory, 2: Formulator, 3: Feeding Logs
+    var selectedTab by remember { mutableIntStateOf(0) } // 0: Inventory, 1: Formulator, 2: Feeding Logs
 
     var showAddInventoryDialog by remember { mutableStateOf(false) }
     var showLogFeedingDialog by remember { mutableStateOf(false) }
+    var selectedIngredientForAction by remember { mutableStateOf<com.phms.app.data.local.entity.FeedIngredientEntity?>(null) }
+    var showIngredientActionDialog by remember { mutableStateOf(false) }
 
     // Feed Formulator state
-    var selectedPreset by remember { mutableStateOf("Grower Mash") }
-    var batchWeightKgStr by remember { mutableStateOf("100") }
-    var maizePct by remember { mutableStateOf("58") }
-    var wheatBranPct by remember { mutableStateOf("20") }
-    var soybeanPct by remember { mutableStateOf("14") }
-    var fishMealPct by remember { mutableStateOf("6") }
-    var premixPct by remember { mutableStateOf("2") }
-    var formulaDisplayUnit by remember { mutableStateOf("Both") } // "Both", "kg", "grams"
+    var selectedPreset by remember { mutableStateOf("Weaner/Starter") }
+    var batchWeightKgStr by remember { mutableStateOf("1000") }
+    var formulaDisplayUnit by remember { mutableStateOf("kg") } // "Both", "kg", "grams"
 
-    fun applyPreset(preset: String) {
-        selectedPreset = preset
-        when (preset) {
-            "Creep Starter" -> { maizePct = "55"; wheatBranPct = "5"; soybeanPct = "25"; fishMealPct = "12"; premixPct = "3" }
-            "Weaner Starter" -> { maizePct = "52"; wheatBranPct = "18"; soybeanPct = "20"; fishMealPct = "7"; premixPct = "3" }
-            "Grower Mash" -> { maizePct = "58"; wheatBranPct = "20"; soybeanPct = "14"; fishMealPct = "6"; premixPct = "2" }
-            "Finisher Meal" -> { maizePct = "62"; wheatBranPct = "22"; soybeanPct = "10"; fishMealPct = "4"; premixPct = "2" }
-            "Sow & Weaner" -> { maizePct = "54"; wheatBranPct = "22"; soybeanPct = "16"; fishMealPct = "6"; premixPct = "2" }
-        }
-    }
+    // Recipe data class: name, description, kg per 1000 kg base
+    data class Ingredient(val name: String, val role: String, val kgPerTonne: Double)
+    data class FeedRecipe(val name: String, val ingredients: List<Ingredient>)
 
-    val batchKg = batchWeightKgStr.toDoubleOrNull() ?: 100.0
-    val mPct = maizePct.toDoubleOrNull() ?: 0.0
-    val wPct = wheatBranPct.toDoubleOrNull() ?: 0.0
-    val sPct = soybeanPct.toDoubleOrNull() ?: 0.0
-    val fPct = fishMealPct.toDoubleOrNull() ?: 0.0
-    val pPct = premixPct.toDoubleOrNull() ?: 0.0
-    val totalPct = mPct + wPct + sPct + fPct + pPct
+    val recipes = listOf(
+        FeedRecipe("Weaner/Starter", listOf(
+            Ingredient("Whole Ground Maize",   "Energy source",             600.0),
+            Ingredient("Whole Ground Wheat",   "Energy & fiber",            100.0),
+            Ingredient("Soybean Meal",          "Plant protein",             180.0),
+            Ingredient("Sunflower Cake",        "Protein & energy",          50.0),
+            Ingredient("Fishmeal/Omena",        "Animal protein & minerals",  30.0),
+            Ingredient("Vegetable Oil",         "Energy (fat)",               15.0),
+            Ingredient("Feed Lime/Limestone",   "Calcium source",              8.0),
+            Ingredient("DCP (Bone Meal)",       "Phosphorus & calcium",        7.0),
+            Ingredient("2% Pig Feed Premix",   "Vitamins & minerals",         20.0),
+            Ingredient("Stock/Animal Salt",     "Electrolytes",                5.0)
+        )),
+        FeedRecipe("Grower", listOf(
+            Ingredient("Whole Ground Maize",   "Energy source",             670.0),
+            Ingredient("Whole Ground Wheat",   "Energy & fiber",            100.0),
+            Ingredient("Soybean Meal",          "Plant protein",             120.0),
+            Ingredient("Sunflower Cake",        "Protein & energy",          70.0),
+            Ingredient("Fishmeal/Omena",        "Animal protein & minerals",  10.0),
+            Ingredient("Vegetable Oil",         "Energy (fat)",                2.0),
+            Ingredient("Feed Lime/Limestone",   "Calcium source",              3.0),
+            Ingredient("DCP (Bone Meal)",       "Phosphorus & calcium",        2.0),
+            Ingredient("2% Pig Feed Premix",   "Vitamins & minerals",         20.0),
+            Ingredient("Stock/Animal Salt",     "Electrolytes",                1.0)
+        )),
+        FeedRecipe("Finisher", listOf(
+            Ingredient("Whole Ground Maize",   "Energy source",             710.0),
+            Ingredient("Whole Ground Wheat",   "Energy & fiber",            100.0),
+            Ingredient("Soybean Meal",          "Plant protein",              80.0),
+            Ingredient("Sunflower Cake",        "Protein & energy",          70.0),
+            Ingredient("Fishmeal/Omena",        "Animal protein & minerals",  10.0),
+            Ingredient("Vegetable Oil",         "Energy (fat)",                2.0),
+            Ingredient("Feed Lime/Limestone",   "Calcium source",              3.0),
+            Ingredient("DCP (Bone Meal)",       "Phosphorus & calcium",        2.0),
+            Ingredient("2% Pig Feed Premix",   "Vitamins & minerals",         20.0),
+            Ingredient("Stock/Animal Salt",     "Electrolytes",                1.0)
+        ))
+    )
+
+    val currentRecipe = recipes.find { it.name == selectedPreset } ?: recipes[0]
+    val batchKg = batchWeightKgStr.toDoubleOrNull() ?: 1000.0
+    val baseTotal = currentRecipe.ingredients.sumOf { it.kgPerTonne }
     val dateFormat = SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault())
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
@@ -101,19 +129,14 @@ fun FeedScreen(viewModel: MainViewModel) {
             containerColor = Color(0xFF161B22),
             contentColor = Color(0xFF4CAF50)
         ) {
-            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Feeding Key", fontSize = 11.sp, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) })
-            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Inventory", fontSize = 11.sp, fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) })
-            Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Formulator", fontSize = 11.sp, fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) })
-            Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("Feeding Logs", fontSize = 11.sp, fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) })
+            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Inventory", fontSize = 11.sp, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) })
+            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Formulator", fontSize = 11.sp, fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) })
+            Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Feeding Logs", fontSize = 11.sp, fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) })
         }
         Spacer(Modifier.height(12.dp))
 
         when (selectedTab) {
-            0 -> { // FEEDING KEY
-                SwineFeedingKeyTab(pigs = pigs)
-            }
-
-            1 -> { // INVENTORY
+            0 -> { // INVENTORY
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -136,7 +159,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                         val isLow = ing.stock_kg <= ing.reorder_level
                         val fillFraction = (ing.stock_kg / (ing.reorder_level * 3)).coerceIn(0.0, 1.0).toFloat()
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().clickable { selectedIngredientForAction = ing; showIngredientActionDialog = true },
                             shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
                             border = if (isLow) BorderStroke(1.dp, Color(0xFFFF5252)) else BorderStroke(1.dp, Color(0xFF30363D))
@@ -197,9 +220,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                 }
             }
 
-            2 -> { // FORMULATOR
-                var showCustomRatioInputs by remember { mutableStateOf(false) }
-
+            1 -> { // FORMULATOR
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     item {
                         Card(
@@ -209,16 +230,16 @@ fun FeedScreen(viewModel: MainViewModel) {
                             border = BorderStroke(1.dp, Color(0xFF30363D))
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("Balanced Feed Formulation", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text("Select a formula preset and target batch weight. Calculations adjust automatically in kg and grams.", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                Text("Farm Feed Formulator", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text("Select a recipe and enter your target batch size. Ingredient quantities scale automatically.", color = Color(0xFF8B949E), fontSize = 12.sp)
 
-                                Text("Formula Presets:", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("Recipe:", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    listOf("Creep Starter", "Weaner Starter", "Grower Mash", "Finisher Meal", "Sow & Weaner").forEach { preset ->
+                                    recipes.forEach { recipe ->
                                         FilterChip(
-                                            selected = selectedPreset == preset,
-                                            onClick = { applyPreset(preset) },
-                                            label = { Text(preset, fontSize = 11.sp) },
+                                            selected = selectedPreset == recipe.name,
+                                            onClick = { selectedPreset = recipe.name },
+                                            label = { Text(recipe.name, fontSize = 11.sp) },
                                             colors = FilterChipDefaults.filterChipColors(
                                                 selectedContainerColor = Color(0xFF1B5E20),
                                                 selectedLabelColor = Color(0xFF4CAF50),
@@ -229,9 +250,9 @@ fun FeedScreen(viewModel: MainViewModel) {
                                     }
                                 }
 
-                                Text("Target Batch Output:", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("Target Batch Size:", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    listOf("50", "100", "200", "500", "1000").forEach { weight ->
+                                    listOf("100", "250", "500", "1000").forEach { weight ->
                                         FilterChip(
                                             selected = batchWeightKgStr == weight,
                                             onClick = { batchWeightKgStr = weight },
@@ -249,35 +270,11 @@ fun FeedScreen(viewModel: MainViewModel) {
                                 OutlinedTextField(
                                     value = batchWeightKgStr,
                                     onValueChange = { input -> batchWeightKgStr = input.filter { it.isDigit() || it == '.' } },
-                                    label = { Text("Target Batch Output (kg)") },
+                                    label = { Text("Custom Batch Size (kg)") },
                                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50), focusedTextColor = Color.White, unfocusedTextColor = Color.White, unfocusedLabelColor = Color(0xFF8B949E), focusedLabelColor = Color(0xFF4CAF50))
                                 )
-
-                                Row(
-                                    Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text("Customize Ratio Percentages", color = Color(0xFF8B949E), fontSize = 12.sp)
-                                    TextButton(onClick = { showCustomRatioInputs = !showCustomRatioInputs }) {
-                                        Text(if (showCustomRatioInputs) "Hide Custom Editor ▴" else "Edit Ratios ▾", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-
-                                if (showCustomRatioInputs) {
-                                    Text("Ingredient Ratios (%) — Total must equal 100%", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Box(Modifier.weight(1f)) { FormField("Maize Meal %", maizePct, { maizePct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                                        Box(Modifier.weight(1f)) { FormField("Wheat Bran %", wheatBranPct, { wheatBranPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                                    }
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Box(Modifier.weight(1f)) { FormField("Soybean %", soybeanPct, { soybeanPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                                        Box(Modifier.weight(1f)) { FormField("Fish Meal %", fishMealPct, { fishMealPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number) }
-                                    }
-                                    FormField("Premix & Salt %", premixPct, { premixPct = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
-                                }
                             }
                         }
                     }
@@ -290,39 +287,119 @@ fun FeedScreen(viewModel: MainViewModel) {
                             border = BorderStroke(1.dp, Color(0xFF2E7D32))
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Column {
-                                        Text("Ingredient Rations List (${batchKg.toInt()} kg Batch)", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        Text("Uneditable calculated measurements (${selectedPreset})", color = Color(0xFF8B949E), fontSize = 11.sp)
-                                    }
-                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        listOf("Both", "kg", "grams").forEach { unit ->
-                                            FilterChip(
-                                                selected = formulaDisplayUnit == unit,
-                                                onClick = { formulaDisplayUnit = unit },
-                                                label = { Text(if (unit == "Both") "kg & g" else unit, fontSize = 10.sp) },
-                                                colors = FilterChipDefaults.filterChipColors(
-                                                    selectedContainerColor = Color(0xFF2E7D32),
-                                                    selectedLabelColor = Color.White,
-                                                    containerColor = Color(0xFF161B22),
-                                                    labelColor = Color(0xFF8B949E)
+                                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("${selectedPreset} — ${batchKg.toInt()} kg Batch", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Text("Scaled from 1-tonne base formula", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("Display Units:", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            listOf("kg", "grams", "Both").forEach { unit ->
+                                                FilterChip(
+                                                    selected = formulaDisplayUnit == unit,
+                                                    onClick = { formulaDisplayUnit = unit },
+                                                    label = { Text(if (unit == "Both") "kg & g" else unit, fontSize = 11.sp) },
+                                                    colors = FilterChipDefaults.filterChipColors(
+                                                        selectedContainerColor = Color(0xFF2E7D32),
+                                                        selectedLabelColor = Color.White,
+                                                        containerColor = Color(0xFF161B22),
+                                                        labelColor = Color(0xFF8B949E)
+                                                    )
                                                 )
-                                            )
+                                            }
                                         }
                                     }
                                 }
                                 HorizontalDivider(color = Color(0xFF2E7D32))
 
-                                UneditableRationListItem("Maize Meal", "Energy source", mPct, mPct / 100.0 * batchKg, formulaDisplayUnit)
-                                UneditableRationListItem("Wheat Bran", "Fiber & digestion", wPct, wPct / 100.0 * batchKg, formulaDisplayUnit)
-                                UneditableRationListItem("Soybean Meal", "Plant protein", sPct, sPct / 100.0 * batchKg, formulaDisplayUnit)
-                                UneditableRationListItem("Fish Meal", "Animal protein & minerals", fPct, fPct / 100.0 * batchKg, formulaDisplayUnit)
-                                UneditableRationListItem("Premix & Salt", "Vitamins & minerals", pPct, pPct / 100.0 * batchKg, formulaDisplayUnit)
+                                currentRecipe.ingredients.forEachIndexed { idx, ingredient ->
+                                    val scaledKg = (ingredient.kgPerTonne / baseTotal) * batchKg
+                                    val pct = (ingredient.kgPerTonne / baseTotal) * 100.0
+                                    UneditableRationListItem(ingredient.name, ingredient.role, pct, scaledKg, formulaDisplayUnit)
+                                }
 
                                 HorizontalDivider(color = Color(0xFF2E7D32))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Total Mix Ratio:", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                    Text("${totalPct.toInt()}% (${batchKg.toInt()} kg total output)", color = if (totalPct == 100.0) Color(0xFF4CAF50) else Color(0xFFFF5252), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("Total Output:", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("${batchKg.toInt()} kg (${currentRecipe.ingredients.size} ingredients)", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                                // Base formula note
+                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF0E2A1A)) {
+                                    Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Text("ℹ️", fontSize = 14.sp)
+                                        Text("Base recipe: ${currentRecipe.ingredients.sumOf { it.kgPerTonne }.toInt()} kg per tonne. All quantities scaled proportionally to your batch size.", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // ── FEED COST CALCULATOR ─────────────────────────────────────────────
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            border = BorderStroke(1.dp, Color(0xFFFFB74D))
+                        ) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Box(
+                                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF2A1E00)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.AttachMoney, contentDescription = null, tint = Color(0xFFFFB74D), modifier = Modifier.size(18.dp))
+                                    }
+                                    Text("Batch Cost Estimate", color = Color(0xFFFFD54F), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                }
+                                Text("Based on current inventory prices. Update prices in Inventory tab.", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                HorizontalDivider(color = Color(0xFF30363D))
+
+                                val ingMap = ingredients.associateBy { it.name }
+                                var totalCost = 0.0
+                                currentRecipe.ingredients.forEach { recipeIng ->
+                                    val scaledKg = (recipeIng.kgPerTonne / baseTotal) * batchKg
+                                    val matchedIng = ingMap[recipeIng.name]
+                                    val pricePerKg = matchedIng?.cost_per_kg ?: 0.0
+                                    val lineTotal = scaledKg * pricePerKg
+                                    totalCost += lineTotal
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(recipeIng.name, color = Color(0xFFC9D1D9), fontSize = 12.sp)
+                                            Text("${String.format("%.1f", scaledKg)} kg × KSh ${String.format("%.0f", pricePerKg)}/kg", color = Color(0xFF8B949E), fontSize = 10.sp)
+                                        }
+                                        Text(
+                                            if (pricePerKg > 0) "KSh ${lineTotal.toInt()}" else "—",
+                                            color = if (pricePerKg > 0) Color(0xFFFFD54F) else Color(0xFF6E7681),
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+
+                                HorizontalDivider(color = Color(0xFF30363D))
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Total Batch Cost:", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("KSh ${totalCost.toInt()}", color = Color(0xFFFFD54F), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                }
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Cost per kg of feed:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                    Text(if (batchKg > 0 && totalCost > 0) "KSh ${String.format("%.1f", totalCost / batchKg)}/kg" else "—", color = Color(0xFFFFB74D), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                                }
+                                if (totalCost == 0.0) {
+                                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF1E1500), modifier = Modifier.fillMaxWidth()) {
+                                        Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFFFFB74D), modifier = Modifier.size(14.dp))
+                                            Text("Add ingredient prices in the Inventory tab to see cost estimates.", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -330,7 +407,8 @@ fun FeedScreen(viewModel: MainViewModel) {
                 }
             }
 
-            3 -> { // FEEDING LOGS
+
+            2 -> { // FEEDING LOGS
                 val context = LocalContext.current
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -608,7 +686,30 @@ fun FeedScreen(viewModel: MainViewModel) {
                             }
                         }
                     } else {
-                        items(feedingLogs) { log ->
+                        items(feedingLogs, key = { it.id }) { log ->
+                            val dismissState = rememberSwipeToDismissBoxState(
+                                confirmValueChange = { value ->
+                                    if (value == SwipeToDismissBoxValue.EndToStart) {
+                                        viewModel.deleteFeedingLog(log.id)
+                                        true
+                                    } else false
+                                }
+                            )
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                enableDismissFromStartToEnd = false,
+                                backgroundContent = {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize().padding(vertical = 2.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF8C1D1D)),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Row(modifier = Modifier.padding(end = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Icon(Icons.Default.Delete, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                            Text("Delete", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+                            ) {
                             val ing = ingredients.find { it.id == log.ingredient_id }
                             val targetIcon: androidx.compose.ui.graphics.vector.ImageVector = when (log.target_scope) {
                                 "Single Pig" -> Icons.Default.Pets
@@ -683,6 +784,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                                     }
                                 }
                             }
+                            } // end SwipeToDismissBox
                         }
                     }
                 }
@@ -690,6 +792,137 @@ fun FeedScreen(viewModel: MainViewModel) {
         }
     }
 
+    // -- INGREDIENT ACTION DIALOG (Restock / Update Price) ------------------
+    if (showIngredientActionDialog && selectedIngredientForAction != null) {
+        val ing = selectedIngredientForAction!!
+        var actionMode by remember { mutableStateOf("") } // "" | "restock" | "price"
+        var addKgStr by remember { mutableStateOf("") }
+        var totalCostStr by remember { mutableStateOf("") }
+        var newCostPerKgStr by remember { mutableStateOf(ing.cost_per_kg.toString()) }
+        var newPricePerBagStr by remember { mutableStateOf(ing.price_per_bag?.toString() ?: "") }
+        val context = LocalContext.current
+
+        AlertDialog(
+            onDismissRequest = { showIngredientActionDialog = false; actionMode = "" },
+            containerColor = Color(0xFF161B22),
+            title = {
+                Column {
+                    Text(ing.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(
+                        if (ing.price_per_bag != null) "KSh ${ing.price_per_bag?.toInt()}/bag (${ing.bag_size_kg?.toInt()}kg) � Stock: ${String.format("%.1f", ing.stock_kg)}kg"
+                        else "KSh ${ing.cost_per_kg}/kg � Stock: ${String.format("%.1f", ing.stock_kg)}kg",
+                        color = Color(0xFF8B949E), fontSize = 12.sp
+                    )
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (actionMode.isEmpty()) {
+                        // Choose action
+                        Text("What would you like to do?", color = Color(0xFFC9D1D9), fontSize = 13.sp)
+                        Button(
+                            onClick = { actionMode = "restock" },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Add More Stock (Restock)", fontWeight = FontWeight.Bold)
+                        }
+                        OutlinedButton(
+                            onClick = { actionMode = "price" },
+                            modifier = Modifier.fillMaxWidth(),
+                            border = BorderStroke(1.dp, Color(0xFF4CAF50)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(Icons.Default.Edit, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Update Price", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+                        }
+                    } else if (actionMode == "restock") {
+                        Text("Add Stock", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        OutlinedTextField(
+                            value = addKgStr,
+                            onValueChange = { addKgStr = it.filter { c -> c.isDigit() || c == '.' } },
+                            label = { Text("Quantity to Add (kg)") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50), focusedTextColor = Color.White, unfocusedTextColor = Color.White, unfocusedLabelColor = Color(0xFF8B949E), focusedLabelColor = Color(0xFF4CAF50))
+                        )
+                        OutlinedTextField(
+                            value = totalCostStr,
+                            onValueChange = { totalCostStr = it.filter { c -> c.isDigit() || c == '.' } },
+                            label = { Text("Total Cost (KSh) � optional") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50), focusedTextColor = Color.White, unfocusedTextColor = Color.White, unfocusedLabelColor = Color(0xFF8B949E), focusedLabelColor = Color(0xFF4CAF50))
+                        )
+                        val addKg = addKgStr.toDoubleOrNull() ?: 0.0
+                        if (addKg > 0) {
+                            Text("New stock will be: ${String.format("%.1f", ing.stock_kg + addKg)} kg", color = Color(0xFF81C784), fontSize = 12.sp)
+                        }
+                    } else if (actionMode == "price") {
+                        Text("Update Price", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        OutlinedTextField(
+                            value = newCostPerKgStr,
+                            onValueChange = { newCostPerKgStr = it.filter { c -> c.isDigit() || c == '.' } },
+                            label = { Text("New Price per kg (KSh)") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50), focusedTextColor = Color.White, unfocusedTextColor = Color.White, unfocusedLabelColor = Color(0xFF8B949E), focusedLabelColor = Color(0xFF4CAF50))
+                        )
+                        if (ing.price_per_bag != null) {
+                            OutlinedTextField(
+                                value = newPricePerBagStr,
+                                onValueChange = { newPricePerBagStr = it.filter { c -> c.isDigit() || c == '.' } },
+                                label = { Text("New Price per Bag (KSh) � optional") },
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50), focusedTextColor = Color.White, unfocusedTextColor = Color.White, unfocusedLabelColor = Color(0xFF8B949E), focusedLabelColor = Color(0xFF4CAF50))
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                if (actionMode.isNotEmpty()) {
+                    Button(
+                        onClick = {
+                            when (actionMode) {
+                                "restock" -> {
+                                    val addKg = addKgStr.toDoubleOrNull() ?: 0.0
+                                    if (addKg > 0) {
+                                        viewModel.restockIngredient(ing.id, addKg, totalCostStr.toDoubleOrNull() ?: 0.0)
+                                        Toast.makeText(context, "+${addKg}kg added to ${ing.name}", android.widget.Toast.LENGTH_SHORT).show()
+                                        showIngredientActionDialog = false
+                                    }
+                                }
+                                "price" -> {
+                                    val newCpk = newCostPerKgStr.toDoubleOrNull()
+                                    if (newCpk != null && newCpk > 0) {
+                                        viewModel.updateIngredientPrice(ing.id, newCpk, newPricePerBagStr.toDoubleOrNull())
+                                        Toast.makeText(context, "${ing.name} price updated!", android.widget.Toast.LENGTH_SHORT).show()
+                                        showIngredientActionDialog = false
+                                    }
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) { Text(if (actionMode == "restock") "Add Stock" else "Save Price", fontWeight = FontWeight.Bold) }
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = {
+                        if (actionMode.isEmpty()) { showIngredientActionDialog = false }
+                        else { actionMode = "" }
+                    },
+                    border = BorderStroke(1.dp, Color(0xFF30363D))
+                ) { Text(if (actionMode.isEmpty()) "Close" else "? Back", color = Color(0xFF8B949E)) }
+            }
+        )
+    }
     // Modal Dialog: Add Inventory / Shop Premix Bag
     if (showAddInventoryDialog) {
         var name by remember { mutableStateOf("") }
@@ -1213,7 +1446,8 @@ fun UneditableRationListItem(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF1B5E20)) {
-                        Text("${percentage.toInt()}%", color = Color(0xFF81C784), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        val pctText = if (percentage < 1.0) String.format(Locale.getDefault(), "%.1f%%", percentage) else "${percentage.toInt()}%"
+                        Text(pctText, color = Color(0xFF81C784), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                     }
                 }
                 Text(category, color = Color(0xFF8B949E), fontSize = 11.sp)

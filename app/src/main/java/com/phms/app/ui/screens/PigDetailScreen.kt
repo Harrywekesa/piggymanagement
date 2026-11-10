@@ -20,7 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -266,8 +270,80 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
                     if (weights.isEmpty()) {
                         item { EmptyTab("No weight records yet") }
                     } else {
+                        // ── GROWTH CHART ────────────────────────────────────
                         item {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                border = BorderStroke(1.dp, Color(0xFF2E7D32))
+                            ) {
+                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Growth Chart", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    val sorted = weights.sortedBy { it.date }
+                                    val minW = sorted.minOf { it.weight_kg }.toFloat()
+                                    val maxW = sorted.maxOf { it.weight_kg }.toFloat()
+                                    val range = (maxW - minW).coerceAtLeast(1f)
+                                    val lineColor = Color(0xFF4CAF50)
+                                    val dotColor = Color(0xFF81C784)
+                                    val gridColor = Color(0xFF21262D)
+                                    Canvas(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(150.dp)
+                                            .padding(bottom = 4.dp)
+                                    ) {
+                                        val w = size.width
+                                        val h = size.height
+                                        val padL = 40f; val padR = 16f; val padT = 8f; val padB = 24f
+                                        val chartW = w - padL - padR
+                                        val chartH = h - padT - padB
+                                        // Grid lines
+                                        listOf(0f, 0.25f, 0.5f, 0.75f, 1f).forEach { frac ->
+                                            val y = padT + chartH * (1f - frac)
+                                            drawLine(gridColor, androidx.compose.ui.geometry.Offset(padL, y), androidx.compose.ui.geometry.Offset(w - padR, y), strokeWidth = 1f)
+                                        }
+                                        // Line path
+                                        if (sorted.size >= 2) {
+                                            val path = Path()
+                                            sorted.forEachIndexed { i, rec ->
+                                                val x = padL + (i.toFloat() / (sorted.size - 1).toFloat()) * chartW
+                                                val y = padT + chartH * (1f - ((rec.weight_kg.toFloat() - minW) / range))
+                                                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                                            }
+                                            drawPath(path, lineColor, style = Stroke(width = 3f, cap = StrokeCap.Round))
+                                        }
+                                        // Dots
+                                        sorted.forEachIndexed { i, rec ->
+                                            val x = padL + (if (sorted.size > 1) i.toFloat() / (sorted.size - 1).toFloat() else 0.5f) * chartW
+                                            val y = padT + chartH * (1f - ((rec.weight_kg.toFloat() - minW) / range))
+                                            drawCircle(dotColor, radius = 6f, center = androidx.compose.ui.geometry.Offset(x, y))
+                                            drawCircle(Color(0xFF0D1117), radius = 3f, center = androidx.compose.ui.geometry.Offset(x, y))
+                                        }
+                                    }
+                                    // Min / Max / Latest summary
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("${String.format("%.1f", sorted.first().weight_kg)} kg", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text("Start", color = Color(0xFF6E7681), fontSize = 10.sp)
+                                        }
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            val gainKg = sorted.last().weight_kg - sorted.first().weight_kg
+                                            Text("${if (gainKg >= 0) "+" else ""}${String.format("%.1f", gainKg)} kg", color = if (gainKg >= 0) Color(0xFF81C784) else Color(0xFFE57373), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text("Total Gain", color = Color(0xFF6E7681), fontSize = 10.sp)
+                                        }
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("${String.format("%.1f", sorted.last().weight_kg)} kg", color = Color(0xFF4CAF50), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text("Latest", color = Color(0xFF6E7681), fontSize = 10.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // ── WEIGHT LOG LIST ──────────────────────────────────
+                        item {
+                            Column(Modifier.padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Weight History", color = Color(0xFF8B949E), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                                 weights.forEachIndexed { i, w ->
                                     WeightRow(w, prev = weights.getOrNull(i + 1), dateFormat = dateFormat)
                                 }
@@ -649,6 +725,21 @@ fun HealthEventRow(event: HealthEventEntity, dateFormat: SimpleDateFormat) {
                     Text(
                         "${event.withdrawal_days}d WD",
                         color = Color(0xFFFF5252),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                    )
+                }
+            }
+            if (event.repeat_interval_days > 0) {
+                Spacer(Modifier.width(4.dp))
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFF0E2420)
+                ) {
+                    Text(
+                        "\uD83D\uDD01 ${event.repeat_interval_days}d",
+                        color = Color(0xFF4CAF50),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)

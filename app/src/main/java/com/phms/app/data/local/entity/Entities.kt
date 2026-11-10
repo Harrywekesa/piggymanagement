@@ -179,7 +179,8 @@ data class HealthEventEntity(
     val notes: String? = null,
     val disease_name: String? = null,
     val age_weeks: Int? = null,
-    val weight_kg: Double? = null
+    val weight_kg: Double? = null,
+    val repeat_interval_days: Int = 0  // 0 = no repeat; >0 = schedule next dose alert after N days
 )
 
 @Entity(tableName = "symptoms")

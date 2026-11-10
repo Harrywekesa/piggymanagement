@@ -2,4 +2,5 @@
 <paths>
     <external-files-path name="pig_photos" path="Pictures/" />
     <cache-path name="cache" path="." />
+    <cache-path name="backups" path="backups/" />
 </paths>

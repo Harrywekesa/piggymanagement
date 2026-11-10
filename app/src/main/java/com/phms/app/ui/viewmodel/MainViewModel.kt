@@ -72,13 +72,13 @@ class MainViewModel(
     }
 
     fun syncBuyersFromCloud() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             com.phms.app.data.remote.FirestoreBuyerSync.syncFromCloud(repository.marketDao)
         }
     }
 
     fun checkForAppUpdates() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _appUpdateInfo.value = _appUpdateInfo.value.copy(isChecking = true)
             val info = com.phms.app.data.updater.GitHubUpdateChecker.checkForUpdates()
             _appUpdateInfo.value = info
@@ -307,6 +307,12 @@ class MainViewModel(
         }
     }
 
+    fun deleteFeedingLog(logId: Long) {
+        viewModelScope.launch {
+            repository.feedDao.deleteFeedingLogById(logId)
+        }
+    }
+
     fun logFeedingAndDeductStock(
         penId: Long? = null,
         batchId: Long? = null,
@@ -407,6 +413,47 @@ class MainViewModel(
         viewModelScope.launch { repository.alertDao.markAlertDone(alertId) }
     }
 
+    // ── FEED INVENTORY ACTIONS ─────────────────────────────────────────────
+    fun restockIngredient(ingredientId: Long, addedKg: Double, totalCost: Double) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.feedDao.addStock(ingredientId, addedKg)
+            repository.feedDao.insertPurchase(
+                com.phms.app.data.local.entity.FeedPurchaseEntity(
+                    ingredient_id = ingredientId,
+                    date = System.currentTimeMillis(),
+                    quantity_kg = addedKg,
+                    total_cost = totalCost
+                )
+            )
+            if (totalCost > 0.0) {
+                val ing = repository.feedDao.getIngredientById(ingredientId)
+                repository.logExpense(
+                    ExpenseEntity(
+                        category = "Feed",
+                        amount = totalCost,
+                        date = System.currentTimeMillis(),
+                        target_scope = "Herd",
+                        payee = "Feed Supplier",
+                        notes = "Restock: ${ing?.name ?: "Ingredient"} +${addedKg}kg"
+                    )
+                )
+            }
+            loadPnL()
+        }
+    }
+
+    fun updateIngredientPrice(ingredientId: Long, newCostPerKg: Double, newPricePerBag: Double?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val ing = repository.feedDao.getIngredientById(ingredientId) ?: return@launch
+            repository.feedDao.updateIngredient(
+                ing.copy(
+                    cost_per_kg = newCostPerKg,
+                    price_per_bag = newPricePerBag ?: ing.price_per_bag
+                )
+            )
+        }
+    }
+
     fun markPigStatus(pigId: Long, status: String) {
         viewModelScope.launch { repository.updatePigStatus(pigId, status) }
     }
@@ -414,7 +461,8 @@ class MainViewModel(
     fun logGroupHealthEvent(
         targetScope: String, targetPigId: Long?, targetCategory: String?,
         type: String, product: String, dosage: String, cost: Double, vetName: String, notes: String?,
-        withdrawalDays: Int = 0, diseaseName: String? = null, ageWeeks: Int? = null, weightKg: Double? = null
+        withdrawalDays: Int = 0, diseaseName: String? = null, ageWeeks: Int? = null, weightKg: Double? = null,
+        repeatIntervalDays: Int = 0
     ) {
         viewModelScope.launch {
             repository.logHealthEvent(
@@ -430,7 +478,8 @@ class MainViewModel(
                 withdrawalDays = withdrawalDays,
                 diseaseName = diseaseName,
                 ageWeeks = ageWeeks,
-                weightKg = weightKg
+                weightKg = weightKg,
+                repeatIntervalDays = repeatIntervalDays
             )
             if (cost > 0.0) {
                 repository.logExpense(
@@ -890,6 +939,30 @@ class MainViewModel(
 
     fun clearBackupStatus() {
         _backupStatus.value = null
+    }
+
+    // Auto-backup silently on app open (rolling 7 copies to Downloads/PHMS_Backups/)
+    fun performAutoBackup(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            com.phms.app.data.backup.BackupManager.performAutoBackup(context, repository.db)
+            // Silent — no UI update on success
+        }
+    }
+
+    // Share backup file via Android share sheet → user picks Google Drive, WhatsApp, etc.
+    fun shareBackupFile(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = com.phms.app.data.backup.BackupManager.shareBackupFile(context, repository.db)
+            _backupStatus.value = result
+        }
+    }
+
+    // Email backup — opens email client with backup file attached
+    fun emailBackup(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = com.phms.app.data.backup.BackupManager.emailBackup(context, repository.db)
+            _backupStatus.value = result
+        }
     }
 
     // Demo Data & Farm Data Reset

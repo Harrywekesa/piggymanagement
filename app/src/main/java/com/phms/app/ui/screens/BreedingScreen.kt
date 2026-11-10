@@ -44,6 +44,53 @@ fun BreedingScreen(viewModel: MainViewModel) {
     val now = System.currentTimeMillis()
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
+        // ── FARROWING COUNTDOWN BANNER ────────────────────────────────────────
+        val urgentPregnancies = activePregnancies
+            .map { preg ->
+                val daysRemaining = ((preg.expected_farrowing_date - now) / (1000 * 60 * 60 * 24)).coerceAtLeast(0L)
+                preg to daysRemaining
+            }
+            .filter { (_, days) -> days <= 7 }
+            .sortedBy { (_, days) -> days }
+
+        if (urgentPregnancies.isNotEmpty()) {
+            urgentPregnancies.forEach { (preg, days) ->
+                val sow = sows.find { it.id == preg.sow_id }
+                val sowName = sow?.tag_number?.let { "Sow #$it" } ?: "Sow"
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (days == 0L) Color(0xFF3E0000) else Color(0xFF1A0A14)),
+                    border = BorderStroke(1.5.dp, if (days == 0L) Color(0xFFFF1744) else Color(0xFFE91E8C))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text(if (days == 0L) "🐣" else "🤰", fontSize = 24.sp)
+                            Column {
+                                Text(
+                                    if (days == 0L) "🚨 $sowName — DUE NOW!" else "⏰ $sowName — farrows in $days day${if (days == 1L) "" else "s"}",
+                                    color = if (days == 0L) Color(0xFFFF5252) else Color(0xFFE91E8C),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                                Text("Due: ${dateFormat.format(Date(preg.expected_farrowing_date))}", color = Color(0xFF8B949E), fontSize = 11.sp)
+                            }
+                        }
+                        Surface(shape = RoundedCornerShape(6.dp), color = if (days == 0L) Color(0xFFD32F2F) else Color(0xFF880E4F)) {
+                            Text(
+                                if (days == 0L) "OVERDUE" else "${days}d",
+                                color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
         Column(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {

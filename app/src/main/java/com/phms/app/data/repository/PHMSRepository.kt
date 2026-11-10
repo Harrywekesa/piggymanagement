@@ -14,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-class PHMSRepository(private val db: AppDatabase) {
+class PHMSRepository(val db: AppDatabase) {
 
     val pigDao = db.pigDao()
     val penDao = db.penDao()
@@ -132,7 +132,8 @@ class PHMSRepository(private val db: AppDatabase) {
         withdrawalDays: Int = 0,
         diseaseName: String? = null,
         ageWeeks: Int? = null,
-        weightKg: Double? = null
+        weightKg: Double? = null,
+        repeatIntervalDays: Int = 0
     ) {
         val now = System.currentTimeMillis()
         when (targetScope) {
@@ -153,7 +154,8 @@ class PHMSRepository(private val db: AppDatabase) {
                             notes = notes,
                             disease_name = diseaseName,
                             age_weeks = ageWeeks,
-                            weight_kg = weightKg
+                            weight_kg = weightKg,
+                            repeat_interval_days = repeatIntervalDays
                         )
                     )
                 }
@@ -185,7 +187,8 @@ class PHMSRepository(private val db: AppDatabase) {
                             notes = notes,
                             disease_name = diseaseName,
                             age_weeks = ageWeeks,
-                            weight_kg = weightKg
+                            weight_kg = weightKg,
+                            repeat_interval_days = repeatIntervalDays
                         )
                     )
                 }
@@ -207,11 +210,32 @@ class PHMSRepository(private val db: AppDatabase) {
                             notes = notes,
                             disease_name = diseaseName,
                             age_weeks = ageWeeks,
-                            weight_kg = weightKg
+                            weight_kg = weightKg,
+                            repeat_interval_days = repeatIntervalDays
                         )
                     )
                 }
             }
+        }
+        // Schedule a repeat-dose alert if requested
+        if (repeatIntervalDays > 0) {
+            val dueDate = now + repeatIntervalDays * 24 * 60 * 60 * 1000L
+            val scopeLabel = when (targetScope) {
+                "Single Pig" -> "Pig #${targetPigId ?: "?"}"
+                "Category"   -> targetCategory ?: "Category"
+                else         -> "Full Herd"
+            }
+            val dateFmt = java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault())
+            alertDao.insertAlert(
+                AlertEntity(
+                    type = type.uppercase(),
+                    priority = "High",
+                    related_pig_id = if (targetScope == "Single Pig") targetPigId else null,
+                    message = "🔁 $type due: $product ($dosage) for $scopeLabel — scheduled ${dateFmt.format(java.util.Date(dueDate))}",
+                    created_date = dueDate,
+                    status = "Active"
+                )
+            )
         }
         // Log financial expense for health event
         if (cost > 0.0) {

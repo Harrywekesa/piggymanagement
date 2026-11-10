@@ -3,6 +3,10 @@ package com.phms.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -38,9 +42,15 @@ data class NavItem(val route: String, val label: String, val icon: ImageVector)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         val app = application as PHMSApplication
         val viewModel = MainViewModel(app.repository, app.settingsRepository)
+
+        // Auto-backup on every app open (silent, rolling 7 copies)
+        lifecycleScope.launch(Dispatchers.IO) {
+            viewModel.performAutoBackup(applicationContext)
+        }
 
         setContent {
             PHMSTheme {
@@ -58,7 +68,7 @@ val primaryNavItems = listOf(
     NavItem("more", "More", Icons.Default.GridView)
 )
 
-val MORE_SUB_ROUTES = setOf("health", "breeding", "market", "reports", "settings", "sale_flow")
+val MORE_SUB_ROUTES = setOf("health", "breeding", "market", "reports", "settings", "sale_flow", "educate")
 
 fun isMoreSubRoute(route: String?): Boolean {
     if (route == null) return false
@@ -80,8 +90,10 @@ fun PHMSApp(viewModel: MainViewModel) {
     val farmSettings by viewModel.farmSettings.collectAsState()
     val activePigs by viewModel.activePigs.collectAsState()
     val activeAlerts by viewModel.activeAlerts.collectAsState()
+    val feedIngredients by viewModel.feedIngredients.collectAsState()
 
     val criticalAlertCount = remember(activeAlerts) { activeAlerts.count { it.priority == "Critical" } }
+    val lowStockCount = remember(feedIngredients) { feedIngredients.count { it.stock_kg <= it.reorder_level } }
 
     // Auto-launch Guided Tour on first launch after onboarding
     LaunchedEffect(isOnboarded, farmSettings.showTourOnFirstOpen) {
@@ -92,12 +104,12 @@ fun PHMSApp(viewModel: MainViewModel) {
     }
 
     // Routes where bottom nav should show
-    val showBottomBar = currentRoute != null && (
+    val showBottomBar = currentRoute != null && currentRoute != "splash" && (
             currentRoute in TOP_LEVEL_ROUTES ||
             TOP_LEVEL_ROUTES.any { currentRoute.startsWith(it) } ||
             isMoreSubRoute(currentRoute)
     )
-    val showHeader = currentRoute != null && currentRoute != "onboarding" && !currentRoute.startsWith("pig_detail") &&
+    val showHeader = currentRoute != null && currentRoute != "onboarding" && currentRoute != "splash" && !currentRoute.startsWith("pig_detail") &&
             !currentRoute.startsWith("add_edit_pig") && !currentRoute.startsWith("sale_flow") && !currentRoute.startsWith("help_center")
 
     Scaffold(
@@ -117,6 +129,7 @@ fun PHMSApp(viewModel: MainViewModel) {
                 PHMSBottomNav(
                     currentRoute = currentRoute,
                     alertCount = criticalAlertCount,
+                    lowStockCount = lowStockCount,
                     onItemClick = { item ->
                         val target = item.route
                         when {
@@ -172,9 +185,19 @@ fun PHMSApp(viewModel: MainViewModel) {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = if (!isOnboarded) "onboarding" else "dashboard",
+            startDestination = if (!isOnboarded) "onboarding" else "splash",
             modifier = Modifier.padding(paddingValues)
         ) {
+            composable("splash") {
+                PiggishSplashScreen(
+                    farmName = farmSettings.farmName,
+                    onLoadingComplete = {
+                        navController.navigate("dashboard") {
+                            popUpTo("splash") { inclusive = true }
+                        }
+                    }
+                )
+            }
             composable("onboarding") { OnboardingScreen(viewModel, navController) }
             composable("dashboard") { DashboardScreen(viewModel, navController) }
             composable("pigs") { PigsScreen(viewModel, navController) }
@@ -188,6 +211,7 @@ fun PHMSApp(viewModel: MainViewModel) {
             }
             composable("reports") { ReportsHubScreen(viewModel) }
             composable("settings") { SettingsScreen(viewModel) }
+                            composable("educate") { EducateMeScreen(viewModel, navController) }
             composable(
                 route = "help_center?autoTour={autoTour}",
                 arguments = listOf(navArgument("autoTour") { type = NavType.BoolType; defaultValue = false })
@@ -304,6 +328,7 @@ fun PHMSHeader(farmName: String, pigCount: Int, alertCount: Int, navController: 
 fun PHMSBottomNav(
     currentRoute: String?,
     alertCount: Int,
+    lowStockCount: Int,
     onItemClick: (NavItem) -> Unit
 ) {
     NavigationBar(
@@ -325,6 +350,10 @@ fun PHMSBottomNav(
                             if (item.route == "alerts" && alertCount > 0) {
                                 Badge(containerColor = Color(0xFFFF5252)) {
                                     Text("$alertCount", fontSize = 9.sp)
+                                }
+                            } else if (item.route == "feed" && lowStockCount > 0) {
+                                Badge(containerColor = Color(0xFFFFB74D)) {
+                                    Text("$lowStockCount", fontSize = 9.sp)
                                 }
                             }
                         }

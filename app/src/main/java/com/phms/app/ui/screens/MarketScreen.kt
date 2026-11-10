@@ -29,6 +29,8 @@ import com.phms.app.ui.components.LocationSelector
 import com.phms.app.ui.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARKET SCREEN
@@ -46,6 +48,9 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
     var selectedWardFilter by remember { mutableStateOf("All Wards") }
     var buyerSearchQuery by remember { mutableStateOf("") }
     var showAddBuyerDialog by remember { mutableStateOf(false) }
+    var pigPricePerKg by remember { mutableStateOf("") }
+    var showPriceEditor by remember { mutableStateOf(false) }
+    val priceHistory = remember { mutableStateListOf<Pair<String, Double>>() }
 
     val filteredBuyers = buyers.filter { buyer ->
         val matchesCounty = selectedCountyFilter == "All Counties" || buyer.county.equals(selectedCountyFilter, ignoreCase = true) || buyer.location?.contains(selectedCountyFilter, ignoreCase = true) == true
@@ -63,6 +68,109 @@ fun MarketScreen(viewModel: MainViewModel, onStartSale: () -> Unit) {
     ) {
         item {
             Text("Market & Sales", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        }
+
+        // ── MARKET PRICE TRACKER ──────────────────────────────────────────────
+        item {
+            val currentPriceKg = pigPricePerKg.toDoubleOrNull()
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                border = BorderStroke(1.dp, Color(0xFFFFB74D))
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(
+                                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF2A1E00)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFFFFB74D), modifier = Modifier.size(18.dp))
+                            }
+                            Text("Live Market Price (KSh/kg)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+                        TextButton(onClick = { showPriceEditor = !showPriceEditor }) {
+                            Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFFFFB74D), modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Update", color = Color(0xFFFFB74D), fontSize = 12.sp)
+                        }
+                    }
+
+                    if (currentPriceKg != null && currentPriceKg > 0) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF1E1500), modifier = Modifier.weight(1f)) {
+                                Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("KSh ${String.format("%.0f", currentPriceKg)}", color = Color(0xFFFFD54F), fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                                    Text("per kg live weight", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                }
+                            }
+                            Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF1E1500), modifier = Modifier.weight(1f)) {
+                                Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    val avg90kgValue = currentPriceKg * 90
+                                    Text("KSh ${avg90kgValue.toInt()}", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                    Text("per pig @ 90 kg", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                }
+                            }
+                        }
+                        // Market-ready pig portfolio value
+                        if (marketPigs.isNotEmpty()) {
+                            Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF122316), border = BorderStroke(1.dp, Color(0xFF2E7D32)), modifier = Modifier.fillMaxWidth()) {
+                                Row(modifier = Modifier.padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Text("${marketPigs.size} market-ready pigs worth approx:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                    Text("KSh ${(currentPriceKg * 90 * marketPigs.size).toInt()}", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                            }
+                        }
+                    } else {
+                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF1E1500), modifier = Modifier.fillMaxWidth()) {
+                            Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFFFFB74D), modifier = Modifier.size(14.dp))
+                                Text("Tap 'Update' to record today's market pig price (KSh per kg live weight)", color = Color(0xFF8B949E), fontSize = 11.sp)
+                            }
+                        }
+                    }
+
+                    if (showPriceEditor) {
+                        OutlinedTextField(
+                            value = pigPricePerKg,
+                            onValueChange = { pigPricePerKg = it.filter { c -> c.isDigit() || c == '.' } },
+                            label = { Text("Price (KSh / kg live weight)") },
+                            placeholder = { Text("e.g. 350") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFFFFB74D),
+                                focusedLabelColor = Color(0xFFFFB74D),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                unfocusedLabelColor = Color(0xFF8B949E)
+                            ),
+                            trailingIcon = {
+                                TextButton(onClick = {
+                                    val p = pigPricePerKg.toDoubleOrNull()
+                                    if (p != null && p > 0) {
+                                        val today = SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(Date())
+                                        priceHistory.add(0, today to p)
+                                        if (priceHistory.size > 10) priceHistory.removeLastOrNull()
+                                        showPriceEditor = false
+                                    }
+                                }) { Text("Save", color = Color(0xFFFFB74D), fontWeight = FontWeight.Bold) }
+                            }
+                        )
+                    }
+
+                    if (priceHistory.isNotEmpty()) {
+                        Text("Recent Prices:", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        priceHistory.take(5).forEach { (date, price) ->
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(date, color = Color(0xFF6E7681), fontSize = 11.sp)
+                                Text("KSh ${String.format("%.0f", price)}/kg", color = Color(0xFFFFD54F), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                        }
+                    }
+                }
+            }
         }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

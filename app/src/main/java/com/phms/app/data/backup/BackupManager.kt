@@ -2,12 +2,14 @@ package com.phms.app.data.backup
 
 import android.content.Context
 import android.net.Uri
+import android.os.Environment
 import androidx.room.withTransaction
 import com.google.gson.GsonBuilder
 import com.phms.app.data.local.database.AppDatabase
 import com.phms.app.data.local.entity.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
@@ -77,6 +79,115 @@ object BackupManager {
             )
         } catch (e: Exception) {
             BackupResult.Error("Export failed: ${e.message}")
+        }
+    }
+
+    // ─── AUTO-BACKUP (silent, rolling 7 copies to Downloads/PHMS_Backups/) ───
+
+    suspend fun performAutoBackup(context: Context, db: AppDatabase): BackupResult = withContext(Dispatchers.IO) {
+        try {
+            val backupDir = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "PHMS_Backups"
+            )
+            backupDir.mkdirs()
+
+            val dateFmt = SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.getDefault())
+            val fileName = "PHMS_auto_${dateFmt.format(Date())}.json"
+            val backupFile = File(backupDir, fileName)
+
+            val backup = collectAllData(db)
+            val json = gson.toJson(backup)
+            backupFile.writeText(json, Charsets.UTF_8)
+
+            // Prune to keep only last 7 backups
+            val allBackups = backupDir.listFiles { f -> f.name.startsWith("PHMS_auto_") && f.name.endsWith(".json") }
+                ?.sortedByDescending { it.lastModified() } ?: emptyList()
+            allBackups.drop(7).forEach { it.delete() }
+
+            BackupResult.Success("Auto-backup saved: ${backup.pigs.size} pigs, ${backup.healthEvents.size} health events")
+        } catch (e: Exception) {
+            BackupResult.Error("Auto-backup failed: ${e.message}")
+        }
+    }
+
+    // ─── SHARE BACKUP (Google Drive via share sheet) ──────────────────────────
+
+    suspend fun shareBackupFile(context: Context, db: AppDatabase): BackupResult = withContext(Dispatchers.IO) {
+        try {
+            val backup = collectAllData(db)
+            val json = gson.toJson(backup)
+            val dateFmt = SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.getDefault())
+            val fileName = "PHMS_backup_${dateFmt.format(Date())}.json"
+
+            val cacheDir = File(context.cacheDir, "backups")
+            cacheDir.mkdirs()
+            val file = File(cacheDir, fileName)
+            file.writeText(json, Charsets.UTF_8)
+
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+
+            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "application/json"
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "PHMS Farm Backup - ${backup.exportedAtReadable}")
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            val chooser = android.content.Intent.createChooser(shareIntent, "Save backup to...")
+            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooser)
+
+            BackupResult.Success("Backup ready to share! Choose Google Drive to save to cloud.")
+        } catch (e: Exception) {
+            BackupResult.Error("Share backup failed: ${e.message}")
+        }
+    }
+
+    // ─── EMAIL BACKUP ─────────────────────────────────────────────────────────
+
+    suspend fun emailBackup(context: Context, db: AppDatabase): BackupResult = withContext(Dispatchers.IO) {
+        try {
+            val backup = collectAllData(db)
+            val json = gson.toJson(backup)
+            val dateFmt = SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.getDefault())
+            val fileName = "PHMS_backup_${dateFmt.format(Date())}.json"
+
+            val cacheDir = File(context.cacheDir, "backups")
+            cacheDir.mkdirs()
+            val file = File(cacheDir, fileName)
+            file.writeText(json, Charsets.UTF_8)
+
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+
+            val emailIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "message/rfc822"  // forces email apps only
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "PHMS Farm Backup - ${backup.exportedAtReadable}")
+                putExtra(
+                    android.content.Intent.EXTRA_TEXT,
+                    "Attached is your PHMS farm data backup.\n\n" +
+                    "Farm data: ${backup.pigs.size} pigs, ${backup.healthEvents.size} health events, " +
+                    "${backup.sales.size} sales records\n" +
+                    "Exported: ${backup.exportedAtReadable}\n\n" +
+                    "To restore: open PHMS app → Settings → Restore Backup → select this file."
+                )
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            val chooser = android.content.Intent.createChooser(emailIntent, "Email backup via...")
+            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooser)
+
+            BackupResult.Success("Opening email app with backup attached...")
+        } catch (e: Exception) {
+            BackupResult.Error("Email backup failed: ${e.message}")
         }
     }
 

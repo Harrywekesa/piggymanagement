@@ -43,6 +43,9 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
     val alerts by viewModel.activeAlerts.collectAsState()
     val pnl by viewModel.pnlSummary.collectAsState()
     val updateInfo by viewModel.appUpdateInfo.collectAsState()
+    val feedIngredients by viewModel.feedIngredients.collectAsState()
+    val activePregnancies by viewModel.activePregnancies.collectAsState()
+    val todayFeedingStatus by viewModel.todayFeedingStatus.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
     val marketReadyCount = remember(pigs) { pigs.count { it.current_stage_id == 5L } }
 
@@ -85,7 +88,115 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                 }
             }
         }
-        // HERO SECTION HEADER
+        // ── TODAY AT A GLANCE ─────────────────────────────────────────────
+        item {
+            val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+            val greeting = when {
+                hour < 12 -> "Good morning 🌅"
+                hour < 17 -> "Good afternoon ☀️"
+                else -> "Good evening 🌙"
+            }
+            val lowStockCount = feedIngredients.count { it.stock_kg <= it.reorder_level }
+            val criticalAlertCount = alerts.count { it.priority == "Critical" }
+            val soonestFarrow = activePregnancies
+                .minByOrNull { it.expected_farrowing_date }
+                ?.let { preg ->
+                    val days = ((preg.expected_farrowing_date - System.currentTimeMillis()) / (1000 * 60 * 60 * 24)).coerceAtLeast(0L)
+                    days
+                }
+            val fedToday = todayFeedingStatus?.isLoggedToday == true
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1E12)),
+                border = BorderStroke(1.dp, Color(0xFF2E7D32))
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("🐖", fontSize = 20.sp)
+                        Column {
+                            Text(greeting, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Text("Here's what needs your attention today", color = Color(0xFF8B949E), fontSize = 11.sp)
+                        }
+                    }
+                    HorizontalDivider(color = Color(0xFF1F3D24))
+
+                    // Action items row
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Feeding status
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (fedToday) Color(0xFF122316) else Color(0xFF1B2A0A),
+                            border = BorderStroke(1.dp, if (fedToday) Color(0xFF2E7D32) else Color(0xFF558B2F)),
+                            modifier = Modifier.weight(1f).clickable { navController.navigate("feed") }
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(if (fedToday) "✅" else "🌾", fontSize = 18.sp)
+                                Text(if (fedToday) "Fed Today" else "Feed Due", color = if (fedToday) Color(0xFF81C784) else Color(0xFFCCFF90), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            }
+                        }
+                        // Alerts
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (criticalAlertCount > 0) Color(0xFF2A0D0D) else Color(0xFF161B22),
+                            border = BorderStroke(1.dp, if (criticalAlertCount > 0) Color(0xFFE53935) else Color(0xFF30363D)),
+                            modifier = Modifier.weight(1f).clickable { navController.navigate("alerts") }
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(if (criticalAlertCount > 0) "🚨" else "✅", fontSize = 18.sp)
+                                Text(if (criticalAlertCount > 0) "$criticalAlertCount Critical" else "No Alerts", color = if (criticalAlertCount > 0) Color(0xFFFF5252) else Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            }
+                        }
+                        // Low stock
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (lowStockCount > 0) Color(0xFF1E1500) else Color(0xFF161B22),
+                            border = BorderStroke(1.dp, if (lowStockCount > 0) Color(0xFFFFB74D) else Color(0xFF30363D)),
+                            modifier = Modifier.weight(1f).clickable { navController.navigate("feed") }
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(if (lowStockCount > 0) "⚠️" else "✅", fontSize = 18.sp)
+                                Text(if (lowStockCount > 0) "$lowStockCount Low Stock" else "Stock OK", color = if (lowStockCount > 0) Color(0xFFFFB74D) else Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            }
+                        }
+                        // Farrowing
+                        if (soonestFarrow != null) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (soonestFarrow <= 5) Color(0xFF1A0A1A) else Color(0xFF161B22),
+                                border = BorderStroke(1.dp, if (soonestFarrow <= 5) Color(0xFFE91E8C) else Color(0xFF30363D)),
+                                modifier = Modifier.weight(1f).clickable { navController.navigate("breeding") }
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(if (soonestFarrow == 0L) "🐣" else "🤰", fontSize = 18.sp)
+                                    Text(if (soonestFarrow == 0L) "DUE NOW!" else "Farrow ${soonestFarrow}d", color = if (soonestFarrow <= 5) Color(0xFFE91E8C) else Color(0xFF8B949E), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    }
+
+                    if (marketReadyCount > 0) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF1E1500),
+                            border = BorderStroke(1.dp, Color(0xFFFFB74D)),
+                            modifier = Modifier.fillMaxWidth().clickable { navController.navigate("market") }
+                        ) {
+                            Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("💰", fontSize = 16.sp)
+                                    Text("$marketReadyCount pig(s) ready for market (90kg+)", color = Color(0xFFFFD54F), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFFFFB74D), modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── HERO SECTION HEADER ───────────────────────────────────────────
         item {
             Row(
                 Modifier.fillMaxWidth(),
