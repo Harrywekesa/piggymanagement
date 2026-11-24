@@ -53,7 +53,8 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            PHMSTheme {
+            val farmSettings by viewModel.farmSettings.collectAsState()
+            PHMSTheme(darkTheme = farmSettings.isDarkTheme) {
                 PHMSApp(viewModel)
             }
         }
@@ -91,9 +92,17 @@ fun PHMSApp(viewModel: MainViewModel) {
     val activePigs by viewModel.activePigs.collectAsState()
     val activeAlerts by viewModel.activeAlerts.collectAsState()
     val feedIngredients by viewModel.feedIngredients.collectAsState()
+    val availableMixedBatches by viewModel.availableMixedBatches.collectAsState()
 
     val criticalAlertCount = remember(activeAlerts) { activeAlerts.count { it.priority == "Critical" } }
-    val lowStockCount = remember(feedIngredients) { feedIngredients.count { it.stock_kg <= it.reorder_level } }
+    val lowStockCount = remember(feedIngredients, availableMixedBatches) {
+        if (availableMixedBatches.any { it.remaining_kg > 0 }) {
+            // If farm has formulated mixed feed ready, 0-stock raw ingredients do not trigger low feed badge
+            0
+        } else {
+            feedIngredients.count { it.stock_kg <= it.reorder_level }
+        }
+    }
 
     // Auto-launch Guided Tour on first launch after onboarding
     LaunchedEffect(isOnboarded, farmSettings.showTourOnFirstOpen) {
@@ -113,7 +122,7 @@ fun PHMSApp(viewModel: MainViewModel) {
             !currentRoute.startsWith("add_edit_pig") && !currentRoute.startsWith("sale_flow") && !currentRoute.startsWith("help_center")
 
     Scaffold(
-        containerColor = Color(0xFF0D1117),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             if (showHeader) {
                 PHMSHeader(
@@ -293,7 +302,7 @@ fun PHMSHeader(farmName: String, pigCount: Int, alertCount: Int, navController: 
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(Icons.Default.Pets, null, tint = Color.White, modifier = Modifier.size(14.dp))
-                            Text("$pigCount pigs", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Text("$pigCount pigs", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         }
                     }
                     // Alerts pill → navigate to Alerts tab
@@ -314,7 +323,7 @@ fun PHMSHeader(farmName: String, pigCount: Int, alertCount: Int, navController: 
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Icon(Icons.Default.Warning, null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                Text("$alertCount critical", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                Text("$alertCount critical", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                             }
                         }
                     }
@@ -332,7 +341,7 @@ fun PHMSBottomNav(
     onItemClick: (NavItem) -> Unit
 ) {
     NavigationBar(
-        containerColor = Color(0xFF161B22),
+        containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
         modifier = Modifier.clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
     ) {
@@ -369,11 +378,11 @@ fun PHMSBottomNav(
                     Text(item.label, fontSize = 10.sp, maxLines = 1)
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color(0xFF4CAF50),
-                    selectedTextColor = Color(0xFF4CAF50),
-                    unselectedIconColor = Color(0xFF6E7681),
-                    unselectedTextColor = Color(0xFF6E7681),
-                    indicatorColor = Color(0xFF21262D)
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    indicatorColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             )
         }

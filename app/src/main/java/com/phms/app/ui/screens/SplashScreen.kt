@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -118,7 +119,7 @@ fun PiggishSplashScreen(
 
             Text(
                 text = farmName.ifBlank { "Homes Best" },
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -202,7 +203,7 @@ fun PiggishSplashScreen(
                 ) {
                     Text(
                         text = statusText,
-                        color = Color(0xFFC9D1D9),
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )

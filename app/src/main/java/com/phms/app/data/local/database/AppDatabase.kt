@@ -29,6 +29,29 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
     }
 }
 
+/** v8 → v9: Added mixed_batches table + mixed_batch_id column on feeding_logs */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS mixed_batches (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                name TEXT NOT NULL,
+                formula_name TEXT NOT NULL,
+                total_kg REAL NOT NULL,
+                remaining_kg REAL NOT NULL,
+                cost_per_kg REAL NOT NULL,
+                total_cost REAL NOT NULL,
+                ingredients_used_json TEXT NOT NULL,
+                skipped_ingredients_json TEXT NOT NULL DEFAULT '[]',
+                is_complete_formula INTEGER NOT NULL DEFAULT 1,
+                created_date INTEGER NOT NULL,
+                notes TEXT
+            )
+        """.trimIndent())
+        db.execSQL("ALTER TABLE feeding_logs ADD COLUMN mixed_batch_id INTEGER")
+    }
+}
+
 @Database(
     entities = [
         PigEntity::class,
@@ -54,9 +77,10 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
         BuyerEntity::class,
         SaleEntity::class,
         ExpenseEntity::class,
-        GiltHeatRecordEntity::class
+        GiltHeatRecordEntity::class,
+        MixedBatchEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -72,6 +96,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun alertDao(): AlertDao
     abstract fun marketDao(): MarketDao
     abstract fun expenseDao(): ExpenseDao
+    abstract fun mixedBatchDao(): MixedBatchDao
 
     companion object {
         @Volatile
@@ -84,7 +109,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "phms_database"
                 )
-                .addMigrations(MIGRATION_7_8)
+                .addMigrations(MIGRATION_7_8, MIGRATION_8_9)
                 .build()
                 INSTANCE = instance
                 instance

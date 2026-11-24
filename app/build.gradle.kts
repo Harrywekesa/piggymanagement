@@ -13,8 +13,8 @@ android {
         applicationId = "com.phms.app"
         minSdk = 21
         targetSdk = 34
-        versionCode = 14
-        versionName = "1.0.11"
+        versionCode = 19
+        versionName = "1.0.16"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

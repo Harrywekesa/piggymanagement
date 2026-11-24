@@ -197,7 +197,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
     }
 
     Scaffold(
-        containerColor = Color(0xFF0D1117),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -211,7 +211,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                         Icon(Icons.Default.ArrowBack, null, tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF161B22))
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
@@ -224,7 +224,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
             item {
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -237,7 +237,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                             modifier = Modifier
                                 .size(110.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF21262D))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .border(2.dp, Color(0xFF4CAF50), CircleShape)
                                 .clickable { showPhotoOptionDialog = true },
                             contentAlignment = Alignment.Center
@@ -252,8 +252,8 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                                 )
                             } else {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color(0xFF6E7681), modifier = Modifier.size(32.dp))
-                                    Text("Tap to add photo", color = Color(0xFF6E7681), fontSize = 10.sp)
+                                Icon(Icons.Default.CameraAlt, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(32.dp))
+                                    Text("Tap to add photo", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                 }
                             }
                         }
@@ -272,7 +272,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                             OutlinedButton(
                                 onClick = { galleryLauncher.launch("image/*") },
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF8B949E)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D)),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Icon(Icons.Default.PhotoLibrary, null, modifier = Modifier.size(16.dp))
@@ -290,7 +290,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                     FormField("Tag / Ear Number *", tagNumber, { tagNumber = it })
                     Spacer(Modifier.height(12.dp))
                     // Breed — dropdown with common Kenya pig breeds + "Other" option
-                    Text("Breed", color = Color(0xFF8B949E), fontSize = 13.sp)
+                    Text("Breed", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     Spacer(Modifier.height(4.dp))
                     var breedExpanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
@@ -305,9 +305,9 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = breedExpanded) },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF4CAF50),
-                                unfocusedBorderColor = Color(0xFF30363D),
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             )
                         )
                         ExposedDropdownMenu(
@@ -316,7 +316,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                         ) {
                             standardBreeds.forEach { b ->
                                 DropdownMenuItem(
-                                    text = { Text(b, color = Color.White) },
+                                    text = { Text(b, color = MaterialTheme.colorScheme.onSurface) },
                                     onClick = {
                                         selectedBreedOption = b
                                         breedExpanded = false
@@ -339,15 +339,15 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF4CAF50),
-                                focusedLabelColor = Color(0xFF4CAF50),
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                unfocusedBorderColor = Color(0xFF30363D)
+                                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
                             )
                         )
                     }
                     Spacer(Modifier.height(12.dp))
-                    Text("Sex", color = Color(0xFF8B949E), fontSize = 13.sp)
+                    Text("Sex", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     Spacer(Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("F" to "Sow (Female)", "M" to "Boar (Male)").forEach { (value, label) ->
@@ -363,7 +363,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                         }
                     }
                     Spacer(Modifier.height(12.dp))
-                    Text("Acquisition Source", color = Color(0xFF8B949E), fontSize = 13.sp)
+                    Text("Acquisition Source", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     Spacer(Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Born", "Purchased").forEach { s ->
@@ -405,7 +405,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
             item {
                 SectionCard("Growth Stage, Age & Birth Date") {
                     if (stages.isNotEmpty()) {
-                        Text("Growth Stage *", color = Color(0xFF8B949E), fontSize = 13.sp)
+                        Text("Growth Stage *", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                         Spacer(Modifier.height(4.dp))
                         DropdownSelector(
                             label = "Stage",
@@ -456,18 +456,18 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                         val ageW = ageWeeksStr.toDoubleOrNull() ?: 0.0
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = Color(0xFF1B3A1B),
+                            color = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.weight(1f).padding(top = 8.dp)
                         ) {
                             Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("Approx. Age", color = Color(0xFF81C784), fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                                Text("${String.format(Locale.getDefault(), "%.1f", ageW / 4.3)} months", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text("${String.format(Locale.getDefault(), "%.1f", ageW / 4.3)} months", color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
 
                     Spacer(Modifier.height(8.dp))
-                    Text("Quick Age Presets:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                    Text("Quick Age Presets:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     Spacer(Modifier.height(4.dp))
                     Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf(
@@ -500,8 +500,8 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                     val birthDateFormat = remember { SimpleDateFormat("d MMMM yyyy", Locale.getDefault()) }
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = Color(0xFF21262D),
-                        border = BorderStroke(1.dp, Color(0xFF30363D)),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -510,8 +510,8 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text("Calculated Birth Date", color = Color(0xFF8B949E), fontSize = 11.sp)
-                                Text(birthDateFormat.format(Date(birthDateMs)), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("Calculated Birth Date", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                                Text(birthDateFormat.format(Date(birthDateMs)), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                             OutlinedButton(
                                 onClick = {
@@ -562,12 +562,12 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
             item {
                 SectionCard("Pen & Batch Assignment") {
                     // Pen
-                    Text("Pen Assignment", color = Color(0xFF8B949E), fontSize = 13.sp)
+                    Text("Pen Assignment", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     Spacer(Modifier.height(4.dp))
                     if (pens.isEmpty()) {
                         Text(
                             "⚠ No pens configured yet — pens can be set up in the Farm Settings.",
-                            color = Color(0xFF6E7681), fontSize = 12.sp
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp
                         )
                     } else {
                         DropdownSelector(
@@ -579,12 +579,12 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                     }
                     Spacer(Modifier.height(12.dp))
                     // Batch
-                    Text("Batch / Group", color = Color(0xFF8B949E), fontSize = 13.sp)
+                    Text("Batch / Group", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     Spacer(Modifier.height(4.dp))
                     if (batches.isEmpty()) {
                         Text(
                             "⚠ No batches configured yet — batches help group pigs for herd operations.",
-                            color = Color(0xFF6E7681), fontSize = 12.sp
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp
                         )
                     } else {
                         DropdownSelector(
@@ -602,7 +602,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                 val sowOptions = listOf(null to "None / Unknown") + activePigs.filter { it.sex == "F" && (pigId <= 0 || it.id != pigId) }.map { it.id to "Sow #${it.tag_number} (${it.breed})" }
                 val boarOptions = listOf(null to "None / Unknown") + activePigs.filter { it.sex == "M" && (pigId <= 0 || it.id != pigId) }.map { it.id to "Boar #${it.tag_number} (${it.breed})" }
                 SectionCard("Parentage & Pedigree Lineage") {
-                    Text("Mother Sow (Dam)", color = Color(0xFF8B949E), fontSize = 13.sp)
+                    Text("Mother Sow (Dam)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     Spacer(Modifier.height(4.dp))
                     DropdownSelector(
                         label = "Mother Sow",
@@ -611,7 +611,7 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                         onSelect = { selectedDamId = it }
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text("Father Boar (Sire)", color = Color(0xFF8B949E), fontSize = 13.sp)
+                    Text("Father Boar (Sire)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     Spacer(Modifier.height(4.dp))
                     DropdownSelector(
                         label = "Father Boar",
@@ -629,12 +629,12 @@ fun AddEditPigScreen(pigId: Long, viewModel: MainViewModel, navController: NavCo
                         value = notes,
                         onValueChange = { notes = it },
                         modifier = Modifier.fillMaxWidth().height(100.dp),
-                        placeholder = { Text("Additional notes...", color = Color(0xFF6E7681)) },
+                        placeholder = { Text("Additional notes...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF4CAF50),
-                            unfocusedBorderColor = Color(0xFF30363D),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         ),
                         maxLines = 4
                     )
@@ -726,11 +726,11 @@ fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-        border = BorderStroke(1.dp, Color(0xFF30363D))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(title, color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(title, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Spacer(Modifier.height(12.dp))
             content()
         }
@@ -749,16 +749,16 @@ fun FormField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label, fontSize = 13.sp) },
-        placeholder = { Text(placeholder, color = Color(0xFF6E7681)) },
+        placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color(0xFF4CAF50),
-            unfocusedBorderColor = Color(0xFF30363D),
-            focusedLabelColor = Color(0xFF4CAF50),
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            focusedLabelColor = MaterialTheme.colorScheme.primary,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
         )
     )
 }
@@ -783,9 +783,9 @@ fun DropdownSelector(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color(0xFF4CAF50),
-                unfocusedBorderColor = Color(0xFF30363D),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             )
         )
         ExposedDropdownMenu(
@@ -794,7 +794,7 @@ fun DropdownSelector(
         ) {
             options.forEach { (id, name) ->
                 DropdownMenuItem(
-                    text = { Text(name, color = Color.White) },
+                    text = { Text(name, color = MaterialTheme.colorScheme.onSurface) },
                     onClick = {
                         onSelect(id)
                         expanded = false

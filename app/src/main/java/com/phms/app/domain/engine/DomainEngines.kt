@@ -403,7 +403,8 @@ data class AutoFeedingCategoryPlan(
     val recommendedFeedType: String,
     val crudeProtein: String,
     val matchedIngredient: FeedIngredientEntity?,
-    val willDeductStock: Boolean
+    val willDeductStock: Boolean,
+    val matchedMixedBatch: MixedBatchEntity? = null
 )
 
 data class AutoFeedingSummary(
@@ -539,6 +540,7 @@ object AutoFeedingEngine {
         feedDao: FeedDao,
         growthStageDao: GrowthStageDao,
         breedingDao: BreedingDao,
+        mixedBatchDao: MixedBatchDao? = null,
         now: Long = System.currentTimeMillis()
     ): List<AutoFeedingCategoryPlan> {
         val activePigs = pigDao.getActivePigsSync()
@@ -549,6 +551,7 @@ object AutoFeedingEngine {
         val farrowings = breedingDao.getAllFarrowingRecordsSync()
         val weanings = breedingDao.getAllWeaningRecordsSync()
         val ingredients = feedDao.getAllIngredientsSync()
+        val mixedBatches = mixedBatchDao?.getAllMixedBatchesSync()?.filter { it.remaining_kg > 0 } ?: emptyList()
 
         val categoryGroups = activePigs.groupBy { pig ->
             classifyPigCategory(pig, stages, activePregnancies, farrowings, weanings, now)
@@ -566,7 +569,22 @@ object AutoFeedingEngine {
             if (count > 0) {
                 val rec = SwineFeedingKey.getRecommendation(weightKg = null, ageWeeks = null, categoryName = cat)
                 val totalKg = Math.round(rec.dailyFeedRationKg * count * 10.0) / 10.0
-                val matchedIng = matchIngredientForCategory(cat, ingredients)
+
+                // Priority 1: Match available mixed batch with remaining stock
+                val matchedBatch = mixedBatches.find { b ->
+                    val bName = (b.name + " " + b.formula_name).lowercase()
+                    when (cat) {
+                        "Piglets", "Weaners" -> bName.contains("weaner") || bName.contains("starter") || bName.contains("creep")
+                        "Growers" -> bName.contains("grower")
+                        "Finishers", "Market Ready" -> bName.contains("finisher") || bName.contains("porker")
+                        "Pregnant Sows", "Lactating Sows", "Sows", "Gilts" -> bName.contains("sow") || bName.contains("lactat") || bName.contains("gestat")
+                        "Boars" -> bName.contains("boar") || bName.contains("breeder")
+                        else -> false
+                    }
+                } ?: mixedBatches.firstOrNull() // If no category-specific batch, use any mixed batch with stock
+
+                // Priority 2: Fallback to raw ingredient ONLY if no mixed batch has stock
+                val matchedIng = if (matchedBatch == null) matchIngredientForCategory(cat, ingredients) else null
 
                 plans.add(
                     AutoFeedingCategoryPlan(
@@ -577,7 +595,8 @@ object AutoFeedingEngine {
                         recommendedFeedType = rec.feedType,
                         crudeProtein = rec.crudeProtein,
                         matchedIngredient = matchedIng,
-                        willDeductStock = matchedIng != null
+                        willDeductStock = (matchedBatch != null || matchedIng != null),
+                        matchedMixedBatch = matchedBatch
                     )
                 )
             }
@@ -610,6 +629,7 @@ object AutoFeedingEngine {
         pigDao: PigDao,
         growthStageDao: GrowthStageDao,
         breedingDao: BreedingDao,
+        mixedBatchDao: MixedBatchDao? = null,
         dateMs: Long = System.currentTimeMillis()
     ): TodayFeedingStatus {
         val cal = Calendar.getInstance().apply {
@@ -631,7 +651,7 @@ object AutoFeedingEngine {
         val totalPigsFed = autoLogs.sumOf { it.num_pigs }
         val lastTimestamp = autoLogs.maxOfOrNull { it.date }
 
-        val plans = prepareDailyFeedingPlan(pigDao, feedDao, growthStageDao, breedingDao, dateMs)
+        val plans = prepareDailyFeedingPlan(pigDao, feedDao, growthStageDao, breedingDao, mixedBatchDao, dateMs)
         val activePigs = pigDao.getActivePigsSync().size
         val plannedTotalKg = plans.sumOf { it.totalFeedKg }
 
@@ -653,10 +673,11 @@ object AutoFeedingEngine {
         growthStageDao: GrowthStageDao,
         breedingDao: BreedingDao,
         alertDao: AlertDao,
+        mixedBatchDao: MixedBatchDao? = null,
         currentTimeMs: Long = System.currentTimeMillis(),
         isManualTrigger: Boolean = false
     ): AutoFeedingSummary {
-        val plans = prepareDailyFeedingPlan(pigDao, feedDao, growthStageDao, breedingDao, currentTimeMs)
+        val plans = prepareDailyFeedingPlan(pigDao, feedDao, growthStageDao, breedingDao, mixedBatchDao, currentTimeMs)
         if (plans.isEmpty()) {
             return AutoFeedingSummary(
                 executed = false,
@@ -681,7 +702,9 @@ object AutoFeedingEngine {
         val existingLogs = feedDao.getAutoFeedingLogsForDate(startOfDay, endOfDay)
         for (old in existingLogs) {
             // Restore stock that was previously deducted for this log
-            if (old.ingredient_id != null && old.quantity_kg > 0.0) {
+            if (old.mixed_batch_id != null && old.quantity_kg > 0.0) {
+                mixedBatchDao?.addStockToBatch(old.mixed_batch_id, old.quantity_kg)
+            } else if (old.ingredient_id != null && old.quantity_kg > 0.0) {
                 feedDao.addStock(old.ingredient_id, old.quantity_kg)
             }
         }
@@ -692,7 +715,7 @@ object AutoFeedingEngine {
         val totalFeedKg = Math.round(plans.sumOf { it.totalFeedKg } * 10.0) / 10.0
 
         for (plan in plans) {
-            val feedTypeName = plan.matchedIngredient?.name ?: plan.recommendedFeedType
+            val feedTypeName = plan.matchedMixedBatch?.name ?: plan.matchedIngredient?.name ?: plan.recommendedFeedType
             feedDao.insertFeedingLog(
                 FeedingLogEntity(
                     date = currentTimeMs,
@@ -703,12 +726,15 @@ object AutoFeedingEngine {
                     target_scope = "Category",
                     category = plan.categoryName,
                     ingredient_id = plan.matchedIngredient?.id,
+                    mixed_batch_id = plan.matchedMixedBatch?.id,
                     notes = "Automated daily ration: ${plan.rationPerPigKg} kg/pig (${plan.crudeProtein})"
                 )
             )
 
-            // Deduct stock
-            if (plan.matchedIngredient != null) {
+            // Deduct stock from mixed batch if matched
+            if (plan.matchedMixedBatch != null) {
+                mixedBatchDao?.deductFromBatch(plan.matchedMixedBatch.id, plan.totalFeedKg)
+            } else if (plan.matchedIngredient != null) {
                 feedDao.deductStock(plan.matchedIngredient.id, plan.totalFeedKg)
 
                 val updatedIng = feedDao.getIngredientById(plan.matchedIngredient.id)

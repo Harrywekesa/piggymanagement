@@ -21,7 +21,8 @@ data class FarmSettings(
     val alertOvercrowding: Boolean = true,
     val autoFeedingEnabled: Boolean = true,
     val isOnboarded: Boolean = false,
-    val showTourOnFirstOpen: Boolean = true
+    val showTourOnFirstOpen: Boolean = true,
+    val isDarkTheme: Boolean = true  // default dark; user can switch to light
 )
 
 class SettingsRepository(context: Context) {
@@ -47,7 +48,8 @@ class SettingsRepository(context: Context) {
         alertOvercrowding = prefs.getBoolean("alert_overcrowding", true),
         autoFeedingEnabled = prefs.getBoolean("auto_feeding_enabled", true),
         isOnboarded = prefs.getBoolean("is_onboarded", false),
-        showTourOnFirstOpen = prefs.getBoolean("show_tour_on_first_open", true)
+        showTourOnFirstOpen = prefs.getBoolean("show_tour_on_first_open", true),
+        isDarkTheme = prefs.getBoolean("is_dark_theme", true)
     )
 
     fun save(s: FarmSettings) {
@@ -68,12 +70,19 @@ class SettingsRepository(context: Context) {
             putBoolean("auto_feeding_enabled", s.autoFeedingEnabled)
             putBoolean("is_onboarded", s.isOnboarded)
             putBoolean("show_tour_on_first_open", s.showTourOnFirstOpen)
+            putBoolean("is_dark_theme", s.isDarkTheme)
         }.apply()
         _settings.value = s
     }
 
     fun setOnboarded(onboarded: Boolean) {
         save(get().copy(isOnboarded = onboarded))
+    }
+
+    fun hasWipedTestBuyers(): Boolean = prefs.getBoolean("has_wiped_test_buyers_v1", false)
+
+    fun setWipedTestBuyers() {
+        prefs.edit().putBoolean("has_wiped_test_buyers_v1", true).apply()
     }
 
     fun get() = _settings.value

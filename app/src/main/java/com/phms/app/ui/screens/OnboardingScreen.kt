@@ -110,7 +110,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                         },
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                     ) {
-                        Text("Skip", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Skip", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -141,11 +141,11 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                         }
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Welcome to Digital Pig Farm", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                            Text("Welcome to Digital Pig Farm", color = MaterialTheme.colorScheme.onSurface, fontSize = 21.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                             Spacer(Modifier.height(6.dp))
                             Text(
                                 "Choose how you'd like to get started today:",
-                                color = Color(0xFF8B949E), fontSize = 13.sp, textAlign = TextAlign.Center
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, textAlign = TextAlign.Center
                             )
                         }
 
@@ -172,7 +172,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                     }
                                 },
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             border = BorderStroke(1.5.dp, Color(0xFF4CAF50))
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -183,7 +183,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Icon(Icons.Default.Visibility, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
-                                        Text("Explore Sample Farm", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                        Text("Explore Sample Farm", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                     }
                                     Surface(
                                         color = Color(0xFF1B5E20),
@@ -194,7 +194,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                 }
                                 Text(
                                     "Pre-loaded with 35 realistic pigs across all growth stages, 5 housing pens, breeding events, feed formulations, and financial P&L records.",
-                                    color = Color(0xFF8B949E),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 12.sp,
                                     lineHeight = 17.sp
                                 )
@@ -242,17 +242,17 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                 .fillMaxWidth()
                                 .clickable { step = 1 },
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Icon(Icons.Default.AddBusiness, contentDescription = null, tint = Color(0xFF00B4D8), modifier = Modifier.size(20.dp))
-                                    Text("Start Fresh with My Real Farm", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Text("Start Fresh with My Real Farm", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 }
                                 Text(
                                     "Starts with an empty herd (0 pigs). Continue to enter your farm profile name, Kenya county location, and initial housing pens.",
-                                    color = Color(0xFF8B949E),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 12.sp,
                                     lineHeight = 17.sp
                                 )
@@ -263,7 +263,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                     border = BorderStroke(1.dp, Color(0xFF00B4D8)),
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
-                                    Text("Set Up My Farm Profile →", color = Color(0xFF00B4D8), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    Text("Set Up My Farm Profile >", color = Color(0xFF00B4D8), fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -277,20 +277,20 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text("Set Up Your Farm Profile", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Text("Enter your farm details so records, invoices, and PDF reports reflect your farm branding.", color = Color(0xFF8B949E), fontSize = 13.sp)
+                        Text("Set Up Your Farm Profile", color = MaterialTheme.colorScheme.onSurface, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("Enter your farm details so records, invoices, and PDF reports reflect your farm branding.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
 
                         Card(
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 FormField("Farm Name *", farmName, { farmName = it }, placeholder = "e.g. Wekesa Commercial Pig Farm")
                                 FormField("Farmer / Manager Name", farmerName, { farmerName = it }, placeholder = "e.g. Harrison Wekesa")
-                                HorizontalDivider(color = Color(0xFF21262D))
-                                Text("Farm Administrative Location (Kenya 47 Counties)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                Text("Select your County, Sub-County, and Ward for location branding, weather, and local market linkage:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                Text("Farm Administrative Location (Kenya 47 Counties)", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("Select your County, Sub-County, and Ward for location branding, weather, and local market linkage:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                                 com.phms.app.ui.components.LocationSelector(
                                     selectedCounty = selectedCounty,
                                     selectedSubCounty = selectedSubCounty,
@@ -313,13 +313,13 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Text("Configure Initial Farm Pens", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Text("Set up housing pens for organizing your herd by stage (Farrowing, Weaner, Grower, Finisher).", color = Color(0xFF8B949E), fontSize = 13.sp)
+                        Text("Configure Initial Farm Pens", color = MaterialTheme.colorScheme.onSurface, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("Set up housing pens for organizing your herd by stage (Farrowing, Weaner, Grower, Finisher).", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
 
                         Card(
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                         ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text("Selected Farm Pens (${selectedPens.size})", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -328,17 +328,17 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clip(RoundedCornerShape(8.dp))
-                                            .background(Color(0xFF21262D))
+                                            .background(MaterialTheme.colorScheme.surfaceVariant)
                                             .padding(12.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             Icon(Icons.Default.Home, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
-                                            Text(pen.first, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                            Text(pen.first, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                                         }
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text("Cap: ${pen.second}", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                            Text("Cap: ${pen.second}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                             IconButton(
                                                 onClick = { selectedPens.removeAt(idx) },
                                                 modifier = Modifier.size(24.dp)
@@ -349,9 +349,9 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                                     }
                                 }
 
-                                HorizontalDivider(color = Color(0xFF21262D))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-                                Text("Add Custom Pen", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("Add Custom Pen", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Box(Modifier.weight(2f)) {
                                         FormField("Pen Name", customPenName, { customPenName = it }, placeholder = "e.g. Pen 6")
@@ -393,10 +393,10 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
             if (step > 0) {
                 OutlinedButton(
                     onClick = { step-- },
-                    border = BorderStroke(1.dp, Color(0xFF30363D)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Back", color = Color(0xFF8B949E))
+                    Text("Back", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 Spacer(Modifier.width(1.dp))
@@ -432,7 +432,7 @@ fun OnboardingScreen(viewModel: MainViewModel, navController: NavController) {
                 shape = RoundedCornerShape(12.dp),
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
             ) {
-                Text(if (step < 2) "Next →" else "Complete Setup", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(if (step < 2) "Next >" else "Complete Setup", fontSize = 15.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

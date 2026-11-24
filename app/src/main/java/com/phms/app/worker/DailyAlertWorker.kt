@@ -167,6 +167,7 @@ class DailyAlertWorker(
                     growthStageDao = db.growthStageDao(),
                     breedingDao = db.breedingDao(),
                     alertDao = db.alertDao(),
+                    mixedBatchDao = db.mixedBatchDao(),
                     currentTimeMs = now,
                     isManualTrigger = false
                 )

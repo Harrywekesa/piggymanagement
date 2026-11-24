@@ -149,7 +149,7 @@ fun HelpCenterScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             // Header Bar
             TopAppBar(
-                title = { Text("Help Center & FAQ", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Help Center & FAQ", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, null, tint = Color.White)
@@ -160,7 +160,7 @@ fun HelpCenterScreen(
                         Icon(Icons.Default.Explore, "Guided Tour", tint = Color(0xFF4CAF50))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF161B22))
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
 
             LazyColumn(
@@ -193,7 +193,7 @@ fun HelpCenterScreen(
                                 Icon(Icons.Default.Explore, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(28.dp))
                             }
                             Column(Modifier.weight(1f)) {
-                                Text("Take Interactive Guided Tour", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text("Take Interactive Guided Tour", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 Text("Step-by-step interactive walkthrough of all key farm features", color = Color(0xFF81C784), fontSize = 12.sp)
                             }
                             Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF4CAF50))
@@ -208,7 +208,7 @@ fun HelpCenterScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         border = BorderStroke(1.dp, if (updateInfo.isUpdateAvailable) Color(0xFF00B4D8) else Color(0xFF30363D))
                     ) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -220,8 +220,8 @@ fun HelpCenterScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Icon(Icons.Default.SystemUpdate, null, tint = if (updateInfo.isUpdateAvailable) Color(0xFF00B4D8) else Color(0xFF4CAF50), modifier = Modifier.size(24.dp))
                                     Column {
-                                        Text("App Version & GitHub Auto-Update", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        Text("Installed Version: ${updateInfo.currentVersion}", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                        Text("App Version & GitHub Auto-Update", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Text("Installed Version: ${updateInfo.currentVersion}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                     }
                                 }
                                 if (updateInfo.isChecking) {
@@ -239,7 +239,7 @@ fun HelpCenterScreen(
                             }
 
                             if (updateInfo.isUpdateAvailable) {
-                                HorizontalDivider(color = Color(0xFF21262D))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -250,7 +250,7 @@ fun HelpCenterScreen(
                                         Icon(Icons.Default.SystemUpdate, null, tint = Color(0xFF90E0EF), modifier = Modifier.size(14.dp))
                                         Text("New Update Available: ${updateInfo.latestVersion}", color = Color(0xFF90E0EF), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                     }
-                                        Text(updateInfo.releaseNotes.take(80) + "...", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                        Text(updateInfo.releaseNotes.take(80) + "...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                                     }
                                     Spacer(Modifier.width(8.dp))
                                     Button(
@@ -277,12 +277,12 @@ fun HelpCenterScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search help topics, questions, features...", color = Color(0xFF6E7681)) },
-                        leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF6E7681)) },
+                        placeholder = { Text("Search help topics, questions, features...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Close, null, tint = Color(0xFF6E7681))
+                                    Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         },
@@ -291,11 +291,11 @@ fun HelpCenterScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF4CAF50),
-                            unfocusedBorderColor = Color(0xFF30363D),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedContainerColor = Color(0xFF161B22),
-                            unfocusedContainerColor = Color(0xFF161B22)
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
                         )
                     )
                 }
@@ -314,7 +314,7 @@ fun HelpCenterScreen(
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = Color(0xFF1B5E20),
                                     selectedLabelColor = Color(0xFF4CAF50),
-                                    containerColor = Color(0xFF161B22),
+                                    containerColor = MaterialTheme.colorScheme.surface,
                                     labelColor = Color(0xFF8B949E)
                                 )
                             )
@@ -337,7 +337,7 @@ fun HelpCenterScreen(
                             modifier = Modifier.fillMaxWidth().padding(40.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("No help topics match your search query.", color = Color(0xFF6E7681), fontSize = 14.sp)
+                            Text("No help topics match your search query.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                         }
                     }
                 } else {
@@ -348,8 +348,8 @@ fun HelpCenterScreen(
                                 .fillMaxWidth()
                                 .clickable { expandedFaqId = if (isExpanded) null else faq.id },
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                            border = if (isExpanded) BorderStroke(1.dp, Color(0xFF4CAF50)) else BorderStroke(1.dp, Color(0xFF30363D))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = if (isExpanded) BorderStroke(1.dp, Color(0xFF4CAF50)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
                                 Row(
@@ -368,19 +368,19 @@ fun HelpCenterScreen(
                                             tint = Color(0xFF4CAF50),
                                             modifier = Modifier.size(20.dp)
                                         )
-                                        Text(faq.question, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                        Text(faq.question, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                     }
                                     Icon(
                                         if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                                         null,
-                                        tint = Color(0xFF6E7681)
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 AnimatedVisibility(visible = isExpanded) {
                                     Column(modifier = Modifier.padding(top = 10.dp)) {
-                                        HorizontalDivider(color = Color(0xFF21262D))
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                         Spacer(Modifier.height(10.dp))
-                                        Text(faq.answer, color = Color(0xFF8B949E), fontSize = 13.sp, lineHeight = 20.sp)
+                                        Text(faq.answer, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 20.sp)
                                         if (faq.actionRoute != null && faq.actionLabel != null) {
                                             Spacer(Modifier.height(12.dp))
                                             Button(
@@ -428,7 +428,7 @@ fun GuidedTourOverlay(onDismiss: () -> Unit, navController: NavController) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF161B22),
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(
@@ -439,13 +439,13 @@ fun GuidedTourOverlay(onDismiss: () -> Unit, navController: NavController) {
                 }
                 Column {
                     Text("Step ${step.stepNumber} of ${tourSteps.size}", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Text(step.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(step.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(step.description, color = Color(0xFF8B949E), fontSize = 14.sp, lineHeight = 20.sp)
+                Text(step.description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, lineHeight = 20.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     tourSteps.indices.forEach { i ->
                         Box(
@@ -466,7 +466,7 @@ fun GuidedTourOverlay(onDismiss: () -> Unit, navController: NavController) {
                         onClick = { currentStepIndex++ },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                     ) {
-                        Text("Next Step →", fontSize = 12.sp)
+                        Text("Next Step >", fontSize = 12.sp)
                     }
                 } else {
                     Button(

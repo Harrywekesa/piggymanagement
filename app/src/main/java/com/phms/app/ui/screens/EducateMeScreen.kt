@@ -38,7 +38,7 @@ fun EducateMeScreen(viewModel: MainViewModel, navController: NavController) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Header
         Surface(
-            color = Color(0xFF0D1117),
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
@@ -69,7 +69,7 @@ fun EducateMeScreen(viewModel: MainViewModel, navController: NavController) {
                         )
                         Text(
                             "Feeding guide, ingredients & combinations",
-                            color = Color(0xFF8B949E),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
                     }
@@ -80,7 +80,7 @@ fun EducateMeScreen(viewModel: MainViewModel, navController: NavController) {
         // Tab Row
         TabRow(
             selectedTabIndex = selectedTab,
-            containerColor = Color(0xFF161B22),
+            containerColor = MaterialTheme.colorScheme.surface,
             contentColor = Color(0xFF4CAF50),
             indicator = { tabPositions ->
                 TabRowDefaults.SecondaryIndicator(
@@ -242,7 +242,7 @@ fun IngredientExplainerTab() {
         item {
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = Color(0xFF122316),
+                color = MaterialTheme.colorScheme.primaryContainer,
                 border = BorderStroke(1.dp, Color(0xFF2E7D32)),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -254,7 +254,7 @@ fun IngredientExplainerTab() {
                     Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(16.dp))
                     Text(
                         "Tap any ingredient to expand its full explanation. Based on PHMS recipes using real-world Kenyan feed inputs.",
-                        color = Color(0xFFC9D1D9),
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 11.sp,
                         lineHeight = 15.sp
                     )
@@ -289,20 +289,20 @@ fun IngredientExplainerTab() {
                         ) {
                             Text(ing.emoji, fontSize = 24.sp)
                             Column {
-                                Text(ing.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text(ing.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Surface(shape = RoundedCornerShape(4.dp), color = ing.accentColor.copy(alpha = 0.15f)) {
                                         Text(ing.role, color = ing.accentColor, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                     }
-                                    Text("·", color = Color(0xFF8B949E), fontSize = 10.sp)
-                                    Text(ing.typicalPct, color = Color(0xFF8B949E), fontSize = 10.sp)
+                                    Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                                    Text(ing.typicalPct, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                 }
                             }
                         }
                         Icon(
                             if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                             contentDescription = null,
-                            tint = Color(0xFF8B949E),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -317,11 +317,11 @@ fun IngredientExplainerTab() {
                             modifier = Modifier.padding(top = 10.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            HorizontalDivider(color = Color(0xFF30363D))
-                            Text(ing.whyItMatters, color = Color(0xFFC9D1D9), fontSize = 12.sp, lineHeight = 17.sp)
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                            Text(ing.whyItMatters, color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, lineHeight = 17.sp)
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFF1E2D14),
+                                color = MaterialTheme.colorScheme.primaryContainer,
                                 border = BorderStroke(1.dp, ing.accentColor.copy(alpha = 0.3f))
                             ) {
                                 Row(
@@ -375,9 +375,9 @@ fun FeedCombinationsTab() {
                 "Premix 2% + Lime + DCP + Salt" to "micronutrient foundation"
             ),
             substitutions = listOf(
-                "Fishmeal → blood meal at equal rate if omena is expensive",
-                "Soybean Meal → field peas (max 15%) if soy unavailable",
-                "Wheat → sorghum (max 10%) — dehulled preferred"
+                "Fishmeal -> blood meal at equal rate if omena is expensive",
+                "Soybean Meal -> field peas (max 15%) if soy unavailable",
+                "Wheat -> sorghum (max 10%) — dehulled preferred"
             ),
             accentColor = Color(0xFF81C784),
             bgColor = Color(0xFF122316)
@@ -398,9 +398,9 @@ fun FeedCombinationsTab() {
                 "Premix 2% + Lime + DCP + Salt" to "unchanged from starter"
             ),
             substitutions = listOf(
-                "Sunflower Cake ↑ can partially replace Soybean Meal at this stage",
-                "Canola/rapeseed meal → up to 10% if soy unavailable (watch glucosinolates)",
-                "Cassava flour → up to 15% maize replacement (lower energy, watch mycotoxins)"
+                "Sunflower Cake can partially replace Soybean Meal at this stage",
+                "Canola/rapeseed meal -> up to 10% if soy unavailable (watch glucosinolates)",
+                "Cassava flour -> up to 15% maize replacement (lower energy, watch mycotoxins)"
             ),
             accentColor = Color(0xFF64B5F6),
             bgColor = Color(0xFF0D1E2E)
@@ -421,9 +421,9 @@ fun FeedCombinationsTab() {
                 "Premix 2% + Lime + DCP + Salt" to "unchanged"
             ),
             substitutions = listOf(
-                "Fishmeal must stay ≤1% — prevents fishy pork flavour",
-                "Molasses → up to 5% maize replacement, improves palatability",
-                "Palm kernel cake → up to 10% if available (reduce sunflower cake equally)"
+                "Fishmeal must stay <=1% — prevents fishy pork flavour",
+                "Molasses -> up to 5% maize replacement, improves palatability",
+                "Palm kernel cake -> up to 10% if available (reduce sunflower cake equally)"
             ),
             accentColor = Color(0xFFFFB74D),
             bgColor = Color(0xFF1E180A)
@@ -461,7 +461,7 @@ fun FeedCombinationsTab() {
         item {
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = Color(0xFF1A1A2E),
+                color = MaterialTheme.colorScheme.secondaryContainer,
                 border = BorderStroke(1.dp, Color(0xFF3949AB)),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -472,7 +472,7 @@ fun FeedCombinationsTab() {
                     }
                     Text(
                         "As pigs grow, their protein needs decrease while energy needs increase. Shift from protein-heavy starters to energy-heavy finishers to maximise feed conversion efficiency (FCR).",
-                        color = Color(0xFFC9D1D9),
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 11.sp,
                         lineHeight = 16.sp
                     )
@@ -485,7 +485,7 @@ fun FeedCombinationsTab() {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 border = BorderStroke(1.dp, stage.accentColor.copy(alpha = 0.4f))
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -498,8 +498,8 @@ fun FeedCombinationsTab() {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(stage.emoji, fontSize = 26.sp)
                             Column {
-                                Text(stage.stage, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text(stage.ageWeight, color = Color(0xFF8B949E), fontSize = 11.sp)
+                                Text(stage.stage, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text(stage.ageWeight, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                             }
                         }
                         Column(horizontalAlignment = Alignment.End) {
@@ -508,14 +508,14 @@ fun FeedCombinationsTab() {
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                             }
                             Spacer(Modifier.height(4.dp))
-                            Text(stage.energyMj, color = Color(0xFF8B949E), fontSize = 10.sp)
+                            Text(stage.energyMj, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                         }
                     }
 
-                    HorizontalDivider(color = Color(0xFF30363D))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
                     // Ingredients breakdown
-                    Text("Per 1,000 kg batch:", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Per 1,000 kg batch:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     stage.keyIngredients.forEach { (name, note) ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -524,14 +524,14 @@ fun FeedCombinationsTab() {
                         ) {
                             Text(
                                 "• $name",
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.weight(0.45f)
                             )
                             Text(
                                 note,
-                                color = Color(0xFF8B949E),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp,
                                 modifier = Modifier.weight(0.55f)
                             )
@@ -551,7 +551,7 @@ fun FeedCombinationsTab() {
                                 Text("Possible Substitutions", color = stage.accentColor, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
                             stage.substitutions.forEach { sub ->
-                                Text("→ $sub", color = Color(0xFFC9D1D9), fontSize = 11.sp, lineHeight = 15.sp)
+                                Text("• $sub", color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, lineHeight = 15.sp)
                             }
                         }
                     }
@@ -563,7 +563,7 @@ fun FeedCombinationsTab() {
         item {
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = Color(0xFF1A1200),
+                color = MaterialTheme.colorScheme.tertiaryContainer,
                 border = BorderStroke(1.dp, Color(0xFFFF8A65).copy(alpha = 0.4f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -579,7 +579,7 @@ fun FeedCombinationsTab() {
                         "Store mixed feed ≤2 weeks — rancidity destroys fat-soluble vitamins",
                         "Transition between ration stages gradually over 5–7 days to avoid digestive upset"
                     ).forEach { rule ->
-                        Text("• $rule", color = Color(0xFFC9D1D9), fontSize = 11.sp, lineHeight = 15.sp)
+                        Text("• $rule", color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, lineHeight = 15.sp)
                     }
                 }
             }

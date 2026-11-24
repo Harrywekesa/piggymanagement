@@ -16,3 +16,14 @@ app/build/
 
 # Local logs & build artifacts
 build_output.txt
+
+# Local screenshots and phone database dumps
+*.png
+*.jpg
+*.jpeg
+*.db
+*.db-shm
+*.db-wal
+phone*.db
+scratch/
+scratch_*

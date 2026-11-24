@@ -40,7 +40,7 @@ fun AlertsScreen(viewModel: MainViewModel, navController: NavController) {
 
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Text("Alerts Inbox", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Alerts Inbox", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(8.dp))
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("All", "Critical", "High", "Medium", "Low").forEach { p ->
@@ -59,7 +59,7 @@ fun AlertsScreen(viewModel: MainViewModel, navController: NavController) {
                                 "High" -> Color(0xFFFFB300)
                                 else -> Color(0xFF4CAF50)
                             },
-                            containerColor = Color(0xFF161B22),
+                            containerColor = MaterialTheme.colorScheme.surface,
                             labelColor = Color(0xFF8B949E)
                         )
                     )
@@ -75,7 +75,7 @@ fun AlertsScreen(viewModel: MainViewModel, navController: NavController) {
                         tint = Color(0xFF4CAF50),
                         modifier = Modifier.size(48.dp)
                     )
-                    Text("All clear! No alerts here.", color = Color(0xFF8B949E), textAlign = TextAlign.Center)
+                    Text("All clear! No alerts here.", color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                 }
             }
         } else {
@@ -111,16 +111,16 @@ fun AlertItemCard(
     if (showDismissDialog) {
         AlertDialog(
             onDismissRequest = { showDismissDialog = false },
-            containerColor = Color(0xFF161B22),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
-                Text("Mark as Addressed?", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Mark as Addressed?", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(alert.type.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    Text(alert.message, fontSize = 13.sp, color = Color(0xFFC9D1D9))
+                    Text(alert.message, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
-                    Text("This alert will be removed from your inbox.", fontSize = 12.sp, color = Color(0xFF8B949E))
+                    Text("This alert will be removed from your inbox.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             confirmButton = {
@@ -136,9 +136,9 @@ fun AlertItemCard(
             dismissButton = {
                 OutlinedButton(
                     onClick = { showDismissDialog = false },
-                    border = BorderStroke(1.dp, Color(0xFF30363D))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
-                    Text("Cancel", color = Color(0xFF8B949E))
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -160,7 +160,7 @@ fun AlertItemCard(
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(alert.type.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    Text(alert.message, fontSize = 13.sp, color = Color.White)
+                    Text(alert.message, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
                 Spacer(Modifier.width(8.dp))
                 // Quick-dismiss checkmark button (no dialog)

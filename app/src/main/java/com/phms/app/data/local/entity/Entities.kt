@@ -148,6 +148,7 @@ data class FeedingLogEntity(
     val num_pigs: Int = 1,
     val target_scope: String = "Full Herd",   // "Full Herd", "Category", "Pen", "Single Pig"
     val category: String? = null,              // "Piglets", "Weaners", "Growers", "Finishers", "Sows", "Gilts", "Boars"
+    val mixed_batch_id: Long? = null,          // If fed from a mixed batch, links to MixedBatchEntity.id
     val notes: String? = null
 )
 
@@ -287,6 +288,25 @@ data class GiltHeatRecordEntity(
     val symptoms: String, // "Standing Reflex", "Vulva Swelling", "Mucus Discharge", "Restlessness"
     val next_heat_alert_date: Long, // heat_date + 21 days
     val status: String = "Active", // "Active", "Served", "Expired"
+    val notes: String? = null
+)
+
+// --- MODULE 9: MIXED FEED BATCHES ---
+
+/** A prepared batch of mixed feed produced from a formula's proportional ingredients. */
+@Entity(tableName = "mixed_batches")
+data class MixedBatchEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,                    // e.g. "Grower Mix – 100 kg"
+    val formula_name: String,            // Recipe used: "Grower", "Finisher", etc.
+    val total_kg: Double,                // Total batch weight produced
+    val remaining_kg: Double,            // How much is still available
+    val cost_per_kg: Double,             // Actual cost per kg (from ingredients that were available)
+    val total_cost: Double,              // Total cost of this batch
+    val ingredients_used_json: String,   // JSON: [{"name":"Maize","kg":67.0,"cost_per_kg":35.0}]
+    val skipped_ingredients_json: String = "[]", // JSON: list of ingredient names that were skipped
+    val is_complete_formula: Boolean = true,     // false if ingredients were skipped
+    val created_date: Long,
     val notes: String? = null
 )
 

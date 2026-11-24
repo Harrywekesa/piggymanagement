@@ -87,16 +87,16 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
     val totalAmount = totalWeight * price
 
     Scaffold(
-        containerColor = Color(0xFF0D1117),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Record Sale", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Record Sale", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, null, tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF161B22))
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
@@ -112,7 +112,7 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                 when (currentStep) {
                     SaleStep.SELECT_PIGS -> {
                         item {
-                            Text("Select Pigs for Sale", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Select Pigs for Sale", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                             Spacer(Modifier.height(4.dp))
                             Text("${selectedPigIds.size} pig(s) selected", color = Color(0xFF4CAF50), fontSize = 13.sp)
                         }
@@ -139,8 +139,8 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                             item {
                                 Card(
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                    border = BorderStroke(1.dp, Color(0xFF30363D))
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                                 ) {
                                     Column(Modifier.padding(16.dp)) {
                                         OutlinedTextField(
@@ -158,15 +158,15 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                                             modifier = Modifier.fillMaxWidth(),
                                             colors = OutlinedTextFieldDefaults.colors(
                                                 focusedBorderColor = Color(0xFF4CAF50),
-                                                focusedLabelColor = Color(0xFF4CAF50),
-                                                focusedTextColor = Color.White,
-                                                unfocusedTextColor = Color.White,
-                                                unfocusedBorderColor = Color(0xFF30363D)
+                                                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
                                             )
                                         )
                                         if (selectedPigIds.isNotEmpty()) {
                                             Spacer(Modifier.height(8.dp))
-                                            Text("Auto-selected: ${selectedPigIds.joinToString(", ") { "pig #$it" }}", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                            Text("Auto-selected: ${selectedPigIds.joinToString(", ") { "pig #$it" }}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                         }
                                     }
                                 }
@@ -185,15 +185,15 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
 
                     SaleStep.SET_PRICE -> {
                         item {
-                            Text("Set Sale Price & Weights", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Set Sale Price & Weights", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                             Spacer(Modifier.height(2.dp))
-                            Text("Enter the actual weighed weight for each pig at point of sale.", color = Color(0xFF8B949E), fontSize = 12.sp)
+                            Text("Enter the actual weighed weight for each pig at point of sale.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                         }
                         item {
                             Card(
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                             ) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     OutlinedTextField(
@@ -206,14 +206,14 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = OutlinedTextFieldDefaults.colors(
                                             focusedBorderColor = Color(0xFF4CAF50),
-                                            focusedLabelColor = Color(0xFF4CAF50),
-                                            focusedTextColor = Color.White,
-                                            unfocusedTextColor = Color.White,
-                                            unfocusedBorderColor = Color(0xFF30363D)
+                                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
                                         )
                                     )
-                                    HorizontalDivider(color = Color(0xFF21262D))
-                                    Text("Enter actual scale weight per pig:", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                    Text("Enter actual scale weight per pig:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                     // Editable per-pig weight fields
                                     selectedPigs.forEach { pig ->
                                         Row(
@@ -222,8 +222,8 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
                                             Column(Modifier.weight(1f)) {
-                                                Text("#${pig.tag_number}", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                                                Text(pig.breed, color = Color(0xFF6E7681), fontSize = 11.sp)
+                                                Text("#${pig.tag_number}", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                                Text(pig.breed, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                                             }
                                             OutlinedTextField(
                                                 value = manualWeightStrings[pig.id] ?: "",
@@ -237,22 +237,22 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                                                 modifier = Modifier.width(100.dp),
                                                 colors = OutlinedTextFieldDefaults.colors(
                                                     focusedBorderColor = Color(0xFF4CAF50),
-                                                    focusedLabelColor = Color(0xFF4CAF50),
-                                                    focusedTextColor = Color.White,
-                                                    unfocusedTextColor = Color.White,
-                                                    unfocusedBorderColor = Color(0xFF30363D)
+                                                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                                                 ),
                                                 singleLine = true
                                             )
                                         }
                                     }
-                                    HorizontalDivider(color = Color(0xFF21262D))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("Total Weight", color = Color(0xFF8B949E))
-                                        Text("${String.format("%.1f", totalWeight)} kg", color = Color.White, fontWeight = FontWeight.Bold)
+                                        Text("Total Weight", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text("${String.format("%.1f", totalWeight)} kg", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                                     }
                                     if (price > 0) {
-                                        HorizontalDivider(color = Color(0xFF21262D))
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text("Total Amount", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             Text("KSh ${String.format("%,.0f", totalAmount)}", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -265,14 +265,14 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
 
                     SaleStep.BUYER_DETAILS -> {
                         item {
-                            Text("Buyer Details", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Buyer Details", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                         if (!showNewBuyerForm) {
                             item {
                                 Button(
                                     onClick = { showNewBuyerForm = true },
                                     modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF21262D)),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.outlineVariant),
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Icon(Icons.Default.PersonAdd, null, tint = Color(0xFF4CAF50))
@@ -281,7 +281,7 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                                 }
                             }
                             if (buyers.isNotEmpty()) {
-                                item { Text("Or select existing buyer:", color = Color(0xFF8B949E), fontSize = 13.sp) }
+                                item { Text("Or select existing buyer:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp) }
                                 items(buyers) { buyer ->
                                     BuyerSelectCard(buyer = buyer, isSelected = selectedBuyerId == buyer.id, onClick = {
                                         selectedBuyerId = buyer.id
@@ -293,15 +293,15 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                             item {
                                 Card(
                                     shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                    border = BorderStroke(1.dp, Color(0xFF30363D))
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                                 ) {
                                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                         Text("New Buyer", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
                                         FormField("Buyer Name *", newBuyerName, { newBuyerName = it })
                                         FormField("Phone Number", newBuyerPhone, { newBuyerPhone = it },
                                             keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone)
-                                        Text("Buyer Type", color = Color(0xFF8B949E), fontSize = 13.sp)
+                                        Text("Buyer Type", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                                         Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             listOf("Butchery", "Wholesaler", "Retailer", "Slaughterhouse", "Individual").forEach { type ->
                                                 FilterChip(
@@ -321,7 +321,7 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                                                 onClick = { showNewBuyerForm = false },
                                                 modifier = Modifier.weight(1f),
                                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF6E7681))
-                                            ) { Text("Cancel", color = Color(0xFF8B949E)) }
+                                            ) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                             Button(
                                                 onClick = {
                                                     if (newBuyerName.isNotBlank()) {
@@ -341,7 +341,7 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
 
                         item {
                             Spacer(Modifier.height(8.dp))
-                            Text("Payment Status", color = Color(0xFF8B949E), fontSize = 13.sp)
+                            Text("Payment Status", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                             Spacer(Modifier.height(8.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 listOf("Paid", "Partial", "Pending").forEach { status ->
@@ -369,19 +369,19 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
 
                     SaleStep.CONFIRM -> {
                         item {
-                            Text("Confirm Sale", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Confirm Sale", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                         item {
                             Card(
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                             ) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     ConfirmRow("Pigs to Sell", "${selectedPigIds.size} pigs")
                                     ConfirmRow("Est. Weight", "~${String.format("%.0f", totalWeight)} kg")
                                     ConfirmRow("Price/kg", "KSh ${pricePerKg}")
-                                    HorizontalDivider(color = Color(0xFF21262D))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                     ConfirmRow("Total Amount", "KSh ${String.format("%,.0f", totalAmount)}", highlight = true)
                                     ConfirmRow("Payment", paymentStatus)
                                     val buyer = buyers.find { it.id == effectiveBuyerId }
@@ -490,7 +490,7 @@ fun SaleStepIndicator(currentStep: SaleStep) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF161B22))
+            .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -538,7 +538,7 @@ fun SalePigCard(pig: PigEntity, isSelected: Boolean, onToggle: () -> Unit) {
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) Color(0xFF1B3A1B) else Color(0xFF161B22)
         ),
-        border = if (isSelected) BorderStroke(1.dp, Color(0xFF4CAF50)) else BorderStroke(1.dp, Color(0xFF30363D))
+        border = if (isSelected) BorderStroke(1.dp, Color(0xFF4CAF50)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -546,7 +546,7 @@ fun SalePigCard(pig: PigEntity, isSelected: Boolean, onToggle: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Box(
-                modifier = Modifier.size(44.dp).clip(CircleShape).background(Color(0xFF21262D)),
+                modifier = Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 if (pig.photo_path != null) {
@@ -556,7 +556,7 @@ fun SalePigCard(pig: PigEntity, isSelected: Boolean, onToggle: () -> Unit) {
                 }
             }
             Column(Modifier.weight(1f)) {
-                Text("#${pig.tag_number}", color = Color.White, fontWeight = FontWeight.SemiBold)
+                Text("#${pig.tag_number}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                 Text("${pig.breed} • ${if (pig.sex == "M") "Boar" else "Sow"}", color = Color(0xFF8B949E), fontSize = 12.sp)
             }
             Checkbox(
@@ -579,19 +579,19 @@ fun BuyerSelectCard(buyer: BuyerEntity, isSelected: Boolean, onClick: () -> Unit
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) Color(0xFF1B3A1B) else Color(0xFF161B22)
         ),
-        border = if (isSelected) BorderStroke(1.dp, Color(0xFF4CAF50)) else BorderStroke(1.dp, Color(0xFF30363D))
+        border = if (isSelected) BorderStroke(1.dp, Color(0xFF4CAF50)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF21262D)),
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 Text(buyer.name.first().uppercase(), color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(buyer.name, color = Color.White, fontWeight = FontWeight.SemiBold)
-                Text("${buyer.type} • ${buyer.phone}", color = Color(0xFF8B949E), fontSize = 12.sp)
+                Text(buyer.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                Text("${buyer.type} • ${buyer.phone}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             if (isSelected) Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50))
         }
@@ -601,7 +601,7 @@ fun BuyerSelectCard(buyer: BuyerEntity, isSelected: Boolean, onClick: () -> Unit
 @Composable
 fun ConfirmRow(label: String, value: String, highlight: Boolean = false) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, color = Color(0xFF8B949E), fontSize = 14.sp)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         Text(value, color = if (highlight) Color(0xFF4CAF50) else Color.White,
             fontWeight = if (highlight) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
     }

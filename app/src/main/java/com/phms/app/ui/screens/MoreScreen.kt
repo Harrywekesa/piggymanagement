@@ -107,7 +107,7 @@ fun MoreScreen(navController: NavController) {
         )
         Text(
             text = "Select a module to manage your herd operations",
-            color = Color(0xFF8B949E),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -124,8 +124,8 @@ fun MoreScreen(navController: NavController) {
                         .fillMaxWidth()
                         .clickable { navController.navigate(module.route) },
                     shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                    border = BorderStroke(1.dp, Color(0xFF30363D))
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(
                         modifier = Modifier.padding(14.dp),
@@ -154,7 +154,7 @@ fun MoreScreen(navController: NavController) {
                             )
                             Text(
                                 text = module.subtitle,
-                                color = Color(0xFF8B949E),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp,
                                 lineHeight = 15.sp,
                                 maxLines = 2

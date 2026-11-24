@@ -78,10 +78,10 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
     val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
 
     Scaffold(
-        containerColor = Color(0xFF0D1117),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Pig #${p.tag_number}", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Pig #${p.tag_number}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, null, tint = Color.White)
@@ -92,7 +92,7 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
                         Icon(Icons.Default.Edit, null, tint = Color(0xFF4CAF50))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF161B22))
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
@@ -125,7 +125,7 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
                             modifier = Modifier
                                 .size(90.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF21262D))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .border(2.dp, Color(0xFF4CAF50), CircleShape)
                                 .clickable { if (!p.photo_path.isNullOrBlank()) showFullScreenPhoto = true },
                             contentAlignment = Alignment.Center
@@ -165,7 +165,7 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
                             if (isWithdrawalActive) WithdrawalBadge()
                         }
                         Spacer(Modifier.height(8.dp))
-                        Text(p.breed, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text(p.breed, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                         Text("${if (p.sex == "M") "Boar" else "Sow"} • $ageDisplay", color = Color(0xFF8B949E), fontSize = 13.sp)
                     }
                 }
@@ -204,7 +204,7 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
             item {
                 ScrollableTabRow(
                     selectedTabIndex = selectedTab,
-                    containerColor = Color(0xFF161B22),
+                    containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = Color(0xFF4CAF50),
                     edgePadding = 8.dp,
                     indicator = { tabPositions ->
@@ -275,66 +275,85 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
                             Card(
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                                 shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                                 border = BorderStroke(1.dp, Color(0xFF2E7D32))
                             ) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text("Growth Chart", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    val sorted = weights.sortedBy { it.date }
-                                    val minW = sorted.minOf { it.weight_kg }.toFloat()
-                                    val maxW = sorted.maxOf { it.weight_kg }.toFloat()
-                                    val range = (maxW - minW).coerceAtLeast(1f)
-                                    val lineColor = Color(0xFF4CAF50)
-                                    val dotColor = Color(0xFF81C784)
-                                    val gridColor = Color(0xFF21262D)
-                                    Canvas(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(150.dp)
-                                            .padding(bottom = 4.dp)
-                                    ) {
-                                        val w = size.width
-                                        val h = size.height
-                                        val padL = 40f; val padR = 16f; val padT = 8f; val padB = 24f
-                                        val chartW = w - padL - padR
-                                        val chartH = h - padT - padB
-                                        // Grid lines
-                                        listOf(0f, 0.25f, 0.5f, 0.75f, 1f).forEach { frac ->
-                                            val y = padT + chartH * (1f - frac)
-                                            drawLine(gridColor, androidx.compose.ui.geometry.Offset(padL, y), androidx.compose.ui.geometry.Offset(w - padR, y), strokeWidth = 1f)
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Growth Chart", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Box(Modifier.size(10.dp, 3.dp).background(Color(0xFF4CAF50)))
+                                                Text("Actual", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp)
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Box(Modifier.size(10.dp, 3.dp).background(Color(0xFFFFB74D)))
+                                                Text("Target", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp)
+                                            }
                                         }
-                                        // Line path
+                                    }
+                                    val sorted = weights.sortedBy { it.date }
+                                    val tgtMap = mapOf(0 to 1.4, 2 to 3.0, 4 to 6.0, 8 to 15.0, 12 to 30.0, 16 to 50.0, 20 to 70.0, 24 to 90.0, 28 to 110.0)
+                                    fun expKg(aw: Double): Double {
+                                        val ks = tgtMap.keys.sorted(); val lo = ks.lastOrNull { it <= aw } ?: return tgtMap.values.first()
+                                        val hi = ks.firstOrNull { it > aw } ?: return tgtMap[lo]!!
+                                        return tgtMap[lo]!! + ((aw - lo) / (hi - lo)) * (tgtMap[hi]!! - tgtMap[lo]!!)
+                                    }
+                                    val minW = sorted.minOf { it.weight_kg }.toFloat().coerceAtMost(1.4f)
+                                    val maxW = sorted.maxOf { it.weight_kg }.toFloat().coerceAtLeast(10f)
+                                    val range = (maxW - minW).coerceAtLeast(1f)
+                                    Canvas(modifier = Modifier.fillMaxWidth().height(160.dp).padding(bottom = 4.dp)) {
+                                        val w = size.width; val h = size.height
+                                        val padL = 40f; val padR = 16f; val padT = 8f; val padB = 24f
+                                        val chartW = w - padL - padR; val chartH = h - padT - padB
+                                        listOf(0f, 0.25f, 0.5f, 0.75f, 1f).forEach { frac ->
+                                            drawLine(Color(0xFF21262D), androidx.compose.ui.geometry.Offset(padL, padT + chartH * (1f - frac)), androidx.compose.ui.geometry.Offset(w - padR, padT + chartH * (1f - frac)), 1f)
+                                        }
                                         if (sorted.size >= 2) {
+                                            val tPath = Path()
+                                            sorted.forEachIndexed { i, rec ->
+                                                val ageW = (rec.date - p.birth_date) / (7.0 * 24 * 60 * 60 * 1000)
+                                                val tgt = expKg(ageW).toFloat().coerceIn(minW, maxW + range)
+                                                val x = padL + (i.toFloat() / (sorted.size - 1).toFloat()) * chartW
+                                                val y = padT + chartH * (1f - ((tgt - minW) / range))
+                                                if (i == 0) tPath.moveTo(x, y) else tPath.lineTo(x, y)
+                                            }
+                                            drawPath(tPath, Color(0xFFFFB74D), style = Stroke(2f, cap = StrokeCap.Round,
+                                                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(12f, 8f))))
                                             val path = Path()
                                             sorted.forEachIndexed { i, rec ->
                                                 val x = padL + (i.toFloat() / (sorted.size - 1).toFloat()) * chartW
                                                 val y = padT + chartH * (1f - ((rec.weight_kg.toFloat() - minW) / range))
                                                 if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
                                             }
-                                            drawPath(path, lineColor, style = Stroke(width = 3f, cap = StrokeCap.Round))
+                                            drawPath(path, Color(0xFF4CAF50), style = Stroke(3f, cap = StrokeCap.Round))
                                         }
-                                        // Dots
                                         sorted.forEachIndexed { i, rec ->
                                             val x = padL + (if (sorted.size > 1) i.toFloat() / (sorted.size - 1).toFloat() else 0.5f) * chartW
                                             val y = padT + chartH * (1f - ((rec.weight_kg.toFloat() - minW) / range))
-                                            drawCircle(dotColor, radius = 6f, center = androidx.compose.ui.geometry.Offset(x, y))
-                                            drawCircle(Color(0xFF0D1117), radius = 3f, center = androidx.compose.ui.geometry.Offset(x, y))
+                                            drawCircle(Color(0xFF81C784), 6f, androidx.compose.ui.geometry.Offset(x, y))
+                                            drawCircle(Color(0xFF0D1117), 3f, androidx.compose.ui.geometry.Offset(x, y))
                                         }
                                     }
-                                    // Min / Max / Latest summary
+                                    val latestAgeW = (sorted.last().date - p.birth_date) / (7.0 * 24 * 60 * 60 * 1000)
+                                    val vsTarget = sorted.last().weight_kg - expKg(latestAgeW)
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text("${String.format("%.1f", sorted.first().weight_kg)} kg", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                            Text("Start", color = Color(0xFF6E7681), fontSize = 10.sp)
+                                            Text("${String.format("%.1f", sorted.first().weight_kg)} kg", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text("Start", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                         }
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             val gainKg = sorted.last().weight_kg - sorted.first().weight_kg
                                             Text("${if (gainKg >= 0) "+" else ""}${String.format("%.1f", gainKg)} kg", color = if (gainKg >= 0) Color(0xFF81C784) else Color(0xFFE57373), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                            Text("Total Gain", color = Color(0xFF6E7681), fontSize = 10.sp)
+                                            Text("Total Gain", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                         }
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text("${String.format("%.1f", sorted.last().weight_kg)} kg", color = Color(0xFF4CAF50), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                            Text("Latest", color = Color(0xFF6E7681), fontSize = 10.sp)
+                                            Text("Latest", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                                        }
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("${if (vsTarget >= 0) "+" else ""}${String.format("%.1f", vsTarget)} kg", color = if (vsTarget >= 0) Color(0xFF4CAF50) else Color(0xFFFFB74D), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text("vs Target", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                         }
                                     }
                                 }
@@ -343,7 +362,7 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
                         // ── WEIGHT LOG LIST ──────────────────────────────────
                         item {
                             Column(Modifier.padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("Weight History", color = Color(0xFF8B949E), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                                Text("Weight History", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                                 weights.forEachIndexed { i, w ->
                                     WeightRow(w, prev = weights.getOrNull(i + 1), dateFormat = dateFormat)
                                 }
@@ -429,7 +448,7 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
 
                         Text(
                             "Tap anywhere to close",
-                            color = Color(0xFF8B949E),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
@@ -472,7 +491,7 @@ fun OverviewTab(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1B281B)),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             border = BorderStroke(1.dp, Color(0xFF2E7D32))
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -496,26 +515,26 @@ fun OverviewTab(
                             Text("${feedRec.dailyFeedRationKg} kg/day", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                         }
                         Spacer(Modifier.height(2.dp))
-                        Text(feedRec.feedType, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Text(feedRec.feedType, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                         Text(feedRec.dailyFeedRange, color = Color(0xFFA5D6A7), fontSize = 11.sp)
                     }
                 }
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF122013)
+                    color = MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Protein Required:", color = Color(0xFF8B949E), fontSize = 11.sp)
-                            Text(feedRec.crudeProtein, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            Text("Protein Required:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            Text(feedRec.crudeProtein, color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Feeding Schedule:", color = Color(0xFF8B949E), fontSize = 11.sp)
-                            Text(feedRec.dailyMeals, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            Text("Feeding Schedule:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            Text(feedRec.dailyMeals, color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Water Required:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                            Text("Water Required:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                             Text(feedRec.waterReqLiters, color = Color(0xFF81C784), fontSize = 11.sp, fontWeight = FontWeight.Medium)
                         }
                     }
@@ -581,7 +600,7 @@ fun OverviewTab(
         }
         if (!pig.notes.isNullOrBlank()) {
             InfoSection("Notes") {
-                Text(pig.notes, color = Color(0xFF8B949E), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
+                Text(pig.notes, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, modifier = Modifier.padding(8.dp))
             }
         }
     }
@@ -589,18 +608,18 @@ fun OverviewTab(
     if (showFeedingKeyDialog) {
         AlertDialog(
             onDismissRequest = { showFeedingKeyDialog = false },
-            containerColor = Color(0xFF161B22),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color(0xFF4CAF50))
-                    Text("Swine Feeding Key & Guide", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Swine Feeding Key & Guide", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         "Veterinary daily feed allowances by weight, age, and breeding category:",
-                        color = Color(0xFF8B949E), fontSize = 12.sp
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp
                     )
                     SwineFeedingKey.table.forEach { item ->
                         val isCurrentMatch = item.stageName.equals(currentStage?.name, true) ||
@@ -616,14 +635,14 @@ fun OverviewTab(
                         ) {
                             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text(item.category, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text(item.category, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                     Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF2E7D32)) {
-                                        Text("${item.dailyFeedRationKg} kg/day", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        Text("${item.dailyFeedRationKg} kg/day", color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                     }
                                 }
                                 Text("Weight: ${item.weightRange} • Age: ${item.ageRange}", color = Color(0xFF81C784), fontSize = 11.sp)
-                                Text("Feed: ${item.feedType} (${item.crudeProtein})", color = Color(0xFFE6EDF3), fontSize = 11.sp)
-                                Text("Schedule: ${item.dailyMeals} • Water: ${item.waterReqLiters}", color = Color(0xFF8B949E), fontSize = 10.sp)
+                                Text("Feed: ${item.feedType} (${item.crudeProtein})", color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp)
+                                Text("Schedule: ${item.dailyMeals} • Water: ${item.waterReqLiters}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                 Text(item.managementGuide, color = Color(0xFFA5D6A7), fontSize = 10.sp)
                             }
                         }
@@ -645,8 +664,8 @@ fun InfoSection(title: String, content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-        border = BorderStroke(1.dp, Color(0xFF30363D))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(title, color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 13.sp)
@@ -664,8 +683,8 @@ fun InfoRow(label: String, value: String) {
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, color = Color(0xFF8B949E), fontSize = 13.sp)
-        Text(value, color = Color(0xFFE6EDF3), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+        Text(value, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -676,8 +695,8 @@ fun HealthEventRow(event: HealthEventEntity, dateFormat: SimpleDateFormat) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-        border = BorderStroke(1.dp, Color(0xFF30363D))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -699,14 +718,14 @@ fun HealthEventRow(event: HealthEventEntity, dateFormat: SimpleDateFormat) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(event.type, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text(event.type, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                     if (!event.disease_name.isNullOrEmpty()) {
                         Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF3E2723)) {
                             Text(event.disease_name!!, color = Color(0xFFFF8A65), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
                         }
                     }
                 }
-                Text(event.product, color = Color(0xFF8B949E), fontSize = 12.sp)
+                Text(event.product, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 val extraDetails = buildList {
                     if (event.age_weeks != null) add("Age: ${event.age_weeks}w")
                     if (event.weight_kg != null) add("Weight: ${event.weight_kg}kg")
@@ -715,7 +734,7 @@ fun HealthEventRow(event: HealthEventEntity, dateFormat: SimpleDateFormat) {
                 if (extraDetails.isNotBlank()) {
                     Text(extraDetails, color = Color(0xFF4CAF50), fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 }
-                Text(dateFormat.format(Date(event.date)), color = Color(0xFF6E7681), fontSize = 11.sp)
+                Text(dateFormat.format(Date(event.date)), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
             if (event.withdrawal_days > 0) {
                 Surface(
@@ -735,7 +754,7 @@ fun HealthEventRow(event: HealthEventEntity, dateFormat: SimpleDateFormat) {
                 Spacer(Modifier.width(4.dp))
                 Surface(
                     shape = RoundedCornerShape(6.dp),
-                    color = Color(0xFF0E2420)
+                    color = MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Text(
                         "\uD83D\uDD01 ${event.repeat_interval_days}d",
@@ -759,16 +778,16 @@ fun StageHistoryRow(history: PigStageHistoryEntity, stageMap: Map<Long, GrowthSt
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-        border = BorderStroke(1.dp, Color(0xFF30363D))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.TrendingUp, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(28.dp))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text("$from → $to", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                Text("${history.weight_at_promotion}kg • ${history.age_at_promotion_weeks}w old", color = Color(0xFF8B949E), fontSize = 12.sp)
-                Text(dateFormat.format(Date(history.promotion_date)), color = Color(0xFF6E7681), fontSize = 11.sp)
+                Text("$from > $to", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text("${history.weight_at_promotion}kg • ${history.age_at_promotion_weeks}w old", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Text(dateFormat.format(Date(history.promotion_date)), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
     }
@@ -784,9 +803,9 @@ fun WeightRow(record: WeightRecordEntity, prev: WeightRecordEntity?, dateFormat:
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(dateFormat.format(Date(record.date)), color = Color(0xFF8B949E), fontSize = 13.sp)
+        Text(dateFormat.format(Date(record.date)), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("${record.weight_kg} kg", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text("${record.weight_kg} kg", color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             if (gain != null) {
                 val gainColor = if (gain >= 0) Color(0xFF4CAF50) else Color(0xFFFF5252)
                 val sign = if (gain >= 0) "+" else ""
@@ -794,7 +813,7 @@ fun WeightRow(record: WeightRecordEntity, prev: WeightRecordEntity?, dateFormat:
             }
         }
     }
-    HorizontalDivider(color = Color(0xFF21262D))
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 @Composable
@@ -802,8 +821,8 @@ fun StatCard(label: String, value: String, icon: ImageVector, modifier: Modifier
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-        border = BorderStroke(1.dp, Color(0xFF30363D))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -811,8 +830,8 @@ fun StatCard(label: String, value: String, icon: ImageVector, modifier: Modifier
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(icon, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
-            Text(value, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp, textAlign = TextAlign.Center)
-            Text(label, color = Color(0xFF6E7681), fontSize = 10.sp, textAlign = TextAlign.Center)
+            Text(value, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp, textAlign = TextAlign.Center)
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, textAlign = TextAlign.Center)
         }
     }
 }
@@ -852,7 +871,7 @@ fun EmptyTab(message: String) {
             .padding(40.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(message, color = Color(0xFF6E7681), fontSize = 14.sp, textAlign = TextAlign.Center)
+        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, textAlign = TextAlign.Center)
     }
 }
 
@@ -922,9 +941,9 @@ fun ActionButtonsRow(
                 modifier = Modifier.weight(1f),
                 border = BorderStroke(1.dp, Color(0xFF6E7681))
             ) {
-                Icon(Icons.Default.MoreVert, null, tint = Color(0xFF8B949E), modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("Status", color = Color(0xFF8B949E), fontSize = 13.sp)
+                Text("Status", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
             }
         }
     }
@@ -954,8 +973,8 @@ fun ActionButtonsRow(
 
         AlertDialog(
             onDismissRequest = { showLogHealthDialog = false },
-            containerColor = Color(0xFF161B22),
-            title = { Text("Log Health / Vet Event — Pig #${pig.tag_number}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text("Log Health / Vet Event — Pig #${pig.tag_number}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
@@ -1044,7 +1063,7 @@ fun ActionButtonsRow(
                     FormField("Product / Medication Description", product, { product = it }, placeholder = "e.g. Oxytetracycline 20%, Iron injection (Defaults to event type)")
 
                     if (eventType == "Gilt/Sow Serviced" && boars.isNotEmpty()) {
-                        Text("Servicing Boar (Optional for AI)", color = Color(0xFF8B949E), fontSize = 12.sp)
+                        Text("Servicing Boar (Optional for AI)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                         DropdownSelector(
                             label = "Select Boar",
                             options = listOf(-1L to "Artificial Insemination (AI)") + boars.map { it.id to "Boar Tag #${it.tag_number}" },
@@ -1117,7 +1136,7 @@ fun ActionButtonsRow(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                 ) { Text("Save Event") }
             },
-            dismissButton = { OutlinedButton(onClick = { showLogHealthDialog = false }) { Text("Cancel", color = Color(0xFF8B949E)) } }
+            dismissButton = { OutlinedButton(onClick = { showLogHealthDialog = false }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         )
     }
 
@@ -1125,8 +1144,8 @@ fun ActionButtonsRow(
         var weightInput by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showLogWeightDialog = false },
-            title = { Text("Log Weight", color = Color.White) },
-            containerColor = Color(0xFF161B22),
+            title = { Text("Log Weight", color = MaterialTheme.colorScheme.onSurface) },
+            containerColor = MaterialTheme.colorScheme.surface,
             text = {
                 OutlinedTextField(
                     value = weightInput,
@@ -1137,7 +1156,7 @@ fun ActionButtonsRow(
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF4CAF50),
-                        focusedLabelColor = Color(0xFF4CAF50)
+                        focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
                 )
             },
@@ -1163,8 +1182,8 @@ fun ActionButtonsRow(
         val statuses = listOf("Active", "Dead", "Culled")
         AlertDialog(
             onDismissRequest = { showStatusDialog = false },
-            title = { Text("Change Status", color = Color.White) },
-            containerColor = Color(0xFF161B22),
+            title = { Text("Change Status", color = MaterialTheme.colorScheme.onSurface) },
+            containerColor = MaterialTheme.colorScheme.surface,
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     statuses.filter { it != pig.status }.forEach { status ->
@@ -1197,28 +1216,28 @@ fun ActionButtonsRow(
         var selectedPenId by remember { mutableStateOf(pig.pen_id) }
         AlertDialog(
             onDismissRequest = { showPromoteDialog = false },
-            title = { Text("Promote Pig", color = Color.White) },
-            containerColor = Color(0xFF161B22),
+            title = { Text("Promote Pig", color = MaterialTheme.colorScheme.onSurface) },
+            containerColor = MaterialTheme.colorScheme.surface,
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Select new stage:", color = Color(0xFF8B949E), fontSize = 13.sp)
+                    Text("Select new stage:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     stages.forEach { stage ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.clickable { selectedStageId = stage.id }
                         ) {
                             RadioButton(selected = selectedStageId == stage.id, onClick = { selectedStageId = stage.id })
-                            Text(stage.name, color = Color.White)
+                            Text(stage.name, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
-                    Text("Select pen:", color = Color(0xFF8B949E), fontSize = 13.sp)
+                    Text("Select pen:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     pens.forEach { pen ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.clickable { selectedPenId = pen.id }
                         ) {
                             RadioButton(selected = selectedPenId == pen.id, onClick = { selectedPenId = pen.id })
-                            Text(pen.name, color = Color.White)
+                            Text(pen.name, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }

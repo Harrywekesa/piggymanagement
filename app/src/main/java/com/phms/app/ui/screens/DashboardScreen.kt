@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
     val pigs by viewModel.activePigs.collectAsState()
+    val allPigs by viewModel.allPigs.collectAsState()
+    val healthEvents by viewModel.allHealthEvents.collectAsState()
     val alerts by viewModel.activeAlerts.collectAsState()
     val pnl by viewModel.pnlSummary.collectAsState()
     val updateInfo by viewModel.appUpdateInfo.collectAsState()
@@ -61,7 +63,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                         com.phms.app.data.updater.GitHubUpdateChecker.openUpdateLink(context, updateInfo)
                     },
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1B3A4B)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
                     border = BorderStroke(1.dp, Color(0xFF00B4D8))
                 ) {
                     Row(
@@ -72,7 +74,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
                             Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = Color(0xFF90E0EF), modifier = Modifier.size(24.dp))
                             Column {
-                                Text("New Update Available (${updateInfo.latestVersion})", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("New Update Available (${updateInfo.latestVersion})", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Text("Tap to download & install the latest GitHub release.", color = Color(0xFF90E0EF), fontSize = 11.sp)
                             }
                         }
@@ -105,35 +107,52 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                     days
                 }
             val fedToday = todayFeedingStatus?.isLoggedToday == true
+            val monthStart = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000L
+            val deathsThisMonth = healthEvents.count { it.type == "Mortality / Death" && it.date >= monthStart }
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1E12)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 border = BorderStroke(1.dp, Color(0xFF2E7D32))
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("🐖", fontSize = 20.sp)
                         Column {
-                            Text(greeting, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                            Text("Here's what needs your attention today", color = Color(0xFF8B949E), fontSize = 11.sp)
+                            Text(greeting, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Text("Here's what needs your attention today", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                         }
                     }
-                    HorizontalDivider(color = Color(0xFF1F3D24))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                     // Action items row
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         // Feeding status
                         Surface(
                             shape = RoundedCornerShape(10.dp),
                             color = if (fedToday) Color(0xFF122316) else Color(0xFF1B2A0A),
                             border = BorderStroke(1.dp, if (fedToday) Color(0xFF2E7D32) else Color(0xFF558B2F)),
-                            modifier = Modifier.weight(1f).clickable { navController.navigate("feed") }
+                            modifier = Modifier.weight(1f).fillMaxHeight().clickable { navController.navigate("feed") }
                         ) {
-                            Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
                                 Text(if (fedToday) "✅" else "🌾", fontSize = 18.sp)
-                                Text(if (fedToday) "Fed Today" else "Feed Due", color = if (fedToday) Color(0xFF81C784) else Color(0xFFCCFF90), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                Spacer(Modifier.height(3.dp))
+                                Text(
+                                    if (fedToday) "Fed Today" else "Feed Due",
+                                    color = if (fedToday) Color(0xFF81C784) else Color(0xFFCCFF90),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
                         // Alerts
@@ -141,11 +160,23 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                             shape = RoundedCornerShape(10.dp),
                             color = if (criticalAlertCount > 0) Color(0xFF2A0D0D) else Color(0xFF161B22),
                             border = BorderStroke(1.dp, if (criticalAlertCount > 0) Color(0xFFE53935) else Color(0xFF30363D)),
-                            modifier = Modifier.weight(1f).clickable { navController.navigate("alerts") }
+                            modifier = Modifier.weight(1f).fillMaxHeight().clickable { navController.navigate("alerts") }
                         ) {
-                            Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
                                 Text(if (criticalAlertCount > 0) "🚨" else "✅", fontSize = 18.sp)
-                                Text(if (criticalAlertCount > 0) "$criticalAlertCount Critical" else "No Alerts", color = if (criticalAlertCount > 0) Color(0xFFFF5252) else Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                Spacer(Modifier.height(3.dp))
+                                Text(
+                                    if (criticalAlertCount > 0) "$criticalAlertCount Alerts" else "No Alerts",
+                                    color = if (criticalAlertCount > 0) Color(0xFFFF5252) else Color(0xFF81C784),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
                         // Low stock
@@ -153,11 +184,23 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                             shape = RoundedCornerShape(10.dp),
                             color = if (lowStockCount > 0) Color(0xFF1E1500) else Color(0xFF161B22),
                             border = BorderStroke(1.dp, if (lowStockCount > 0) Color(0xFFFFB74D) else Color(0xFF30363D)),
-                            modifier = Modifier.weight(1f).clickable { navController.navigate("feed") }
+                            modifier = Modifier.weight(1f).fillMaxHeight().clickable { navController.navigate("feed") }
                         ) {
-                            Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
                                 Text(if (lowStockCount > 0) "⚠️" else "✅", fontSize = 18.sp)
-                                Text(if (lowStockCount > 0) "$lowStockCount Low Stock" else "Stock OK", color = if (lowStockCount > 0) Color(0xFFFFB74D) else Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                Spacer(Modifier.height(3.dp))
+                                Text(
+                                    if (lowStockCount > 0) "$lowStockCount Low Stock" else "Stock OK",
+                                    color = if (lowStockCount > 0) Color(0xFFFFB74D) else Color(0xFF81C784),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
                         // Farrowing
@@ -166,12 +209,48 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (soonestFarrow <= 5) Color(0xFF1A0A1A) else Color(0xFF161B22),
                                 border = BorderStroke(1.dp, if (soonestFarrow <= 5) Color(0xFFE91E8C) else Color(0xFF30363D)),
-                                modifier = Modifier.weight(1f).clickable { navController.navigate("breeding") }
+                                modifier = Modifier.weight(1f).fillMaxHeight().clickable { navController.navigate("breeding") }
                             ) {
-                                Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 6.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
                                     Text(if (soonestFarrow == 0L) "🐣" else "🤰", fontSize = 18.sp)
-                                    Text(if (soonestFarrow == 0L) "DUE NOW!" else "Farrow ${soonestFarrow}d", color = if (soonestFarrow <= 5) Color(0xFFE91E8C) else Color(0xFF8B949E), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                    Spacer(Modifier.height(3.dp))
+                                    Text(
+                                        if (soonestFarrow == 0L) "DUE NOW!" else "Farrow ${soonestFarrow}d",
+                                        color = if (soonestFarrow <= 5) Color(0xFFE91E8C) else Color(0xFF8B949E),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp,
+                                        maxLines = 2,
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
+                            }
+                        }
+                        // Mortality tile
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (deathsThisMonth > 0) Color(0xFF1E0A0A) else Color(0xFF161B22),
+                            border = BorderStroke(1.dp, if (deathsThisMonth > 0) Color(0xFFE53935) else Color(0xFF30363D)),
+                            modifier = Modifier.weight(1f).fillMaxHeight().clickable { navController.navigate("pigs") }
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(if (deathsThisMonth > 0) "💀" else "💚", fontSize = 18.sp)
+                                Spacer(Modifier.height(3.dp))
+                                Text(
+                                    if (deathsThisMonth > 0) "$deathsThisMonth Losses" else "0 Losses",
+                                    color = if (deathsThisMonth > 0) Color(0xFFE57373) else Color(0xFF81C784),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
                     }
@@ -179,7 +258,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                     if (marketReadyCount > 0) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF1E1500),
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
                             border = BorderStroke(1.dp, Color(0xFFFFB74D)),
                             modifier = Modifier.fillMaxWidth().clickable { navController.navigate("market") }
                         ) {
@@ -203,7 +282,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Farm Overview", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Farm Overview", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 OutlinedButton(
                     onClick = { navController.navigate("help_center?autoTour=true") },
                     border = BorderStroke(1.dp, Color(0xFF4CAF50)),
@@ -222,7 +301,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 border = BorderStroke(1.5.dp, Color(0xFF2E7D32))
             ) {
                 Column(
@@ -243,7 +322,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                                 modifier = Modifier
                                     .size(54.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFF1A3E22)),
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -254,9 +333,9 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                                 )
                             }
                             Column {
-                                Text("Total Active Herd", color = Color(0xFF8B949E), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                Text("Total Active Herd", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                                 Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text("${pigs.size}", fontSize = 38.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text("${pigs.size}", fontSize = 38.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                     Text("pigs", fontSize = 15.sp, color = Color(0xFF4CAF50), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
                                 }
                             }
@@ -274,7 +353,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                         }
                     }
 
-                    HorizontalDivider(color = Color(0xFF21262D))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                     // Embedded Sub-Metrics Row with clear card outlines
                     Row(
@@ -323,8 +402,8 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                border = BorderStroke(1.dp, Color(0xFF30363D))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -333,12 +412,12 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                                 modifier = Modifier
                                     .size(34.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFF1A3E22)),
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(18.dp))
                             }
-                            Text("30-Day Financial P&L", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                            Text("30-Day Financial P&L", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
                         }
                         Surface(
                             shape = RoundedCornerShape(8.dp),
@@ -354,7 +433,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                             )
                         }
                     }
-                    HorizontalDivider(color = Color(0xFF21262D))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
                             Text("Revenue: KSh ${pnl?.totalRevenue?.toInt() ?: 0}", color = Color(0xFF81C784), fontSize = 11.sp)
@@ -371,7 +450,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
 
         // ── 3. QUICK ACTIONS (Module Card Design with Outlines) ────────────────
         item {
-            Text("Quick Actions", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Quick Actions", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 DashQuickAction("Pigs", Icons.Default.Pets, Color(0xFF81C784), Color(0xFF1A3E22), { navController.navigate("pigs") }, Modifier.weight(1f))
@@ -384,7 +463,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
         // ── 4. ALERTS PREVIEW ──────────────────────────────────────────────────
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Recent Alerts (${alerts.size})", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Recent Alerts (${alerts.size})", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 TextButton(onClick = { navController.navigate("alerts") }) {
                     Text("View All", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
                 }
@@ -395,12 +474,12 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                    border = BorderStroke(1.dp, Color(0xFF30363D))
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50))
-                        Text("All caught up! No active alerts.", color = Color(0xFF8B949E))
+                        Text("All caught up! No active alerts.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -415,14 +494,14 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
         }
 
         // ── 5. RECENT PIGS PREVIEW ─────────────────────────────────────────────
-        item { Text("Recent Pigs", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White) }
+        item { Text("Recent Pigs", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) }
         items(pigs.take(3)) { pig ->
             CompactPigRow(pig = pig, onClick = { navController.navigate("pig_detail/${pig.id}") })
         }
         if (pigs.isNotEmpty()) {
             item {
                 TextButton(onClick = { navController.navigate("pigs") }, modifier = Modifier.fillMaxWidth()) {
-                    Text("View All ${pigs.size} Pigs →", color = Color(0xFF4CAF50), fontWeight = FontWeight.SemiBold)
+                    Text("View All ${pigs.size} Pigs >", color = Color(0xFF4CAF50), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -444,8 +523,8 @@ fun HeroSubMetricCard(
     Card(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1117)),
-        border = BorderStroke(1.dp, Color(0xFF30363D))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier.padding(10.dp),
@@ -460,10 +539,10 @@ fun HeroSubMetricCard(
             ) {
                 Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
             }
-            Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1)
+            Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
             Column {
-                Text(label, fontSize = 11.sp, color = Color(0xFFC9D1D9), fontWeight = FontWeight.Medium, maxLines = 1)
-                Text(subtitle, fontSize = 9.sp, color = Color(0xFF8B949E), maxLines = 1)
+                Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, maxLines = 1)
+                Text(subtitle, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             }
         }
     }
@@ -481,8 +560,8 @@ fun DashQuickAction(
     Card(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-        border = BorderStroke(1.dp, Color(0xFF30363D))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier.padding(10.dp).fillMaxWidth(),
@@ -498,7 +577,7 @@ fun DashQuickAction(
             ) {
                 Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
             }
-            Text(label, fontSize = 12.sp, color = Color(0xFFE6EDF3), fontWeight = FontWeight.Medium)
+            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -508,12 +587,12 @@ fun CompactPigRow(pig: PigEntity, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-        border = BorderStroke(1.dp, Color(0xFF30363D))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
-                modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF21262D)),
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 if (pig.photo_path != null) {
@@ -523,10 +602,10 @@ fun CompactPigRow(pig: PigEntity, onClick: () -> Unit) {
                 }
             }
             Column(Modifier.weight(1f)) {
-                Text("#${pig.tag_number}", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                Text("#${pig.tag_number}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 Text("${pig.breed} • ${if (pig.sex == "M") "Boar" else "Sow"}", color = Color(0xFF8B949E), fontSize = 11.sp)
             }
-            Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF8B949E), modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
         }
     }
 }
@@ -536,8 +615,8 @@ fun DashKpiCard(title: String, value: String, subtitle: String, icon: ImageVecto
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-        border = BorderStroke(1.dp, Color(0xFF30363D))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Box(
@@ -551,8 +630,8 @@ fun DashKpiCard(title: String, value: String, subtitle: String, icon: ImageVecto
             }
             Spacer(Modifier.height(8.dp))
             Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = color)
-            Text(title, fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Medium)
-            Text(subtitle, fontSize = 11.sp, color = Color(0xFF6E7681))
+            Text(title, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
+            Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

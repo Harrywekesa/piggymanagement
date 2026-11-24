@@ -238,6 +238,9 @@ interface FeedDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllFeedPurchases(purchases: List<FeedPurchaseEntity>)
 
+    @Query("DELETE FROM feed_ingredients WHERE id = :id")
+    suspend fun deleteIngredientById(id: Long)
+
     @Query("DELETE FROM feed_ingredients")
     suspend fun deleteAllIngredients()
 
@@ -250,11 +253,44 @@ interface FeedDao {
     @Query("DELETE FROM feeding_logs WHERE id = :logId")
     suspend fun deleteFeedingLogById(logId: Long)
 
+    @Query("SELECT * FROM feeding_logs WHERE id = :id")
+    suspend fun getFeedingLogById(id: Long): FeedingLogEntity?
+
     @Query("SELECT * FROM feeding_logs WHERE date >= :startOfDayMs AND date < :endOfDayMs AND feeding_time = 'Daily Ration'")
     suspend fun getAutoFeedingLogsForDate(startOfDayMs: Long, endOfDayMs: Long): List<FeedingLogEntity>
 
     @Query("DELETE FROM feed_purchases")
     suspend fun deleteAllFeedPurchases()
+}
+
+@Dao
+interface MixedBatchDao {
+    @Query("SELECT * FROM mixed_batches ORDER BY created_date DESC")
+    fun getAllMixedBatches(): Flow<List<MixedBatchEntity>>
+
+    @Query("SELECT * FROM mixed_batches WHERE remaining_kg > 0 ORDER BY created_date DESC")
+    fun getAvailableMixedBatches(): Flow<List<MixedBatchEntity>>
+
+    @Query("SELECT * FROM mixed_batches ORDER BY created_date DESC")
+    suspend fun getAllMixedBatchesSync(): List<MixedBatchEntity>
+
+    @Query("SELECT * FROM mixed_batches WHERE id = :batchId")
+    suspend fun getMixedBatchById(batchId: Long): MixedBatchEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMixedBatch(batch: MixedBatchEntity): Long
+
+    @Query("UPDATE mixed_batches SET remaining_kg = MAX(0.0, remaining_kg - :usedKg) WHERE id = :batchId")
+    suspend fun deductFromBatch(batchId: Long, usedKg: Double)
+
+    @Query("UPDATE mixed_batches SET remaining_kg = MIN(total_kg, remaining_kg + :addedKg) WHERE id = :batchId")
+    suspend fun addStockToBatch(batchId: Long, addedKg: Double)
+
+    @Query("DELETE FROM mixed_batches WHERE id = :batchId")
+    suspend fun deleteMixedBatch(batchId: Long)
+
+    @Query("DELETE FROM mixed_batches")
+    suspend fun deleteAllMixedBatches()
 }
 
 @Dao
@@ -406,11 +442,13 @@ interface BreedingDao {
 
 @Dao
 interface AlertDao {
-    @Query("SELECT * FROM alerts WHERE status = 'Active' ORDER BY CASE priority WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 WHEN 'Medium' THEN 3 ELSE 4 END, created_date DESC")
-    fun getActiveAlerts(): Flow<List<AlertEntity>>
+    // Only surface alerts whose created_date has arrived (≤ now), so future-dated
+    // repeat-dose reminders (e.g. 90-day deworming) stay hidden until 7 days before due.
+    @Query("SELECT * FROM alerts WHERE status = 'Active' AND created_date <= :now ORDER BY CASE priority WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 WHEN 'Medium' THEN 3 ELSE 4 END, created_date DESC")
+    fun getActiveAlerts(now: Long = System.currentTimeMillis()): Flow<List<AlertEntity>>
 
-    @Query("SELECT * FROM alerts WHERE status = 'Active' AND priority = 'Critical'")
-    fun getCriticalAlerts(): Flow<List<AlertEntity>>
+    @Query("SELECT * FROM alerts WHERE status = 'Active' AND priority = 'Critical' AND created_date <= :now")
+    fun getCriticalAlerts(now: Long = System.currentTimeMillis()): Flow<List<AlertEntity>>
 
     @Query("SELECT * FROM alerts ORDER BY created_date DESC")
     fun getAllAlerts(): Flow<List<AlertEntity>>
@@ -418,8 +456,8 @@ interface AlertDao {
     @Query("SELECT * FROM alerts ORDER BY created_date DESC")
     suspend fun getAllAlertsSync(): List<AlertEntity>
 
-    @Query("SELECT * FROM alerts WHERE status = 'Active'")
-    suspend fun getActiveAlertsSync(): List<AlertEntity>
+    @Query("SELECT * FROM alerts WHERE status = 'Active' AND created_date <= :now")
+    suspend fun getActiveAlertsSync(now: Long = System.currentTimeMillis()): List<AlertEntity>
 
     @Query("SELECT * FROM alerts WHERE type = :type AND related_pig_id = :pigId AND status = 'Active' LIMIT 1")
     suspend fun getActiveAlertForPig(type: String, pigId: Long): AlertEntity?
@@ -441,6 +479,9 @@ interface AlertDao {
 
     @Query("UPDATE alerts SET status = 'Snoozed', snoozed_until = :snoozedUntil WHERE id = :alertId")
     suspend fun snoozeAlert(alertId: Long, snoozedUntil: Long)
+
+    @Query("DELETE FROM alerts WHERE type = :type")
+    suspend fun deleteAlertsByType(type: String)
 
     @Query("DELETE FROM alerts")
     suspend fun deleteAllAlerts()
@@ -465,6 +506,9 @@ interface MarketDao {
 
     @Delete
     suspend fun deleteBuyer(buyer: BuyerEntity)
+
+    @Query("DELETE FROM buyers WHERE id = :id")
+    suspend fun deleteBuyerById(id: Long)
 
     @Query("DELETE FROM buyers WHERE is_community = 1")
     suspend fun deleteCommunityBuyers()

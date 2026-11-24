@@ -74,8 +74,8 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
     Column(Modifier.fillMaxSize()) {
         // Header + Dropdown Selectors
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Farm Reports Hub", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text("Select report category & time range from the dropdowns below", fontSize = 12.sp, color = Color(0xFF8B949E))
+            Text("Farm Reports Hub", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text("Select report category & time range from the dropdowns below", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             // Dropdown 1: Date Range Filter
             StringDropdownSelector(
@@ -120,7 +120,7 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
             )
 
             // Date Range Display Badge
-            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF161B22)) {
+            Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.surface) {
                 Text(
                     text = "Active Period: ${if (startMs == 0L) "All Time Records" else "${dateFormat.format(Date(startMs))}  →  ${dateFormat.format(Date(endMs))}"}",
                     color = Color(0xFF4CAF50),
@@ -139,19 +139,19 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                         Card(
                             Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text("Profit & Loss Statement (${r?.periodLabel ?: selectedRange})", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                HorizontalDivider(color = Color(0xFF21262D))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 PnLRow("Sales Revenue", "KSh ${r?.pnl?.totalRevenue?.toInt() ?: 0}", positive = true)
                                 PnLRow("Feed Expenses", "– KSh ${r?.pnl?.feedCost?.toInt() ?: 0}", positive = false)
                                 PnLRow("Health & Vet Expenses", "– KSh ${r?.pnl?.healthCost?.toInt() ?: 0}", positive = false)
                                 PnLRow("Labor & Utilities (Est.)", "– KSh ${r?.pnl?.estimatedLaborCost?.toInt() ?: 0}", positive = false)
-                                HorizontalDivider(color = Color(0xFF30363D))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("NET PROFIT / LOSS", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Text("NET PROFIT / LOSS", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                     Text(
                                         "KSh ${r?.pnl?.netProfit?.toInt() ?: 0}",
                                         color = if ((r?.pnl?.netProfit ?: 0.0) >= 0) Color(0xFF4CAF50) else Color(0xFFFF5252),
@@ -162,24 +162,24 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                         }
                     }
                     item {
-                        Text("Sales Ledger in Selected Period (${filteredSales.size})", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Sales Ledger in Selected Period (${filteredSales.size})", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                     if (filteredSales.isEmpty()) {
-                        item { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { Text("No sales recorded in this period.", color = Color(0xFF6E7681)) } }
+                        item { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { Text("No sales recorded in this period.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                     } else {
                         items(filteredSales) { sale ->
                             val buyer = buyers.find { it.id == sale.buyer_id }
                             Card(
                                 Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(10.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                             ) {
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Column(Modifier.weight(1f)) {
-                                        Text(buyer?.name ?: "Unknown Buyer", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                                        Text("${sale.total_weight}kg • KSh ${sale.price_per_kg}/kg", color = Color(0xFF8B949E), fontSize = 11.sp)
-                                        Text(dateFormat.format(Date(sale.date)), color = Color(0xFF6E7681), fontSize = 10.sp)
+                                        Text(buyer?.name ?: "Unknown Buyer", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                        Text("${sale.total_weight}kg • KSh ${sale.price_per_kg}/kg", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                                        Text(dateFormat.format(Date(sale.date)), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                     }
                                     Text("KSh ${sale.total_amount.toInt()}", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 }
@@ -189,7 +189,7 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                 }
                 1 -> { // Herd & Counts
                     item {
-                        Text("Active Herd Inventory Breakdown", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("Active Herd Inventory Breakdown", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     }
                     item {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -213,12 +213,12 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                         Card(
                             Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                         ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Reproductive Output in Selected Period", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                HorizontalDivider(color = Color(0xFF21262D))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 PnLRow("Piglets Born Alive", "${r?.herd?.totalBornAliveInPeriod ?: 0}", positive = true)
                                 PnLRow("Stillborn Piglets", "${r?.herd?.totalStillbornInPeriod ?: 0}", positive = false)
                                 PnLRow("Piglets Weaned", "${r?.herd?.totalWeanedInPeriod ?: 0}", positive = true)
@@ -228,7 +228,7 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                 }
                 2 -> { // Health & Mortality
                     item {
-                        Text("Health & Disease Analytics", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("Health & Disease Analytics", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     }
                     item {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -246,19 +246,19 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                         Card(
                             Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                         ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Disease Prevalence Breakdown", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                HorizontalDivider(color = Color(0xFF21262D))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 val breakdown = r?.health?.diseaseBreakdown ?: emptyMap()
                                 if (breakdown.isEmpty()) {
-                                    Text("No disease cases recorded in this period.", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                    Text("No disease cases recorded in this period.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                 } else {
                                     breakdown.forEach { (disease, count) ->
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text(disease, color = Color.White, fontSize = 13.sp)
+                                            Text(disease, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
                                             Text("$count cases", color = Color(0xFFFF8A65), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                         }
                                     }
@@ -269,7 +269,7 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                 }
                 3 -> { // Feed & FCR
                     item {
-                        Text("Feed Conversion & Growth Efficiency", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("Feed Conversion & Growth Efficiency", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     }
                     item {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -281,12 +281,12 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                         Card(
                             Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                         ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Feed Consumption Summary", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                HorizontalDivider(color = Color(0xFF21262D))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 PnLRow("Total Feed Consumed", String.format(Locale.getDefault(), "%.1f kg", r?.feedGrowth?.totalFeedConsumedKg ?: 0.0), positive = false)
                                 PnLRow("Est. Total Herd Weight Gain", String.format(Locale.getDefault(), "%.1f kg", r?.feedGrowth?.totalWeightGainedKg ?: 0.0), positive = true)
                                 PnLRow("Total Feed Cost", "KSh ${r?.feedGrowth?.feedCostTotal?.toInt() ?: 0}", positive = false)
@@ -298,15 +298,15 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                         Card(
                             Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                            border = BorderStroke(1.dp, Color(0xFF30363D))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                         ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text("Individual Pig ADG & FCR Performance Leaderboard", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text("Individual growth rate (ADG) & feed conversion ratio (FCR) per pig:", color = Color(0xFF8B949E), fontSize = 11.sp)
-                                HorizontalDivider(color = Color(0xFF21262D))
+                                Text("Individual growth rate (ADG) & feed conversion ratio (FCR) per pig:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 if (activeHerdPigs.isEmpty()) {
-                                    Text("No active pigs in herd.", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                    Text("No active pigs in herd.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                 } else {
                                     val pigWeightsMap by produceState<Map<Long, List<com.phms.app.data.local.entity.WeightRecordEntity>>>(initialValue = emptyMap(), key1 = activeHerdPigs) {
                                         val map = mutableMapOf<Long, List<com.phms.app.data.local.entity.WeightRecordEntity>>()
@@ -332,7 +332,7 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Column {
-                                                Text("Pig #${pig.tag_number} (${pig.breed})", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                                Text("Pig #${pig.tag_number} (${pig.breed})", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                                                 Text("${if (pig.sex == "M") "Boar" else "Sow"} • ${ageWeeks}w old", color = Color(0xFF8B949E), fontSize = 11.sp)
                                             }
                                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -352,7 +352,7 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                 }
                 4 -> { // Breeding
                     item {
-                        Text("Breeding & Reproduction Performance", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("Breeding & Reproduction Performance", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     }
                     item {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -385,11 +385,11 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF21262D))
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFFFF5252), modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Export Comprehensive Report as PDF", color = Color.White, fontSize = 13.sp)
+                    Text("Export Comprehensive Report as PDF", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
                 }
             }
         }
@@ -401,11 +401,11 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
 
         AlertDialog(
             onDismissRequest = { showCustomDatePicker = false },
-            containerColor = Color(0xFF161B22),
-            title = { Text("Select Custom Date Range", color = Color.White, fontWeight = FontWeight.Bold) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text("Select Custom Date Range", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Specify how many days ago the period starts & ends:", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    Text("Specify how many days ago the period starts & ends:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     FormField("Days Ago (Start Date)", startDaysAgoStr, { startDaysAgoStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
                     FormField("Days Ago (End Date)", endDaysAgoStr, { endDaysAgoStr = it }, keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
                 }
@@ -426,7 +426,7 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                 ) { Text("Apply Filter") }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showCustomDatePicker = false }) { Text("Cancel", color = Color(0xFF8B949E)) }
+                OutlinedButton(onClick = { showCustomDatePicker = false }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         )
     }
@@ -435,7 +435,7 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
 @Composable
 fun PnLRow(label: String, value: String, positive: Boolean) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, color = Color(0xFF8B949E), fontSize = 14.sp)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         Text(value, color = if (positive) Color(0xFF4CAF50) else Color(0xFFFF5252), fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }
@@ -445,8 +445,8 @@ fun MetricCard(title: String, value: String, icon: ImageVector, accentColor: Col
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-        border = BorderStroke(1.dp, Color(0xFF30363D))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -456,9 +456,9 @@ fun MetricCard(title: String, value: String, icon: ImageVector, accentColor: Col
                 ) {
                     Icon(icon, null, tint = accentColor, modifier = Modifier.size(15.dp))
                 }
-                Text(title, color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
             }
-            Text(value, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(value, color = MaterialTheme.colorScheme.onSurface, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -481,27 +481,27 @@ fun StringDropdownSelector(
             value = selectedOption.ifBlank { label },
             onValueChange = {},
             readOnly = true,
-            label = { Text(label, color = Color(0xFF8B949E), fontSize = 12.sp) },
+            label = { Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             shape = RoundedCornerShape(10.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color(0xFF4CAF50),
-                unfocusedBorderColor = Color(0xFF30363D),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                unfocusedContainerColor = Color(0xFF161B22),
-                focusedContainerColor = Color(0xFF161B22)
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedContainerColor = MaterialTheme.colorScheme.surface
             )
         )
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.background(Color(0xFF161B22))
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option, color = Color.White, fontSize = 13.sp) },
+                    text = { Text(option, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp) },
                     onClick = {
                         onSelect(option)
                         expanded = false

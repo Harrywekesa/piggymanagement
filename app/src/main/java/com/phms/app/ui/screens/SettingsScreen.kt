@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.CloudUpload
@@ -112,7 +114,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item { Text("Settings", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White) }
+        item { Text("Settings", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground) }
 
         // Farm Profile (View Mode vs Edit Mode)
         item {
@@ -122,8 +124,8 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column {
-                                Text(farmSettings.farmName.ifBlank { "My Pig Farm" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                Text("Owner: ${farmSettings.farmerName.ifBlank { "Farmer" }}", color = Color(0xFF8B949E), fontSize = 13.sp)
+                                Text(farmSettings.farmName.ifBlank { "My Pig Farm" }, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text("Owner: ${farmSettings.farmerName.ifBlank { "Farmer" }}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                             }
                             OutlinedButton(
                                 onClick = { isEditingFarmProfile = true },
@@ -135,12 +137,12 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                 Text("Edit Profile", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
-                        HorizontalDivider(color = Color(0xFF21262D))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(14.dp))
                             Text("Location: ${if (farmSettings.farmLocation.isNotBlank()) farmSettings.farmLocation else "$farmWard, $farmSubCounty, $farmCounty"}", color = Color(0xFF81C784), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         }
-                        Text("Currency: ${farmSettings.currencySymbol}", color = Color(0xFF8B949E), fontSize = 12.sp)
+                        Text("Currency: ${farmSettings.currencySymbol}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 } else {
                     // Edit Mode: Form inputs with LocationSelector
@@ -148,7 +150,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         FormField("Farm Name *", farmName, { farmName = it })
                         FormField("Farmer's Name *", farmerName, { farmerName = it })
 
-                        Text("Farm Administrative Location (Kenya)", color = Color(0xFF8B949E), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Farm Administrative Location (Kenya)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         LocationSelector(
                             selectedCounty = farmCounty,
                             selectedSubCounty = farmSubCounty,
@@ -169,7 +171,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                 onClick = { isEditingFarmProfile = false },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(10.dp)
-                            ) { Text("Cancel", color = Color(0xFF8B949E)) }
+                            ) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
 
                             Button(
                                 onClick = {
@@ -229,7 +231,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
             SectionCard("Data Backup & Restore") {
                 Text(
                     "Export your entire farm database (pigs, pens, weight, breeding, feed, and financial records) into a JSON backup file, or restore from a previously saved backup.",
-                    color = Color(0xFF8B949E),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 )
@@ -311,8 +313,52 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF4CAF50), strokeWidth = 2.dp)
                         Spacer(Modifier.width(8.dp))
-                        Text("Processing backup...", color = Color(0xFF8B949E), fontSize = 12.sp)
+                        Text("Processing backup...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
+                }
+            }
+        }
+
+        // Theme & Display
+        item {
+            SectionCard("Theme & Display") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(
+                                if (farmSettings.isDarkTheme) Icons.Default.DarkMode else Icons.Default.LightMode,
+                                contentDescription = null,
+                                tint = if (farmSettings.isDarkTheme) Color(0xFF81C784) else Color(0xFFFFB74D),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                if (farmSettings.isDarkTheme) "Dark Theme" else "Light Theme",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp
+                            )
+                        }
+                        Text(
+                            if (farmSettings.isDarkTheme) "Switch to light theme for outdoor use in bright sunlight"
+                            else "Switch to dark theme for low-light and night use",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.sp
+                        )
+                    }
+                    Switch(
+                        checked = farmSettings.isDarkTheme,
+                        onCheckedChange = { viewModel.saveFarmSettings(farmSettings.copy(isDarkTheme = it)) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFF2E7D32),
+                            uncheckedThumbColor = Color(0xFF8B949E),
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    )
                 }
             }
         }
@@ -323,8 +369,8 @@ fun SettingsScreen(viewModel: MainViewModel) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                border = BorderStroke(1.dp, Color(0xFF30363D))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     // Collapsed header row — always visible
@@ -367,7 +413,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         Icon(
                             if (showDeveloperTools) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                             contentDescription = if (showDeveloperTools) "Collapse" else "Expand",
-                            tint = Color(0xFF8B949E),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -384,11 +430,11 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                 .padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            HorizontalDivider(color = Color(0xFF30363D))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                             Spacer(Modifier.height(2.dp))
                             Text(
                                 "Switch between sample simulation data (for testing, exhibitions, or ASK show judging) and resetting to a completely clean farm.",
-                                color = Color(0xFF8B949E),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp,
                                 lineHeight = 16.sp
                             )
@@ -396,7 +442,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                 Button(
                                     onClick = { showLoadDemoConfirmDialog = true },
                                     modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3A4B)),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                     shape = RoundedCornerShape(10.dp),
                                     enabled = !isOperatingDemo
                                 ) {
@@ -424,7 +470,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                 ) {
                                     CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF00B4D8), strokeWidth = 2.dp)
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Updating farm records...", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                    Text("Updating farm records...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                 }
                             }
                         }
@@ -444,13 +490,13 @@ fun SettingsScreen(viewModel: MainViewModel) {
             }
 
             SectionCard("About & Developer Info") {
-                Text("Pig Health & Management System (PHMS)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text("Pig Health & Management System (PHMS)", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 Text("App Version v$appVersionName", color = Color(0xFF81C784), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                 Spacer(Modifier.height(8.dp))
-                Text("Lead Developer: Harrison Wekesa", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 13.sp)
-                Text("Contact / WhatsApp: +254 791 496 057", color = Color(0xFF8B949E), fontSize = 12.sp)
+                Text("Lead Developer: Harrison Wekesa", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                Text("Contact / WhatsApp: +254 791 496 057", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 Spacer(Modifier.height(8.dp))
-                Text("Developed by Harrison Wekesa to empower commercial pig farmers with data-driven herd analytics, feed formulation, and reproduction tracking.", color = Color(0xFFC9D1D9), fontSize = 12.sp, lineHeight = 18.sp)
+                Text("Developed by Harrison Wekesa to empower commercial pig farmers with data-driven herd analytics, feed formulation, and reproduction tracking.", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, lineHeight = 18.sp)
                 Spacer(Modifier.height(14.dp))
 
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -501,7 +547,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
             text = {
                 Text(
                     "Restoring will replace the current farm records with the data from the selected backup file.\n\nAre you sure you want to proceed?",
-                    color = Color(0xFFC9D1D9),
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 13.sp
                 )
             },
@@ -534,7 +580,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
             text = {
                 Text(
                     "This will populate your database with 35 realistic pigs across all stages, 5 pens, breeding events, feed records, and the Kenya buyers directory.\n\nIdeal for exploring app features or demonstrating at exhibitions.",
-                    color = Color(0xFFC9D1D9),
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 13.sp
                 )
             },
@@ -569,7 +615,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
             text = {
                 Text(
                     "This will permanently delete all pigs, pens, feeding logs, health records, breeding events, sales transactions, and the buyers directory.\n\nGrowth stages will remain.\n\nAre you sure you want to clear all farm records?",
-                    color = Color(0xFFC9D1D9),
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 13.sp
                 )
             },
@@ -604,7 +650,7 @@ fun AlertToggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, color = Color.White, fontSize = 14.sp)
+        Text(label, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
         Switch(
             checked = checked,
             onCheckedChange = onChange,
@@ -612,7 +658,7 @@ fun AlertToggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
                 checkedThumbColor = Color.White,
                 checkedTrackColor = Color(0xFF4CAF50),
                 uncheckedThumbColor = Color(0xFF6E7681),
-                uncheckedTrackColor = Color(0xFF21262D)
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
             )
         )
     }

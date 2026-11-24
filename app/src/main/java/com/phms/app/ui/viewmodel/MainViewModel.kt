@@ -42,9 +42,23 @@ class MainViewModel(
     val criticalAlerts: StateFlow<List<AlertEntity>> = repository.criticalAlerts
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // All pigs (including Dead/Sold) for mortality stats
+    val allPigs: StateFlow<List<PigEntity>> = repository.pigDao.getAllPigs()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // ALL alerts (including future-dated) for schedule display
+    val allAlerts: StateFlow<List<AlertEntity>> = repository.alertDao.getAllAlerts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val feedIngredients: StateFlow<List<FeedIngredientEntity>> =
         repository.feedDao.getAllIngredients()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val mixedBatches: StateFlow<List<MixedBatchEntity>> = repository.allMixedBatches
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val availableMixedBatches: StateFlow<List<MixedBatchEntity>> = repository.availableMixedBatches
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val sales: StateFlow<List<SaleEntity>> = repository.marketDao.getAllSales()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -67,8 +81,18 @@ class MainViewModel(
 
     init {
         checkForAppUpdates()
-        syncBuyersFromCloud()
         loadTodayFeedingStatus()
+        checkAndWipeTestBuyers()
+    }
+
+    private fun checkAndWipeTestBuyers() {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (!settingsRepository.hasWipedTestBuyers()) {
+                repository.marketDao.deleteAllBuyers()
+                com.phms.app.data.remote.FirestoreBuyerSync.clearCloudSharedBuyers()
+                settingsRepository.setWipedTestBuyers()
+            }
+        }
     }
 
     fun syncBuyersFromCloud() {
@@ -91,7 +115,8 @@ class MainViewModel(
                 feedDao = repository.feedDao,
                 pigDao = repository.pigDao,
                 growthStageDao = repository.growthStageDao,
-                breedingDao = repository.breedingDao
+                breedingDao = repository.breedingDao,
+                mixedBatchDao = repository.mixedBatchDao
             )
         }
     }
@@ -104,6 +129,7 @@ class MainViewModel(
                 growthStageDao = repository.growthStageDao,
                 breedingDao = repository.breedingDao,
                 alertDao = repository.alertDao,
+                mixedBatchDao = repository.mixedBatchDao,
                 currentTimeMs = System.currentTimeMillis(),
                 isManualTrigger = true
             )
@@ -152,8 +178,82 @@ class MainViewModel(
     val isWithdrawalActive: StateFlow<Boolean> = _isWithdrawalActive.asStateFlow()
 
     init {
+        syncProcuredFeedPurchasesIfNeeded()
         loadPnL()
         loadFarrowingRecords()
+    }
+
+    fun syncProcuredFeedPurchasesIfNeeded() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val allIngredients = repository.feedDao.getAllIngredientsSync()
+            val allPurchases = repository.feedDao.getAllFeedPurchasesSync()
+            val now = System.currentTimeMillis()
+            var changed = false
+
+            for (ing in allIngredients) {
+                if (ing.stock_kg > 0.0 && ing.cost_per_kg > 0.0) {
+                    val ingPurchases = allPurchases.filter { it.ingredient_id == ing.id }
+                    val totalPurchasedCost = ingPurchases.sumOf { it.total_cost }
+                    if (ingPurchases.isEmpty() || totalPurchasedCost <= 0.0) {
+                        val cost = ing.stock_kg * ing.cost_per_kg
+                        val purchaseDate = now - TimeUnit.DAYS.toMillis(1)
+                        repository.feedDao.insertPurchase(
+                            FeedPurchaseEntity(
+                                ingredient_id = ing.id,
+                                date = purchaseDate,
+                                quantity_kg = ing.stock_kg,
+                                total_cost = cost
+                            )
+                        )
+                        repository.logExpense(
+                            ExpenseEntity(
+                                category = "Feed",
+                                amount = cost,
+                                date = purchaseDate,
+                                target_scope = "Herd",
+                                payee = ing.brand_name ?: ing.name,
+                                notes = "Procurement: ${ing.name} (${ing.stock_kg.toInt()}kg @ KSh ${ing.cost_per_kg}/kg)"
+                            )
+                        )
+                        changed = true
+                    }
+                }
+            }
+
+            val allBatches = repository.mixedBatchDao.getAllMixedBatchesSync()
+            val totalExistingPurchased = allPurchases.sumOf { it.total_cost }
+            for (batch in allBatches) {
+                if (batch.total_kg > 0.0 && batch.cost_per_kg > 0.0) {
+                    val batchCost = if (batch.total_cost > 0.0) batch.total_cost else (batch.total_kg * batch.cost_per_kg)
+                    val batchPurchases = allPurchases.filter { it.ingredient_id == 0L && it.quantity_kg == batch.total_kg }
+                    if (batchPurchases.isEmpty() && totalExistingPurchased < batchCost) {
+                        repository.feedDao.insertPurchase(
+                            FeedPurchaseEntity(
+                                ingredient_id = 0L,
+                                date = batch.created_date,
+                                quantity_kg = batch.total_kg,
+                                total_cost = batchCost
+                            )
+                        )
+                        repository.logExpense(
+                            ExpenseEntity(
+                                category = "Feed",
+                                amount = batchCost,
+                                date = batch.created_date,
+                                target_scope = "Herd",
+                                payee = "Feed Supplier",
+                                notes = "Feed Batch: ${batch.name} (${batch.total_kg.toInt()}kg @ KSh ${batch.cost_per_kg}/kg)"
+                            )
+                        )
+                        changed = true
+                    }
+                }
+            }
+
+            if (changed) {
+                loadPnL()
+            }
+        }
     }
 
     fun loadPnL(startDateMs: Long? = null) {
@@ -281,35 +381,63 @@ class MainViewModel(
         type: String = "Raw Ingredient", brandName: String? = null, bagSizeKg: Double? = null, pricePerBag: Double? = null,
         stageCategory: String? = null
     ) {
-        viewModelScope.launch {
-            repository.feedDao.insertIngredient(
+        viewModelScope.launch(Dispatchers.IO) {
+            val newId = repository.feedDao.insertIngredient(
                 FeedIngredientEntity(
                     name = name, stock_kg = stockKg, cost_per_kg = costPerKg, reorder_level = reorderLevel,
                     type = type, brand_name = brandName, bag_size_kg = bagSizeKg, price_per_bag = pricePerBag,
                     stage_category = stageCategory
                 )
             )
-            // Log expense if shop premix purchase cost entered
-            if (type == "Commercial Premix" && (pricePerBag ?: 0.0) > 0.0) {
+            val now = System.currentTimeMillis()
+            val totalCost = if (type == "Commercial Premix" && (pricePerBag ?: 0.0) > 0.0) {
                 val bags = if (bagSizeKg != null && bagSizeKg > 0) stockKg / bagSizeKg else 1.0
-                val totalCost = bags * (pricePerBag ?: 0.0)
+                bags * (pricePerBag ?: 0.0)
+            } else {
+                stockKg * costPerKg
+            }
+
+            if (stockKg > 0.0 && totalCost > 0.0) {
+                repository.feedDao.insertPurchase(
+                    FeedPurchaseEntity(
+                        ingredient_id = newId,
+                        date = now,
+                        quantity_kg = stockKg,
+                        total_cost = totalCost
+                    )
+                )
                 repository.logExpense(
                     ExpenseEntity(
                         category = "Feed",
                         amount = totalCost,
-                        date = System.currentTimeMillis(),
+                        date = now,
                         target_scope = "Herd",
                         payee = brandName ?: name,
-                        notes = "Purchase of $name (${bags.toInt()} bags)"
+                        notes = "Procurement: $name (${stockKg.toInt()}kg @ KSh ${costPerKg}/kg)"
                     )
                 )
             }
+            loadPnL()
         }
     }
 
     fun deleteFeedingLog(logId: Long) {
         viewModelScope.launch {
-            repository.feedDao.deleteFeedingLogById(logId)
+            repository.deleteFeedingLog(logId)
+            loadPnL()
+            loadTodayFeedingStatus()
+        }
+    }
+
+    fun clearFeedData(
+        clearLogs: Boolean = true,
+        clearBatches: Boolean = true,
+        clearIngredients: Boolean = false
+    ) {
+        viewModelScope.launch {
+            repository.clearFeedData(clearLogs, clearBatches, clearIngredients)
+            loadPnL()
+            loadTodayFeedingStatus()
         }
     }
 
@@ -324,7 +452,9 @@ class MainViewModel(
         numPigs: Int = 1,
         targetScope: String = "Full Herd",
         category: String? = null,
-        notes: String? = null
+        mixedBatchId: Long? = null,
+        notes: String? = null,
+        date: Long = System.currentTimeMillis()
     ) {
         viewModelScope.launch {
             repository.logFeedingAndDeductStock(
@@ -338,8 +468,47 @@ class MainViewModel(
                 numPigs = numPigs,
                 targetScope = targetScope,
                 category = category,
-                notes = notes
+                mixedBatchId = mixedBatchId,
+                notes = notes,
+                date = date
             )
+            loadPnL()
+            loadTodayFeedingStatus()
+        }
+    }
+
+    fun mixBatch(
+        formulaName: String,
+        totalBatchKg: Double,
+        items: List<PHMSRepository.IngredientMixItem>,
+        batchLabel: String? = null,
+        onComplete: (batchId: Long) -> Unit = {}
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val id = repository.mixBatch(formulaName, totalBatchKg, items, batchLabel)
+            loadPnL()
+            onComplete(id)
+        }
+    }
+
+    fun registerPreMixedBatch(
+        name: String,
+        formulaName: String,
+        totalKg: Double,
+        costPerKg: Double,
+        notes: String? = null,
+        onComplete: (batchId: Long) -> Unit = {}
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val id = repository.registerPreMixedBatch(name, formulaName, totalKg, costPerKg, notes)
+            loadPnL()
+            onComplete(id)
+        }
+    }
+
+    fun deleteMixedBatch(batchId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteMixedBatch(batchId)
             loadPnL()
         }
     }
@@ -416,24 +585,25 @@ class MainViewModel(
     // ── FEED INVENTORY ACTIONS ─────────────────────────────────────────────
     fun restockIngredient(ingredientId: Long, addedKg: Double, totalCost: Double) {
         viewModelScope.launch(Dispatchers.IO) {
+            val ing = repository.feedDao.getIngredientById(ingredientId)
+            val effectiveCost = if (totalCost > 0.0) totalCost else (addedKg * (ing?.cost_per_kg ?: 0.0))
             repository.feedDao.addStock(ingredientId, addedKg)
             repository.feedDao.insertPurchase(
-                com.phms.app.data.local.entity.FeedPurchaseEntity(
+                FeedPurchaseEntity(
                     ingredient_id = ingredientId,
                     date = System.currentTimeMillis(),
                     quantity_kg = addedKg,
-                    total_cost = totalCost
+                    total_cost = effectiveCost
                 )
             )
-            if (totalCost > 0.0) {
-                val ing = repository.feedDao.getIngredientById(ingredientId)
+            if (effectiveCost > 0.0) {
                 repository.logExpense(
                     ExpenseEntity(
                         category = "Feed",
-                        amount = totalCost,
+                        amount = effectiveCost,
                         date = System.currentTimeMillis(),
                         target_scope = "Herd",
-                        payee = "Feed Supplier",
+                        payee = ing?.brand_name ?: "Feed Supplier",
                         notes = "Restock: ${ing?.name ?: "Ingredient"} +${addedKg}kg"
                     )
                 )
@@ -451,6 +621,45 @@ class MainViewModel(
                     price_per_bag = newPricePerBag ?: ing.price_per_bag
                 )
             )
+        }
+    }
+
+    fun updateFeedIngredient(ingredient: FeedIngredientEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val oldIng = repository.feedDao.getIngredientById(ingredient.id)
+            repository.feedDao.updateIngredient(ingredient)
+            if (oldIng != null && ingredient.stock_kg > oldIng.stock_kg) {
+                val addedKg = ingredient.stock_kg - oldIng.stock_kg
+                val addedCost = addedKg * ingredient.cost_per_kg
+                if (addedCost > 0.0) {
+                    repository.feedDao.insertPurchase(
+                        FeedPurchaseEntity(
+                            ingredient_id = ingredient.id,
+                            date = System.currentTimeMillis(),
+                            quantity_kg = addedKg,
+                            total_cost = addedCost
+                        )
+                    )
+                    repository.logExpense(
+                        ExpenseEntity(
+                            category = "Feed",
+                            amount = addedCost,
+                            date = System.currentTimeMillis(),
+                            target_scope = "Herd",
+                            payee = ingredient.brand_name ?: "Feed Supplier",
+                            notes = "Stock increase: ${ingredient.name} +${addedKg}kg"
+                        )
+                    )
+                }
+            }
+            loadPnL()
+        }
+    }
+
+    fun deleteFeedIngredient(ingredientId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.feedDao.deleteIngredientById(ingredientId)
+            loadPnL()
         }
     }
 
@@ -562,6 +771,25 @@ class MainViewModel(
             if (shareToAllFarmers) {
                 com.phms.app.data.remote.FirestoreBuyerSync.pushBuyerToCloud(buyer)
             }
+        }
+    }
+
+    fun deleteBuyer(buyer: BuyerEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.marketDao.deleteBuyer(buyer)
+            if (buyer.is_community) {
+                com.phms.app.data.remote.FirestoreBuyerSync.deleteCloudBuyer(buyer.phone)
+            }
+        }
+    }
+
+    fun clearAllBuyers(wipeCloud: Boolean = true) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.marketDao.deleteAllBuyers()
+            if (wipeCloud) {
+                com.phms.app.data.remote.FirestoreBuyerSync.clearCloudSharedBuyers()
+            }
+            settingsRepository.setWipedTestBuyers()
         }
     }
 

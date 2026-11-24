@@ -26,6 +26,7 @@ class PHMSRepository(val db: AppDatabase) {
     val alertDao = db.alertDao()
     val marketDao = db.marketDao()
     val expenseDao = db.expenseDao()
+    val mixedBatchDao = db.mixedBatchDao()
 
     val promotionEngine = PromotionEngine(pigDao, growthStageDao, alertDao)
 
@@ -42,6 +43,8 @@ class PHMSRepository(val db: AppDatabase) {
     val allFormulas: Flow<List<FeedFormulaEntity>> = feedDao.getAllFormulas()
     val allHealthEvents: Flow<List<HealthEventEntity>> = healthDao.getAllEvents()
     val allFeedingLogs: Flow<List<FeedingLogEntity>> = feedDao.getAllFeedingLogs()
+    val allMixedBatches: Flow<List<MixedBatchEntity>> = mixedBatchDao.getAllMixedBatches()
+    val availableMixedBatches: Flow<List<MixedBatchEntity>> = mixedBatchDao.getAvailableMixedBatches()
 
     suspend fun logFeedingAndDeductStock(
         penId: Long?,
@@ -54,9 +57,10 @@ class PHMSRepository(val db: AppDatabase) {
         numPigs: Int,
         targetScope: String = "Full Herd",
         category: String? = null,
-        notes: String? = null
-    ): Long {
-        val now = System.currentTimeMillis()
+        mixedBatchId: Long? = null,
+        notes: String? = null,
+        date: Long = System.currentTimeMillis()
+    ): Long = withContext(Dispatchers.IO) {
         val totalConsumedKg = quantityPerPigKg * numPigs
 
         val logId = feedDao.insertFeedingLog(
@@ -65,23 +69,171 @@ class PHMSRepository(val db: AppDatabase) {
                 batch_id = batchId,
                 pig_id = pigId,
                 ingredient_id = ingredientId,
-                date = now,
+                date = date,
                 feeding_time = feedingTime,
                 feed_type = feedType,
                 quantity_kg = totalConsumedKg,
                 num_pigs = numPigs,
                 target_scope = targetScope,
                 category = category,
+                mixed_batch_id = mixedBatchId,
                 notes = notes
             )
         )
 
-        // Deduct from stock if linked to ingredient/premix
+        // Deduct from ingredient stock if linked
         if (ingredientId != null) {
             feedDao.deductStock(ingredientId, totalConsumedKg)
         }
 
-        return logId
+        // Deduct from mixed batch if fed from one
+        if (mixedBatchId != null) {
+            mixedBatchDao.deductFromBatch(mixedBatchId, totalConsumedKg)
+        }
+
+        logId
+    }
+
+    suspend fun deleteFeedingLog(logId: Long) = withContext(Dispatchers.IO) {
+        val log = feedDao.getFeedingLogById(logId)
+        if (log != null) {
+            if (log.mixed_batch_id != null && log.quantity_kg > 0) {
+                mixedBatchDao.addStockToBatch(log.mixed_batch_id, log.quantity_kg)
+            } else if (log.ingredient_id != null && log.quantity_kg > 0) {
+                feedDao.addStock(log.ingredient_id, log.quantity_kg)
+            }
+            feedDao.deleteFeedingLogById(logId)
+        }
+    }
+
+    suspend fun clearFeedData(
+        clearLogs: Boolean = true,
+        clearBatches: Boolean = true,
+        clearIngredients: Boolean = false
+    ) = withContext(Dispatchers.IO) {
+        if (clearLogs) {
+            feedDao.deleteAllFeedingLogs()
+        }
+        if (clearBatches) {
+            mixedBatchDao.deleteAllMixedBatches()
+        }
+        if (clearIngredients) {
+            feedDao.deleteAllIngredients()
+        }
+        alertDao.deleteAlertsByType("Low Feed")
+    }
+
+    /**
+     * Mixes a batch of feed from a formula. Each ingredient in [ingredientAmounts] is a pair
+     * of (ingredientId, kgNeeded). Skipped ingredients (nullId or no stock) are recorded.
+     * Returns the new MixedBatchEntity id.
+     */
+    data class IngredientMixItem(
+        val ingredientId: Long?,   // null = skipped / not in inventory
+        val name: String,
+        val kgNeeded: Double,
+        val costPerKg: Double,
+        val include: Boolean       // user toggled to include or skip
+    )
+
+    suspend fun mixBatch(
+        formulaName: String,
+        totalBatchKg: Double,
+        items: List<IngredientMixItem>,
+        batchLabel: String? = null
+    ): Long = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        val includedItems = items.filter { it.include && it.ingredientId != null }
+        val skippedItems = items.filter { !it.include || it.ingredientId == null }
+        val isComplete = skippedItems.isEmpty()
+
+        // Deduct stock from each included ingredient
+        includedItems.forEach { item ->
+            if (item.ingredientId != null) {
+                feedDao.deductStock(item.ingredientId, item.kgNeeded)
+            }
+        }
+
+        // Compute actual batch weight (sum of included kgs)
+        val actualKg = includedItems.sumOf { it.kgNeeded }
+        val totalCost = includedItems.sumOf { it.kgNeeded * it.costPerKg }
+        val costPerKg = if (actualKg > 0) totalCost / actualKg else 0.0
+
+        // Build JSON for included ingredients
+        val usedJson = "[" + includedItems.joinToString(",") { item ->
+            "{\"name\":\"${item.name}\",\"kg\":${item.kgNeeded},\"cost_per_kg\":${item.costPerKg}}"
+        } + "]"
+        val skippedJson = "[" + skippedItems.joinToString(",") { "\"${it.name}\"" } + "]"
+
+        val name = batchLabel ?: run {
+            val sdf = java.text.SimpleDateFormat("dd MMM", java.util.Locale.getDefault())
+            "${formulaName} Mix — ${actualKg.toInt()} kg (${sdf.format(java.util.Date(now))})"
+        }
+
+        val batch = MixedBatchEntity(
+            name = name,
+            formula_name = formulaName,
+            total_kg = actualKg,
+            remaining_kg = actualKg,
+            cost_per_kg = costPerKg,
+            total_cost = totalCost,
+            ingredients_used_json = usedJson,
+            skipped_ingredients_json = skippedJson,
+            is_complete_formula = isComplete,
+            created_date = now
+        )
+
+        mixedBatchDao.insertMixedBatch(batch)
+    }
+
+    suspend fun registerPreMixedBatch(
+        name: String,
+        formulaName: String,
+        totalKg: Double,
+        costPerKg: Double,
+        notes: String? = null
+    ): Long = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        val totalCost = totalKg * costPerKg
+        val batch = MixedBatchEntity(
+            name = name,
+            formula_name = formulaName,
+            total_kg = totalKg,
+            remaining_kg = totalKg,
+            cost_per_kg = costPerKg,
+            total_cost = totalCost,
+            ingredients_used_json = "[]",
+            skipped_ingredients_json = "[]",
+            is_complete_formula = true,
+            created_date = now,
+            notes = notes
+        )
+        val batchId = mixedBatchDao.insertMixedBatch(batch)
+        if (totalCost > 0.0) {
+            feedDao.insertPurchase(
+                FeedPurchaseEntity(
+                    ingredient_id = 0L,
+                    date = now,
+                    quantity_kg = totalKg,
+                    total_cost = totalCost
+                )
+            )
+            expenseDao.insertExpense(
+                ExpenseEntity(
+                    category = "Feed",
+                    amount = totalCost,
+                    date = now,
+                    target_scope = "Herd",
+                    payee = "Feed Supplier",
+                    notes = "Pre-mixed Batch: $name (${totalKg.toInt()}kg @ KSh ${costPerKg}/kg)"
+                )
+            )
+        }
+        batchId
+    }
+
+    suspend fun deleteMixedBatch(batchId: Long) = withContext(Dispatchers.IO) {
+        mixedBatchDao.deleteMixedBatch(batchId)
     }
 
     suspend fun getOffspringForSow(sowId: Long) = pigDao.getOffspringForSowSync(sowId)
@@ -217,9 +369,11 @@ class PHMSRepository(val db: AppDatabase) {
                 }
             }
         }
-        // Schedule a repeat-dose alert if requested
+        // Schedule a repeat-dose alert if requested.
+        // Alert surfaces 7 days before the due date so the farmer has time to prepare.
         if (repeatIntervalDays > 0) {
-            val dueDate = now + repeatIntervalDays * 24 * 60 * 60 * 1000L
+            val dueDate   = now + repeatIntervalDays.toLong() * 24 * 60 * 60 * 1000L
+            val alertDate = dueDate - 7 * 24 * 60 * 60 * 1000L   // 7-day advance warning
             val scopeLabel = when (targetScope) {
                 "Single Pig" -> "Pig #${targetPigId ?: "?"}"
                 "Category"   -> targetCategory ?: "Category"
@@ -231,8 +385,8 @@ class PHMSRepository(val db: AppDatabase) {
                     type = type.uppercase(),
                     priority = "High",
                     related_pig_id = if (targetScope == "Single Pig") targetPigId else null,
-                    message = "🔁 $type due: $product ($dosage) for $scopeLabel — scheduled ${dateFmt.format(java.util.Date(dueDate))}",
-                    created_date = dueDate,
+                    message = "🔁 $type due ${dateFmt.format(java.util.Date(dueDate))}: $product ($dosage) for $scopeLabel — due in 7 days",
+                    created_date = alertDate,   // surfaces 7 days before due date
                     status = "Active"
                 )
             )
@@ -333,7 +487,6 @@ class PHMSRepository(val db: AppDatabase) {
     // Seed Demo Data
     suspend fun seedDemoData() {
         com.phms.app.data.seed.DemoDataSeeder.seedDatabase(db)
-        seedCommunityBuyers()
     }
 
     // Reset Farm Data (clears active herd, records, and personal buyers; preserves growth stages + community directory)

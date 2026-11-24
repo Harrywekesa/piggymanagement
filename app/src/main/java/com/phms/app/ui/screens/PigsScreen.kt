@@ -56,11 +56,11 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
         Column(Modifier.fillMaxSize()) {
             // Header & Segmented Tab Row
             Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                Text("Herd & Pens Management", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Herd & Pens Management", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(8.dp))
                 TabRow(
                     selectedTabIndex = mainTab,
-                    containerColor = Color(0xFF161B22),
+                    containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = Color(0xFF4CAF50)
                 ) {
                     Tab(
@@ -87,15 +87,15 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text("Search by tag or breed...", color = Color(0xFF6E7681)) },
-                            leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF6E7681)) },
+                            placeholder = { Text("Search by tag or breed...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                            leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF4CAF50), unfocusedBorderColor = Color(0xFF30363D),
-                                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
-                                unfocusedContainerColor = Color(0xFF161B22), focusedContainerColor = Color(0xFF161B22)
+                                focusedBorderColor = Color(0xFF4CAF50), unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedTextColor = Color.White, unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface, focusedContainerColor = MaterialTheme.colorScheme.surface
                             )
                         )
                     }
@@ -109,7 +109,7 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = Color(0xFF1B5E20),
                                         selectedLabelColor = Color(0xFF4CAF50),
-                                        containerColor = Color(0xFF161B22),
+                                        containerColor = MaterialTheme.colorScheme.surface,
                                         labelColor = Color(0xFF8B949E)
                                     )
                                 )
@@ -119,7 +119,7 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                     if (filteredPigs.isEmpty()) {
                         item {
                             Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                                Text("No pigs match your search.", color = Color(0xFF6E7681), textAlign = TextAlign.Center)
+                                Text("No pigs match your search.", color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                             }
                         }
                     } else {
@@ -140,7 +140,7 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                 ) {
                     item {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text("Active Farm Pens", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Active Farm Pens", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             Button(
                                 onClick = { showAddPenDialog = true },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
@@ -158,14 +158,14 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                             Card(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
                                 shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                             ) {
                                 Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(Icons.Default.Home, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(48.dp))
                                     Spacer(Modifier.height(8.dp))
-                                    Text("No Pens Created Yet", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                    Text("Create pens to organize pigs into Nursery, Growth, Farrowing, or Finishers.", color = Color(0xFF8B949E), fontSize = 12.sp, textAlign = TextAlign.Center)
+                                    Text("No Pens Created Yet", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text("Create pens to organize pigs into Nursery, Growth, Farrowing, or Finishers.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, textAlign = TextAlign.Center)
                                     Spacer(Modifier.height(12.dp))
                                     Button(
                                         onClick = { showAddPenDialog = true },
@@ -184,15 +184,15 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                             ) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         Column {
-                                            Text(pen.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                            Text(pen.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                             if (!pen.notes.isNullOrBlank()) {
-                                                Text(pen.notes, color = Color(0xFF8B949E), fontSize = 11.sp)
+                                                Text(pen.notes, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                                             }
                                         }
                                         Surface(
@@ -213,22 +213,22 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                                         progress = { occupancyPct },
                                         modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
                                         color = if (occupancyPct >= 1.0f) Color(0xFFFF5252) else if (occupancyPct >= 0.8f) Color(0xFFFFB300) else Color(0xFF4CAF50),
-                                        trackColor = Color(0xFF21262D)
+                                        trackColor = MaterialTheme.colorScheme.outlineVariant
                                     )
 
                                     if (assignedPigs.isNotEmpty()) {
-                                        Text("Assigned Pigs (${assignedPigs.size}):", color = Color(0xFF8B949E), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Text("Assigned Pigs (${assignedPigs.size}):", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                             assignedPigs.forEach { pig ->
                                                 AssistChip(
                                                     onClick = { navController.navigate("pig_detail/${pig.id}") },
                                                     label = { Text("#${pig.tag_number} (${pig.breed.take(8)})", fontSize = 11.sp) },
-                                                    colors = AssistChipDefaults.assistChipColors(containerColor = Color(0xFF21262D), labelColor = Color.White)
+                                                    colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.outlineVariant, labelColor = MaterialTheme.colorScheme.onSurface)
                                                 )
                                             }
                                         }
                                     } else {
-                                        Text("No pigs assigned to this pen.", color = Color(0xFF6E7681), fontSize = 12.sp)
+                                        Text("No pigs assigned to this pen.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                     }
 
                                     OutlinedButton(
@@ -270,8 +270,8 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
 
             AlertDialog(
                 onDismissRequest = { showAddPenDialog = false },
-                containerColor = Color(0xFF161B22),
-                title = { Text("Create New Pen", color = Color.White, fontWeight = FontWeight.Bold) },
+                containerColor = MaterialTheme.colorScheme.surface,
+                title = { Text("Create New Pen", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         FormField("Pen Name / Identifier *", penName, { penName = it }, placeholder = "e.g. Pen A1 (Nursery), Pen B2 (Farrowing)")
@@ -293,7 +293,7 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                     ) { Text("Create Pen") }
                 },
-                dismissButton = { OutlinedButton(onClick = { showAddPenDialog = false }) { Text("Cancel", color = Color(0xFF8B949E)) } }
+                dismissButton = { OutlinedButton(onClick = { showAddPenDialog = false }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
             )
         }
 
@@ -303,14 +303,14 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
 
             AlertDialog(
                 onDismissRequest = { targetPenForAssignment = null },
-                containerColor = Color(0xFF161B22),
-                title = { Text("Assign Pig to ${pen.name}", color = Color.White, fontWeight = FontWeight.Bold) },
+                containerColor = MaterialTheme.colorScheme.surface,
+                title = { Text("Assign Pig to ${pen.name}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
                 text = {
                     Column(
                         modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text("Select pig from active herd:", color = Color(0xFF8B949E), fontSize = 12.sp)
+                        Text("Select pig from active herd:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                         pigs.forEach { pig ->
                             val currentPen = pens.find { it.id == pig.pen_id }
                             Row(
@@ -322,8 +322,8 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                             ) {
                                 RadioButton(selected = selectedPigId == pig.id, onClick = { selectedPigId = pig.id })
                                 Column {
-                                    Text("Pig #${pig.tag_number} (${pig.breed})", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    Text("Current: ${currentPen?.name ?: "Unassigned"}", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                    Text("Pig #${pig.tag_number} (${pig.breed})", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("Current: ${currentPen?.name ?: "Unassigned"}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                                 }
                             }
                         }
@@ -341,7 +341,7 @@ fun PigsScreen(viewModel: MainViewModel, navController: NavController) {
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                     ) { Text("Assign to Pen") }
                 },
-                dismissButton = { OutlinedButton(onClick = { targetPenForAssignment = null }) { Text("Cancel", color = Color(0xFF8B949E)) } }
+                dismissButton = { OutlinedButton(onClick = { targetPenForAssignment = null }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
             )
         }
     }
@@ -352,8 +352,8 @@ fun PigListCard(pig: PigEntity, stageName: String, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-        border = BorderStroke(1.dp, Color(0xFF30363D))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -392,12 +392,12 @@ fun PigListCard(pig: PigEntity, stageName: String, onClick: () -> Unit) {
                 }
             }
             Column(Modifier.weight(1f)) {
-                Text("Tag #${pig.tag_number}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                Text("Tag #${pig.tag_number}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     "${pig.breed} • ${if (pig.sex == "M") "Boar" else "Sow"}",
-                    fontSize = 13.sp, color = Color(0xFF8B949E)
+                    fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(pig.source, fontSize = 11.sp, color = Color(0xFF6E7681))
+                Text(pig.source, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF1B5E20)) {

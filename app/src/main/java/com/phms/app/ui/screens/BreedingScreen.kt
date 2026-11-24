@@ -77,7 +77,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp
                                 )
-                                Text("Due: ${dateFormat.format(Date(preg.expected_farrowing_date))}", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                Text("Due: ${dateFormat.format(Date(preg.expected_farrowing_date))}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                             }
                         }
                         Surface(shape = RoundedCornerShape(6.dp), color = if (days == 0L) Color(0xFFD32F2F) else Color(0xFF880E4F)) {
@@ -94,8 +94,8 @@ fun BreedingScreen(viewModel: MainViewModel) {
         Column(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
-                    Text("Breeding & Reproduction", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    Text("Gestation tracking, AI mating & gilt heat alerts", fontSize = 12.sp, color = Color(0xFF8B949E))
+                    Text("Breeding & Reproduction", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Gestation tracking, AI mating & gilt heat alerts", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -146,7 +146,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
 
         TabRow(
             selectedTabIndex = selectedTab,
-            containerColor = Color(0xFF161B22),
+            containerColor = MaterialTheme.colorScheme.surface,
             contentColor = Color(0xFF4CAF50)
         ) {
             Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Active Gestations (${activePregnancies.size})", fontSize = 12.sp) })
@@ -161,7 +161,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                 if (activePregnancies.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("No active pregnancies logged.", color = Color(0xFF6E7681), fontSize = 15.sp)
+                            Text("No active pregnancies logged.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
                             Spacer(Modifier.height(8.dp))
                             Text("Click 'Record Mating' above to start tracking gestation for a sow.", color = Color(0xFF484F58), fontSize = 13.sp)
                         }
@@ -179,8 +179,8 @@ fun BreedingScreen(viewModel: MainViewModel) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                             ) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -192,8 +192,8 @@ fun BreedingScreen(viewModel: MainViewModel) {
                                                 Icon(Icons.Default.Pets, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                                             }
                                             Column {
-                                                Text("Sow Tag #${sow?.tag_number ?: preg.sow_id}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                                Text("Inseminated: ${dateFormat.format(Date(preg.insemination_date))}", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                                Text("Sow Tag #${sow?.tag_number ?: preg.sow_id}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                                Text("Inseminated: ${dateFormat.format(Date(preg.insemination_date))}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                             }
                                         }
                                         Surface(shape = RoundedCornerShape(8.dp), color = if (daysRemaining <= 5) Color(0xFFD32F2F) else Color(0xFF1B5E20)) {
@@ -207,14 +207,14 @@ fun BreedingScreen(viewModel: MainViewModel) {
 
                                     Spacer(Modifier.height(4.dp))
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("Gestation Progress ($daysIn / 114 days)", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                        Text("Gestation Progress ($daysIn / 114 days)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                         Text("Due: ${dateFormat.format(Date(preg.expected_farrowing_date))}", color = Color(0xFF81C784), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                     }
                                     LinearProgressIndicator(
                                         progress = { progress },
                                         modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
                                         color = Color(0xFFE91E8C),
-                                        trackColor = Color(0xFF21262D),
+                                        trackColor = MaterialTheme.colorScheme.outlineVariant,
                                     )
 
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -244,7 +244,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                         Text("Breeding Females (Sows)", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                     if (sows.isEmpty()) {
-                        item { Text("No active sows registered in herd.", color = Color(0xFF6E7681), fontSize = 13.sp) }
+                        item { Text("No active sows registered in herd.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp) }
                     } else {
                         items(sows) { sow ->
                             val offsprings = pigs.filter { it.dam_id == sow.id }
@@ -253,22 +253,22 @@ fun BreedingScreen(viewModel: MainViewModel) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                             ) {
                                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             Icon(Icons.Default.Pets, contentDescription = null, tint = Color(0xFF880E4F), modifier = Modifier.size(22.dp))
                                             Column {
-                                                Text("Tag #${sow.tag_number}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                                Text(sow.breed, color = Color(0xFF8B949E), fontSize = 12.sp)
+                                                Text("Tag #${sow.tag_number}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                                Text(sow.breed, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                             }
                                         }
                                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                             if (activePreg != null) {
                                                 Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF880E4F)) {
-                                                    Text("PREGNANT", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                                                    Text("PREGNANT", color = MaterialTheme.colorScheme.onSurface, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
                                                 }
                                             }
                                             Button(
@@ -285,7 +285,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                                         }
                                     }
                                     if (offsprings.isNotEmpty()) {
-                                        Text("Offspring Count: ${offsprings.size} pigs", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                        Text("Offspring Count: ${offsprings.size} pigs", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                                     }
                                 }
                             }
@@ -297,26 +297,26 @@ fun BreedingScreen(viewModel: MainViewModel) {
                         Text("Breeding Males (Boars)", color = Color(0xFF64B5F6), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                     if (boars.isEmpty()) {
-                        item { Text("No active boars registered in herd.", color = Color(0xFF6E7681), fontSize = 13.sp) }
+                        item { Text("No active boars registered in herd.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp) }
                     } else {
                         items(boars) { boar ->
                             val offsprings = pigs.filter { it.sire_id == boar.id }
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                             ) {
                                 Row(Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Icon(Icons.Default.Pets, contentDescription = null, tint = Color(0xFF64B5F6), modifier = Modifier.size(22.dp))
                                         Column {
-                                            Text("Boar Tag #${boar.tag_number}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                            Text(boar.breed, color = Color(0xFF8B949E), fontSize = 12.sp)
+                                            Text("Boar Tag #${boar.tag_number}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text(boar.breed, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                         }
                                     }
-                                    Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF0D47A1)) {
-                                        Text("${offsprings.size} Offspring", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                                    Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+                                        Text("${offsprings.size} Offspring", color = MaterialTheme.colorScheme.onSurface, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
                                     }
                                 }
                             }
@@ -329,7 +329,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                 // FARROWING HISTORY LOG
                 if (farrowingRecords.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No farrowing records recorded yet.", color = Color(0xFF6E7681), fontSize = 15.sp)
+                        Text("No farrowing records recorded yet.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
                     }
                 } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -338,19 +338,19 @@ fun BreedingScreen(viewModel: MainViewModel) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
-                                border = BorderStroke(1.dp, Color(0xFF30363D))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                             ) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Sow Tag #${sow?.tag_number ?: rec.sow_id}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                        Text(dateFormat.format(Date(rec.farrowing_date)), color = Color(0xFF8B949E), fontSize = 12.sp)
+                                        Text("Sow Tag #${sow?.tag_number ?: rec.sow_id}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                        Text(dateFormat.format(Date(rec.farrowing_date)), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                     }
-                                    HorizontalDivider(color = Color(0xFF21262D))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Column {
                                             Text("Born Alive: ${rec.born_alive}", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                            Text("Total Born: ${rec.total_born}", color = Color(0xFFC9D1D9), fontSize = 12.sp)
+                                            Text("Total Born: ${rec.total_born}", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp)
                                         }
                                         Column(horizontalAlignment = Alignment.End) {
                                             Text("Stillborn: ${rec.stillborn} | Mummified: ${rec.mummified}", color = Color(0xFFE57373), fontSize = 12.sp)
@@ -375,8 +375,8 @@ fun BreedingScreen(viewModel: MainViewModel) {
 
         AlertDialog(
             onDismissRequest = { showMatingDialog = false },
-            containerColor = Color(0xFF161B22),
-            title = { Text("Record Mating / Insemination", color = Color.White) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text("Record Mating / Insemination", color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     DropdownSelector(
@@ -386,7 +386,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                         onSelect = { id -> selectedSow = sows.find { it.id == id } }
                     )
 
-                    Text("Service Type", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    Text("Service Type", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         FilterChip(
                             selected = matingType == "Natural",
@@ -415,9 +415,9 @@ fun BreedingScreen(viewModel: MainViewModel) {
                         label = { Text("Notes / Straw Batch No.") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF4CAF50),
-                            unfocusedBorderColor = Color(0xFF30363D),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -445,7 +445,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
             },
             dismissButton = {
                 TextButton(onClick = { showMatingDialog = false }) {
-                    Text("Cancel", color = Color(0xFF8B949E))
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -462,38 +462,38 @@ fun BreedingScreen(viewModel: MainViewModel) {
 
         AlertDialog(
             onDismissRequest = { showFarrowingDialog = false },
-            containerColor = Color(0xFF161B22),
-            title = { Text("Record Farrowing — Sow Tag #${sow?.tag_number ?: ""}", color = Color.White) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text("Record Farrowing — Sow Tag #${sow?.tag_number ?: ""}", color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
                             value = totalBornStr, onValueChange = { totalBornStr = it },
                             label = { Text("Total Born") }, modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = MaterialTheme.colorScheme.onSurface, unfocusedTextColor = MaterialTheme.colorScheme.onSurface)
                         )
                         OutlinedTextField(
                             value = bornAliveStr, onValueChange = { bornAliveStr = it },
                             label = { Text("Born Alive") }, modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = MaterialTheme.colorScheme.onSurface, unfocusedTextColor = MaterialTheme.colorScheme.onSurface)
                         )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
                             value = stillbornStr, onValueChange = { stillbornStr = it },
                             label = { Text("Stillborn") }, modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = MaterialTheme.colorScheme.onSurface, unfocusedTextColor = MaterialTheme.colorScheme.onSurface)
                         )
                         OutlinedTextField(
                             value = mummifiedStr, onValueChange = { mummifiedStr = it },
                             label = { Text("Mummified") }, modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = MaterialTheme.colorScheme.onSurface, unfocusedTextColor = MaterialTheme.colorScheme.onSurface)
                         )
                     }
                     OutlinedTextField(
                         value = avgWeightStr, onValueChange = { avgWeightStr = it },
                         label = { Text("Avg Birth Weight (kg)") }, modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = MaterialTheme.colorScheme.onSurface, unfocusedTextColor = MaterialTheme.colorScheme.onSurface)
                     )
                 }
             },
@@ -520,7 +520,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
             },
             dismissButton = {
                 TextButton(onClick = { showFarrowingDialog = false }) {
-                    Text("Cancel", color = Color(0xFF8B949E))
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -535,11 +535,11 @@ fun BreedingScreen(viewModel: MainViewModel) {
 
         AlertDialog(
             onDismissRequest = { showGiltHeatDialog = false },
-            containerColor = Color(0xFF161B22),
-            title = { Text("Record Gilt Heat Observation", color = Color.White) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text("Record Gilt Heat Observation", color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Select a female pig/gilt to record heat symptoms. The app will auto-alert you in 21 days for the next heat cycle if not served.", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    Text("Select a female pig/gilt to record heat symptoms. The app will auto-alert you in 21 days for the next heat cycle if not served.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
 
                     DropdownSelector(
                         label = "Select Female Pig / Gilt *",
@@ -554,7 +554,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                             onCheckedChange = { standingHeat = it },
                             colors = CheckboxDefaults.colors(checkedColor = Color(0xFFD81B60))
                         )
-                        Text("Standing Reflex Observed (Ready for Mating)", color = Color.White, fontSize = 13.sp)
+                        Text("Standing Reflex Observed (Ready for Mating)", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
                     }
 
                     OutlinedTextField(
@@ -562,7 +562,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                         onValueChange = { symptoms = it },
                         label = { Text("Symptoms / Heat Signs") },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = MaterialTheme.colorScheme.onSurface, unfocusedTextColor = MaterialTheme.colorScheme.onSurface)
                     )
 
                     OutlinedTextField(
@@ -570,7 +570,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                         onValueChange = { notes = it },
                         label = { Text("Notes / Observations") },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = MaterialTheme.colorScheme.onSurface, unfocusedTextColor = MaterialTheme.colorScheme.onSurface)
                     )
                 }
             },
@@ -591,7 +591,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
             },
             dismissButton = {
                 TextButton(onClick = { showGiltHeatDialog = false }) {
-                    Text("Cancel", color = Color(0xFF8B949E))
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -606,11 +606,11 @@ fun BreedingScreen(viewModel: MainViewModel) {
 
         AlertDialog(
             onDismissRequest = { showGiltServiceDialog = false },
-            containerColor = Color(0xFF161B22),
-            title = { Text("Record Gilt Served / Mating Event", color = Color.White) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text("Record Gilt Served / Mating Event", color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Record mating event for a gilt. Starts 114-day gestation tracking and schedules Day 110 & Day 114 farrowing alerts.", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    Text("Record mating event for a gilt. Starts 114-day gestation tracking and schedules Day 110 & Day 114 farrowing alerts.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
 
                     DropdownSelector(
                         label = "Select Gilt / Female Pig *",
@@ -619,7 +619,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                         onSelect = { id -> selectedGilt = femalePigs.find { it.id == id } }
                     )
 
-                    Text("Service Type", color = Color(0xFF8B949E), fontSize = 12.sp)
+                    Text("Service Type", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
                             selected = serviceType == "Natural Service",
@@ -647,7 +647,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
                         onValueChange = { notes = it },
                         label = { Text("AI Straw Batch / Notes") },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = MaterialTheme.colorScheme.onSurface, unfocusedTextColor = MaterialTheme.colorScheme.onSurface)
                     )
                 }
             },
@@ -673,7 +673,7 @@ fun BreedingScreen(viewModel: MainViewModel) {
             },
             dismissButton = {
                 TextButton(onClick = { showGiltServiceDialog = false }) {
-                    Text("Cancel", color = Color(0xFF8B949E))
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )

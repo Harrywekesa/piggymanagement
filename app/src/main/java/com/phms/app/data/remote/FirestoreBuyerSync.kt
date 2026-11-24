@@ -108,4 +108,32 @@ object FirestoreBuyerSync {
             Log.w(TAG, "Failed to push buyer to Firestore: ${e.message}")
         }
     }
+
+    /**
+     * Delete a single buyer from the cloud shared directory by phone number.
+     */
+    suspend fun deleteCloudBuyer(phone: String) {
+        try {
+            val docId = phone.replace("+", "").replace(" ", "")
+            sharedBuyersCollection.document(docId).delete().await()
+            Log.d(TAG, "Buyer with phone $phone deleted from Firestore shared directory.")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to delete buyer from Firestore: ${e.message}")
+        }
+    }
+
+    /**
+     * Completely clear all shared buyers from Firestore cloud collection.
+     */
+    suspend fun clearCloudSharedBuyers() {
+        try {
+            val snapshot = sharedBuyersCollection.get().await()
+            for (doc in snapshot.documents) {
+                doc.reference.delete().await()
+            }
+            Log.d(TAG, "Successfully wiped cloud shared_buyers collection (${snapshot.size()} documents deleted).")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error wiping cloud shared_buyers: ${e.message}")
+        }
+    }
 }

@@ -58,7 +58,21 @@ object PnLCalculator {
 
         // Feed cost — real purchases from DB
         val feedPurchases = feedDao.getPurchasesSince(startDateMs)
-        val feedCost = feedPurchases.sumOf { it.total_cost }
+        val feedPurchaseCost = feedPurchases.sumOf { it.total_cost }
+
+        // Also include standalone feed expenses from expenseDao (excluding auto-generated ones to prevent double counting)
+        val standaloneFeedExpenses = expenseDao?.getExpensesSince(startDateMs)
+            ?.filter {
+                it.category == "Feed" &&
+                !it.notes.orEmpty().contains("Restock:", ignoreCase = true) &&
+                !it.notes.orEmpty().contains("Procurement:", ignoreCase = true) &&
+                !it.notes.orEmpty().contains("Purchase of", ignoreCase = true) &&
+                !it.notes.orEmpty().contains("Stock increase:", ignoreCase = true) &&
+                !it.notes.orEmpty().contains("Pre-mixed Batch:", ignoreCase = true)
+            }
+            ?.sumOf { it.amount } ?: 0.0
+
+        val feedCost = feedPurchaseCost + standaloneFeedExpenses
 
         // Health cost — real events from DB (sum cost field where present)
         val healthEvents = healthDao.getAllEventsSync()
