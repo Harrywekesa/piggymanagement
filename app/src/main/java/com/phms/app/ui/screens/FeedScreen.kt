@@ -34,6 +34,69 @@ import com.phms.app.ui.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+data class BatchIngredientItem(
+    val name: String,
+    val kg: Double,
+    val costPerKg: Double,
+    val totalCost: Double = kg * costPerKg,
+    val percentage: Double = 0.0,
+    val remainingKg: Double = 0.0
+)
+
+fun parseBatchIngredients(batch: MixedBatchEntity): List<BatchIngredientItem> {
+    val list = mutableListOf<BatchIngredientItem>()
+    try {
+        val jsonStr = batch.ingredients_used_json.trim()
+        if (jsonStr.startsWith("[")) {
+            val arr = org.json.JSONArray(jsonStr)
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                val name = obj.optString("name", "Ingredient")
+                val kg = obj.optDouble("kg", 0.0)
+                val costPerKg = obj.optDouble("cost_per_kg", 0.0)
+                val pct = if (batch.total_kg > 0) (kg / batch.total_kg) * 100.0 else 0.0
+                val remKg = if (batch.total_kg > 0) (kg / batch.total_kg) * batch.remaining_kg else 0.0
+                list.add(BatchIngredientItem(name, kg, costPerKg, kg * costPerKg, pct, remKg))
+            }
+        }
+    } catch (_: Exception) {}
+
+    // Also parse any additives logged in batch.notes if not already in list
+    if (!batch.notes.isNullOrBlank()) {
+        try {
+            val regex = Regex("Added\\s+([0-9.]+)\\s*kg\\s+([^(•\n]+)\\s*\\(\\+KSh\\s*([0-9]+)\\)", RegexOption.IGNORE_CASE)
+            regex.findAll(batch.notes).forEach { match ->
+                val kg = match.groupValues[1].toDoubleOrNull() ?: 0.0
+                val rawName = match.groupValues[2].trim()
+                val addedCost = match.groupValues[3].toDoubleOrNull() ?: 0.0
+                val costPerKg = if (kg > 0) addedCost / kg else 0.0
+                val displayName = "$rawName (Additive)"
+                if (list.none { it.name.contains(rawName, ignoreCase = true) }) {
+                    val pct = if (batch.total_kg > 0) (kg / batch.total_kg) * 100.0 else 0.0
+                    val remKg = if (batch.total_kg > 0) (kg / batch.total_kg) * batch.remaining_kg else 0.0
+                    list.add(BatchIngredientItem(displayName, kg, costPerKg, addedCost, pct, remKg))
+                }
+            }
+        } catch (_: Exception) {}
+    }
+
+    return list
+}
+
+fun parseSkippedIngredients(batch: MixedBatchEntity): List<String> {
+    val list = mutableListOf<String>()
+    try {
+        val jsonStr = batch.skipped_ingredients_json.trim()
+        if (jsonStr.startsWith("[")) {
+            val arr = org.json.JSONArray(jsonStr)
+            for (i in 0 until arr.length()) {
+                list.add(arr.getString(i))
+            }
+        }
+    } catch (_: Exception) {}
+    return list
+}
+
 fun fuzzyMatchIngredient(recipeName: String, invList: List<FeedIngredientEntity>): FeedIngredientEntity? {
     val rLower = recipeName.lowercase().trim()
 
@@ -97,6 +160,14 @@ fun FeedScreen(viewModel: MainViewModel) {
     var showRegisterBatchDialog by remember { mutableStateOf(false) }
     var showResetFeedDialog by remember { mutableStateOf(false) }
     var showCustomMixDialog by remember { mutableStateOf(false) }
+    var showAddBatchAdditiveDialog by remember { mutableStateOf(false) }
+    var selectedBatchForAdditive by remember { mutableStateOf<com.phms.app.data.local.entity.MixedBatchEntity?>(null) }
+    var showBatchDetailsDialog by remember { mutableStateOf(false) }
+    var selectedBatchForDetails by remember { mutableStateOf<com.phms.app.data.local.entity.MixedBatchEntity?>(null) }
+
+    val nowMs = remember { System.currentTimeMillis() }
+    val sevenDaysAgo = remember { nowMs - 7 * 86400000L }
+    val recentLogs = remember(feedingLogs) { feedingLogs.filter { it.date >= sevenDaysAgo } }
 
     // Feed Formulator state
     var selectedPreset by remember { mutableStateOf("Weaner/Starter") }
@@ -195,9 +266,9 @@ fun FeedScreen(viewModel: MainViewModel) {
                 ) {
                     val hasMixedReady = availableMixedBatches.any { it.remaining_kg > 0 }
                     if (hasMixedReady) {
-                        Text("${String.format(Locale.US, "%.0f", availableMixedBatches.sumOf { it.remaining_kg })} kg mixed feed ready", color = Color(0xFF81C784), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("${String.format(Locale.US, "%.0f", availableMixedBatches.sumOf { it.remaining_kg })} kg ready", color = Color(0xFF81C784), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     } else {
-                        Text("${ingredients.count { it.stock_kg <= it.reorder_level }} low stock", color = Color(0xFFFF5252), fontSize = 12.sp)
+                        Text("${ingredients.count { it.stock_kg <= it.reorder_level }} low stock", color = Color(0xFFFF5252), fontSize = 12.sp, maxLines = 1)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedButton(
@@ -253,7 +324,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                                     Text("🥣", fontSize = 20.sp)
                                     Column {
                                         Text("All ingredients mixed into batch", fontWeight = FontWeight.Bold, color = Color(0xFF90CAF9), fontSize = 13.sp)
-                                        Text("Your ingredient stocks are at 0 — they've been combined into ${mixedBatches.count { it.remaining_kg > 0 }} batch(es) below. Use Log Feeding > Mix Batch to feed from them.", color = Color(0xFFBBDEFB), fontSize = 11.sp, lineHeight = 15.sp)
+                                        Text("Your ingredient stocks are at 0  -  they've been combined into ${mixedBatches.count { it.remaining_kg > 0 }} batch(es) below. Use Log Feeding > Mix Batch to feed from them.", color = Color(0xFFBBDEFB), fontSize = 11.sp, lineHeight = 15.sp)
                                     }
                                 }
                             }
@@ -466,100 +537,218 @@ fun FeedScreen(viewModel: MainViewModel) {
                             val sdf = remember { java.text.SimpleDateFormat("d MMM", java.util.Locale.getDefault()) }
 
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedBatchForDetails = batch
+                                        showBatchDetailsDialog = true
+                                    },
+                                shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF161B22)),
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                             ) {
-                                Column(Modifier.fillMaxWidth()) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    // 1. TOP ROW: Avatar + Batch Name & Details (Left) | Weight & Status Badge (Right)
                                     Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        // Avatar Icon
-                                        Box(
-                                            modifier = Modifier
-                                                .size(34.dp)
-                                                .clip(CircleShape)
-                                                .background(if (isEmpty) Color(0xFF1B3A1B).copy(alpha = 0.5f) else Color(0xFF1B3A1B)),
-                                            contentAlignment = Alignment.Center
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                            modifier = Modifier.weight(1f, fill = false)
                                         ) {
-                                            Icon(
-                                                Icons.Default.Layers,
-                                                contentDescription = null,
-                                                tint = if (isEmpty) Color(0xFF81C784).copy(alpha = 0.6f) else Color(0xFF4CAF50),
-                                                modifier = Modifier.size(17.dp)
-                                            )
-                                        }
-
-                                        // Batch Name & Cost Details
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(38.dp)
+                                                    .clip(CircleShape)
+                                                    .background(if (isEmpty) Color(0xFF1B3A1B).copy(alpha = 0.5f) else Color(0xFF1B3A1B)),
+                                                contentAlignment = Alignment.Center
                                             ) {
-                                                Text(
-                                                    batch.name,
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 13.5.sp,
-                                                    color = Color.White
+                                                Icon(
+                                                    Icons.Default.Layers,
+                                                    contentDescription = null,
+                                                    tint = if (isEmpty) Color(0xFF81C784).copy(alpha = 0.6f) else Color(0xFF4CAF50),
+                                                    modifier = Modifier.size(19.dp)
                                                 )
-                                                if (!batch.is_complete_formula) {
-                                                    Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF3E2723)) {
-                                                        Text("Partial", color = Color(0xFFFFB74D), fontSize = 8.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
-                                                    }
-                                                }
                                             }
-                                            Text(
-                                                "KSh ${String.format(Locale.US, "%.1f", batch.cost_per_kg)}/kg • ${sdf.format(java.util.Date(batch.created_date))}",
-                                                fontSize = 11.sp,
-                                                color = Color(0xFF8B949E)
-                                            )
-                                        }
 
-                                        // Remaining stock & delete
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                                Text(
-                                                    "${String.format(Locale.US, "%.1f", batch.remaining_kg)} kg",
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 14.sp,
-                                                    color = if (isEmpty) Color(0xFF8B949E) else Color(0xFF4CAF50)
-                                                )
-                                                Surface(
-                                                    shape = RoundedCornerShape(4.dp),
-                                                    color = if (isEmpty) Color(0xFF21262D) else Color(0xFF1B3A4B)
+                                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                                 ) {
                                                     Text(
-                                                        if (isEmpty) "Depleted" else "Ready to Feed",
-                                                        color = if (isEmpty) Color(0xFF8B949E) else Color(0xFF90E0EF),
-                                                        fontSize = 9.sp,
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+                                                        batch.name,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 14.sp,
+                                                        color = Color.White
+                                                    )
+                                                    if (!batch.is_complete_formula) {
+                                                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF3E2723)) {
+                                                            Text(
+                                                                "Partial",
+                                                                color = Color(0xFFFFB74D),
+                                                                fontSize = 9.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                    Icon(
+                                                        Icons.Default.ChevronRight,
+                                                        contentDescription = "View ingredients",
+                                                        tint = Color(0xFF8B949E),
+                                                        modifier = Modifier.size(15.dp)
                                                     )
                                                 }
+                                                Text(
+                                                    "KSh ${String.format(Locale.US, "%.1f", batch.cost_per_kg)}/kg • ${sdf.format(java.util.Date(batch.created_date))}",
+                                                    fontSize = 11.5.sp,
+                                                    color = Color(0xFF8B949E)
+                                                )
                                             }
+                                        }
 
-                                            IconButton(
-                                                onClick = { viewModel.deleteMixedBatch(batch.id) },
-                                                modifier = Modifier.size(26.dp)
+                                        // Remaining stock & status badge
+                                        Column(
+                                            horizontalAlignment = Alignment.End,
+                                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                                        ) {
+                                            Text(
+                                                "${String.format(Locale.US, "%.1f", batch.remaining_kg)} kg",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 15.sp,
+                                                color = if (isEmpty) Color(0xFF8B949E) else Color(0xFF4CAF50)
+                                            )
+                                            Surface(
+                                                shape = RoundedCornerShape(4.dp),
+                                                color = if (isEmpty) Color(0xFF21262D) else Color(0xFF1B3A4B)
                                             ) {
-                                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFF8B949E), modifier = Modifier.size(15.dp))
+                                                Text(
+                                                    if (isEmpty) "Depleted" else "Ready to Feed",
+                                                    color = if (isEmpty) Color(0xFF8B949E) else Color(0xFF90E0EF),
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
                                             }
                                         }
                                     }
 
-                                    // Slim 2dp progress bar
+                                    // 2. MIDDLE ROW: Burn rate badge & Notes
+                                    val batchLogs7d = remember(recentLogs, batch.id) { recentLogs.filter { it.mixed_batch_id == batch.id } }
+                                    val batchBurnRateKg = remember(batchLogs7d) { batchLogs7d.sumOf { it.quantity_kg } / 7.0 }
+                                    val batchDaysRemaining = if (batchBurnRateKg > 0.05 && batch.remaining_kg > 0.0) batch.remaining_kg / batchBurnRateKg else null
+
+                                    if (batchDaysRemaining != null || !batch.notes.isNullOrBlank()) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            if (batchDaysRemaining != null) {
+                                                val (bColor, tColor) = when {
+                                                    batchDaysRemaining <= 2.0 -> Pair(Color(0xFF3E1A1A), Color(0xFFFF5252))
+                                                    batchDaysRemaining <= 5.0 -> Pair(Color(0xFF3E2D1A), Color(0xFFFFB74D))
+                                                    else -> Pair(Color(0xFF1B3A1B), Color(0xFF81C784))
+                                                }
+                                                Surface(shape = RoundedCornerShape(4.dp), color = bColor) {
+                                                    Text(
+                                                        "⏳ ~${String.format(Locale.US, "%.1f", batchDaysRemaining)}d left (${String.format(Locale.US, "%.1f", batchBurnRateKg)} kg/d)",
+                                                        color = tColor,
+                                                        fontSize = 9.5.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                            if (!batch.notes.isNullOrBlank()) {
+                                                Text(
+                                                    batch.notes ?: "",
+                                                    fontSize = 10.sp,
+                                                    color = Color(0xFF90CAF9),
+                                                    maxLines = 1,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f, fill = false)
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    // 3. PROGRESS BAR
                                     if (!isEmpty) {
                                         LinearProgressIndicator(
                                             progress = { pct },
-                                            modifier = Modifier.fillMaxWidth().height(2.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(3.dp)
+                                                .clip(RoundedCornerShape(1.5.dp)),
                                             color = Color(0xFF2E7D32),
                                             trackColor = Color(0xFF21262D)
                                         )
+                                    }
+
+                                    // 4. BOTTOM ACTION ROW: Batch meta (mixed kg) + "+ Additive" button & Delete
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text(
+                                                "Batch #${batch.id} • ${String.format(Locale.US, "%.0f", batch.total_kg)}kg",
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF8B949E)
+                                            )
+                                            Text(
+                                                "• View recipe",
+                                                fontSize = 10.5.sp,
+                                                color = Color(0xFF81C784),
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Button(
+                                                onClick = {
+                                                    selectedBatchForAdditive = batch
+                                                    showAddBatchAdditiveDialog = true
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3A4B)),
+                                                shape = RoundedCornerShape(8.dp),
+                                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                                modifier = Modifier.height(28.dp)
+                                            ) {
+                                                Icon(Icons.Default.Science, null, tint = Color(0xFF90E0EF), modifier = Modifier.size(12.dp))
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("+ Additive", color = Color(0xFF90E0EF), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            }
+
+                                            IconButton(
+                                                onClick = { viewModel.deleteMixedBatch(batch.id) },
+                                                modifier = Modifier.size(28.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = "Delete",
+                                                    tint = Color(0xFF8B949E),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -636,7 +825,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text("${selectedPreset} — ${batchKg.toInt()} kg Batch", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Text("${selectedPreset}  -  ${batchKg.toInt()} kg Batch", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                     Text("Scaled from 1-tonne base formula", color = Color(0xFF8B949E), fontSize = 11.sp)
                                     Row(
                                         Modifier.fillMaxWidth(),
@@ -784,11 +973,11 @@ fun FeedScreen(viewModel: MainViewModel) {
                                     }
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Text("Estimated Cost per kg:", color = Color(0xFF8B949E), fontSize = 11.sp)
-                                        Text(if (costPerKg > 0) "KSh ${String.format(Locale.US, "%.2f", costPerKg)}/kg" else "—", color = Color(0xFFFFD54F), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                        Text(if (costPerKg > 0) "KSh ${String.format(Locale.US, "%.2f", costPerKg)}/kg" else " - ", color = Color(0xFFFFD54F), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                     }
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Text("50 kg Bag Equivalent:", color = Color(0xFF8B949E), fontSize = 11.sp)
-                                        Text(if (costPer50kgBag > 0) "KSh ${String.format(Locale.US, "%,.0f", costPer50kgBag)} / 50kg bag" else "—", color = Color(0xFF81C784), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Text(if (costPer50kgBag > 0) "KSh ${String.format(Locale.US, "%,.0f", costPer50kgBag)} / 50kg bag" else " - ", color = Color(0xFF81C784), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
 
@@ -1345,6 +1534,9 @@ fun FeedScreen(viewModel: MainViewModel) {
         var totalCostStr by remember { mutableStateOf("") }
         var newCostPerKgStr by remember { mutableStateOf(ing.cost_per_kg.toString()) }
         var newPricePerBagStr by remember { mutableStateOf(ing.price_per_bag?.toString() ?: "") }
+        var additiveNameStr by remember { mutableStateOf("") }
+        var additiveKgStr by remember { mutableStateOf("") }
+        var additiveCostStr by remember { mutableStateOf("") }
 
         // States for Edit Details & Direct Stock Setting
         var editNameStr by remember(ing) { mutableStateOf(ing.name) }
@@ -1365,6 +1557,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                             "delete" -> "Delete Ingredient"
                             "restock" -> "Restock ${ing.name}"
                             "price" -> "Update Price: ${ing.name}"
+                            "additive" -> "Add Additive to ${ing.name}"
                             else -> ing.name
                         },
                         color = MaterialTheme.colorScheme.onSurface,
@@ -1424,6 +1617,18 @@ fun FeedScreen(viewModel: MainViewModel) {
                             Text("Update Price Only", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
                         }
 
+                        // 4. Add Additive / Supplement Blend
+                        OutlinedButton(
+                            onClick = { actionMode = "additive" },
+                            modifier = Modifier.fillMaxWidth(),
+                            border = BorderStroke(1.dp, Color(0xFF90E0EF)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(Icons.Default.Science, null, tint = Color(0xFF90E0EF), modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Add Additive / Supplement Blend", color = Color(0xFF90E0EF), fontWeight = FontWeight.Bold)
+                        }
+
                         // 4. Delete Ingredient
                         OutlinedButton(
                             onClick = { actionMode = "delete" },
@@ -1458,8 +1663,8 @@ fun FeedScreen(viewModel: MainViewModel) {
                             onValueChange = { totalCostStr = it.filter { c -> c.isDigit() || c == '.' } },
                             label = {
                                 Text(
-                                    if (autoCost > 0) "Total Cost (KSh) — defaults to KSh ${autoCost.toInt()}"
-                                    else "Total Cost (KSh) — optional"
+                                    if (autoCost > 0) "Total Cost (KSh)  -  defaults to KSh ${autoCost.toInt()}"
+                                    else "Total Cost (KSh)  -  optional"
                                 )
                             },
                             placeholder = { if (autoCost > 0) Text("${autoCost.toInt()}") },
@@ -1579,6 +1784,41 @@ fun FeedScreen(viewModel: MainViewModel) {
                                 )
                             )
                         }
+                    } else if (actionMode == "additive") {
+                        Text("Top up with Additive / Supplement Blend", color = Color(0xFF90E0EF), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(
+                            "Add an additive (e.g. Toxin Binder, Vit Premix, Salt) directly into your inventory stock of ${ing.name}. Stock weight and average cost/kg will be recalculated.",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFFC9D1D9)
+                        )
+                        OutlinedTextField(
+                            value = additiveNameStr,
+                            onValueChange = { additiveNameStr = it },
+                            label = { Text("Additive Name (e.g. Toxin Binder)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF90E0EF))
+                        )
+                        OutlinedTextField(
+                            value = additiveKgStr,
+                            onValueChange = { additiveKgStr = it.filter { c -> c.isDigit() || c == '.' } },
+                            label = { Text("Weight Added (kg)") },
+                            placeholder = { Text("e.g. 1.0") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF90E0EF))
+                        )
+                        OutlinedTextField(
+                            value = additiveCostStr,
+                            onValueChange = { additiveCostStr = it.filter { c -> c.isDigit() || c == '.' } },
+                            label = { Text("Total Cost of Additive (KSh)") },
+                            placeholder = { Text("e.g. 350") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF90E0EF))
+                        )
                     } else if (actionMode == "delete") {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
@@ -1638,6 +1878,19 @@ fun FeedScreen(viewModel: MainViewModel) {
                                         actionMode = ""
                                     }
                                 }
+                                "additive" -> {
+                                    val addKg = additiveKgStr.toDoubleOrNull() ?: 0.0
+                                    val addCost = additiveCostStr.toDoubleOrNull() ?: 0.0
+                                    val addName = additiveNameStr.trim()
+                                    if (addKg > 0 && addName.isNotBlank()) {
+                                        viewModel.addAdditiveToIngredient(ing.id, addName, addKg, addCost)
+                                        Toast.makeText(context, "+${addKg}kg $addName blended into ${ing.name}!", Toast.LENGTH_SHORT).show()
+                                        showIngredientActionDialog = false
+                                        actionMode = ""
+                                    } else {
+                                        Toast.makeText(context, "Please enter valid additive name and weight", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                                 "delete" -> {
                                     viewModel.deleteFeedIngredient(ing.id)
                                     Toast.makeText(context, "${ing.name} removed from inventory", Toast.LENGTH_SHORT).show()
@@ -1650,6 +1903,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                             containerColor = when (actionMode) {
                                 "delete" -> Color(0xFFD32F2F)
                                 "edit" -> Color(0xFF1976D2)
+                                "additive" -> Color(0xFF1B3A4B)
                                 else -> Color(0xFF4CAF50)
                             }
                         )
@@ -1659,6 +1913,7 @@ fun FeedScreen(viewModel: MainViewModel) {
                                 "restock" -> "Add Stock"
                                 "price" -> "Save Price"
                                 "edit" -> "Save Changes & Stock"
+                                "additive" -> "Confirm Blend"
                                 "delete" -> "Confirm Delete"
                                 else -> "Save"
                             },
@@ -1675,6 +1930,440 @@ fun FeedScreen(viewModel: MainViewModel) {
                     },
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) { Text(if (actionMode.isEmpty()) "Close" else "Back", color = Color(0xFF8B949E)) }
+            }
+        )
+    }
+
+    // ── ADD ADDITIVE TO MIXED BATCH DIALOG ────────────────────────────────────
+    if (showAddBatchAdditiveDialog && selectedBatchForAdditive != null) {
+        val context = LocalContext.current
+        val batch = selectedBatchForAdditive!!
+        var additiveSource by remember { mutableStateOf("inventory") } // "inventory" or "custom"
+        var selectedIngId by remember { mutableStateOf<Long?>(ingredients.firstOrNull()?.id) }
+        var customNameStr by remember { mutableStateOf("") }
+        var addedKgStr by remember { mutableStateOf("0.5") }
+        var addedCostStr by remember { mutableStateOf("") }
+        var deductFromInventory by remember { mutableStateOf(true) }
+
+        val chosenIng = ingredients.find { it.id == selectedIngId }
+        val addedKg = addedKgStr.toDoubleOrNull() ?: 0.0
+        val effectiveName = if (additiveSource == "inventory") (chosenIng?.name ?: "Additive") else customNameStr
+
+        val autoCost = if (additiveSource == "inventory" && chosenIng != null) addedKg * chosenIng.cost_per_kg else 0.0
+        val effectiveCost = addedCostStr.toDoubleOrNull() ?: autoCost
+
+        val newTotalKg = batch.total_kg + addedKg
+        val newRemainingKg = batch.remaining_kg + addedKg
+        val newTotalCost = batch.total_cost + effectiveCost
+        val newCostPerKg = if (newTotalKg > 0) newTotalCost / newTotalKg else batch.cost_per_kg
+
+        AlertDialog(
+            onDismissRequest = { showAddBatchAdditiveDialog = false },
+            containerColor = Color(0xFF161B22),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.Science, null, tint = Color(0xFF81C784))
+                    Column {
+                        Text("Add Additive / Supplement", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("Target: ${batch.name} (${String.format(Locale.US, "%.1f", batch.remaining_kg)}kg left)", color = Color(0xFF8B949E), fontSize = 11.sp)
+                    }
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        "Add an ingredient or additive that was missing or added later (e.g. toxin binder, premix, vitamins). Weight and cost will be tracked.",
+                        fontSize = 11.5.sp,
+                        color = Color(0xFFC9D1D9)
+                    )
+
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = additiveSource == "inventory",
+                            onClick = { additiveSource = "inventory" },
+                            label = { Text("From Inventory", fontSize = 11.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFF1B5E20),
+                                selectedLabelColor = Color(0xFF81C784)
+                            )
+                        )
+                        FilterChip(
+                            selected = additiveSource == "custom",
+                            onClick = { additiveSource = "custom" },
+                            label = { Text("New / Custom Additive", fontSize = 11.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFF1B3A4B),
+                                selectedLabelColor = Color(0xFF90E0EF)
+                            )
+                        )
+                    }
+
+                    if (additiveSource == "inventory") {
+                        Text("Select Inventory Ingredient:", fontSize = 12.sp, color = Color(0xFF8B949E))
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            ingredients.forEach { ingItem ->
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (selectedIngId == ingItem.id) Color(0xFF1E3A24) else Color(0xFF21262D),
+                                    border = BorderStroke(1.dp, if (selectedIngId == ingItem.id) Color(0xFF4CAF50) else Color(0xFF30363D)),
+                                    modifier = Modifier.fillMaxWidth().clickable { selectedIngId = ingItem.id }
+                                ) {
+                                    Row(
+                                        Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(ingItem.name, color = Color.White, fontSize = 12.sp, fontWeight = if (selectedIngId == ingItem.id) FontWeight.Bold else FontWeight.Normal)
+                                        Text("${String.format(Locale.US, "%.1f", ingItem.stock_kg)}kg • KSh ${ingItem.cost_per_kg.toInt()}/kg", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = deductFromInventory,
+                                onCheckedChange = { deductFromInventory = it },
+                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF4CAF50))
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Deduct weight from inventory stock", color = Color.White, fontSize = 12.sp)
+                        }
+                    } else {
+                        OutlinedTextField(
+                            value = customNameStr,
+                            onValueChange = { customNameStr = it },
+                            label = { Text("Additive Name (e.g. Toxin Binder)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50))
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = addedKgStr,
+                        onValueChange = { addedKgStr = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("Added Weight (kg)") },
+                        placeholder = { Text("e.g. 0.5") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50))
+                    )
+
+                    OutlinedTextField(
+                        value = addedCostStr,
+                        onValueChange = { addedCostStr = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text(if (autoCost > 0) "Total Cost (KSh)  -  defaults to ${autoCost.toInt()}" else "Total Cost (KSh)  -  optional") },
+                        placeholder = { Text(if (autoCost > 0) autoCost.toInt().toString() else "0") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF4CAF50))
+                    )
+
+                    // Impact Preview Card
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF0D1B1E),
+                        border = BorderStroke(1.dp, Color(0xFF1B3A4B)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Updated Batch Preview:", color = Color(0xFF90E0EF), fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("New Remaining Stock:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                Text("${String.format(Locale.US, "%.1f", newRemainingKg)} kg (+${String.format(Locale.US, "%.2f", addedKg)}kg)", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("New Cost / kg:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                Text("KSh ${String.format(Locale.US, "%.1f", newCostPerKg)}/kg", color = Color(0xFFFFB74D), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Total Added Cost:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                Text("KSh ${effectiveCost.toInt()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (addedKg > 0 && effectiveName.isNotBlank()) {
+                            viewModel.addAdditiveToMixedBatch(
+                                batchId = batch.id,
+                                additiveName = effectiveName,
+                                addedKg = addedKg,
+                                addedCost = effectiveCost,
+                                deductIngredientId = if (additiveSource == "inventory" && deductFromInventory) selectedIngId else null,
+                                onComplete = {
+                                    Toast.makeText(context, "Added ${addedKg}kg of $effectiveName to ${batch.name}!", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                            showAddBatchAdditiveDialog = false
+                        } else {
+                            Toast.makeText(context, "Please enter valid weight and additive name", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20))
+                ) {
+                    Text("Add to Batch", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showAddBatchAdditiveDialog = false }) {
+                    Text("Cancel", color = Color(0xFF8B949E))
+                }
+            }
+        )
+    }
+
+    // ── BATCH INGREDIENT COMPOSITION & DETAILS DIALOG ──────────────────────────
+    if (showBatchDetailsDialog && selectedBatchForDetails != null) {
+        val batch = selectedBatchForDetails!!
+        val parsedIngredients = remember(batch) { parseBatchIngredients(batch) }
+        val skippedIngredients = remember(batch) { parseSkippedIngredients(batch) }
+        val sdfLong = remember { SimpleDateFormat("d MMMM yyyy", Locale.getDefault()) }
+
+        AlertDialog(
+            onDismissRequest = { showBatchDetailsDialog = false },
+            containerColor = Color(0xFF161B22),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF1B3A1B)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Layers, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
+                    }
+                    Column {
+                        Text(batch.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(
+                            "Recipe: ${batch.formula_name} • Mixed ${sdfLong.format(Date(batch.created_date))}",
+                            color = Color(0xFF8B949E),
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Summary Stats Card
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFF0D1B1E),
+                        border = BorderStroke(1.dp, Color(0xFF1B3A4B)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text("Initial Mix", color = Color(0xFF8B949E), fontSize = 10.5.sp)
+                                    Text("${String.format(Locale.US, "%.1f", batch.total_kg)} kg", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                }
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("Remaining", color = Color(0xFF8B949E), fontSize = 10.5.sp)
+                                    Text("${String.format(Locale.US, "%.1f", batch.remaining_kg)} kg", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text("Cost / kg", color = Color(0xFF8B949E), fontSize = 10.5.sp)
+                                    Text("KSh ${String.format(Locale.US, "%.1f", batch.cost_per_kg)}", color = Color(0xFFFFB74D), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                }
+                            }
+
+                            val pctRemain = if (batch.total_kg > 0) (batch.remaining_kg / batch.total_kg).toFloat().coerceIn(0f, 1f) else 0f
+                            LinearProgressIndicator(
+                                progress = { pctRemain },
+                                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
+                                color = Color(0xFF4CAF50),
+                                trackColor = Color(0xFF21262D)
+                            )
+
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Batch Total Cost: KSh ${batch.total_cost.toInt()}", color = Color(0xFFC9D1D9), fontSize = 11.sp)
+                                Text(
+                                    if (batch.is_complete_formula) "✓ Complete formula" else "⚠️ Partial formula",
+                                    color = if (batch.is_complete_formula) Color(0xFF81C784) else Color(0xFFFFB74D),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+
+                    // Ingredients Breakdown List
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Ingredients in this Batch (${parsedIngredients.size})",
+                            color = Color(0xFF4CAF50),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                        if (parsedIngredients.isNotEmpty()) {
+                            Text(
+                                "Total: ${String.format(Locale.US, "%.1f", parsedIngredients.sumOf { it.kg })} kg",
+                                color = Color(0xFF8B949E),
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+
+                    if (parsedIngredients.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            parsedIngredients.forEach { ingItem ->
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFF21262D),
+                                    border = BorderStroke(1.dp, if (ingItem.name.contains("Additive", ignoreCase = true)) Color(0xFF1B3A4B) else Color(0xFF30363D)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Text(
+                                                    ingItem.name,
+                                                    color = if (ingItem.name.contains("Additive", ignoreCase = true)) Color(0xFF90E0EF) else Color.White,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 12.5.sp
+                                                )
+                                                if (ingItem.name.contains("Additive", ignoreCase = true)) {
+                                                    Surface(shape = RoundedCornerShape(3.dp), color = Color(0xFF1B3A4B)) {
+                                                        Text("Additive", color = Color(0xFF90E0EF), fontSize = 8.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
+                                                    }
+                                                }
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Text("${String.format(Locale.US, "%.1f", ingItem.kg)} kg", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 12.5.sp)
+                                                Text("(${String.format(Locale.US, "%.1f", ingItem.percentage)}%)", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                            }
+                                        }
+
+                                        // Progress bar for percentage of mix
+                                        LinearProgressIndicator(
+                                            progress = { (ingItem.percentage / 100.0).toFloat().coerceIn(0f, 1f) },
+                                            modifier = Modifier.fillMaxWidth().height(2.5.dp).clip(RoundedCornerShape(1.dp)),
+                                            color = if (ingItem.name.contains("Additive", ignoreCase = true)) Color(0xFF00B4D8) else Color(0xFF2E7D32),
+                                            trackColor = Color(0xFF161B22)
+                                        )
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                "KSh ${ingItem.costPerKg.toInt()}/kg • Subtotal KSh ${ingItem.totalCost.toInt()}",
+                                                color = Color(0xFF8B949E),
+                                                fontSize = 10.5.sp
+                                            )
+                                            Text(
+                                                "~${String.format(Locale.US, "%.1f", ingItem.remainingKg)} kg remaining",
+                                                color = Color(0xFF81C784),
+                                                fontSize = 10.5.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF21262D),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.Info, null, tint = Color(0xFF90E0EF), modifier = Modifier.size(16.dp))
+                                    Text("Pre-Mixed / Commercial Batch", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                }
+                                Text(
+                                    "This batch was registered as a pre-mixed commercial ration (${batch.total_kg} kg @ KSh ${batch.cost_per_kg}/kg). Detailed individual raw grain proportions are recorded when mixing from the Feed Formulator.",
+                                    color = Color(0xFF8B949E),
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                    }
+
+                    // Skipped Ingredients
+                    if (skippedIngredients.isNotEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF3E2723),
+                            border = BorderStroke(1.dp, Color(0xFFD84315)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text("Omitted From Recipe:", color = Color(0xFFFFB74D), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                Text(skippedIngredients.joinToString(", "), color = Color(0xFFFFCC80), fontSize = 11.sp)
+                            }
+                        }
+                    }
+
+                    // Notes / Additives Log
+                    if (!batch.notes.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF131D24),
+                            border = BorderStroke(1.dp, Color(0xFF1B3A4B)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.History, null, tint = Color(0xFF90E0EF), modifier = Modifier.size(14.dp))
+                                    Text("Additives & Mix Notes", color = Color(0xFF90E0EF), fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+                                }
+                                Text(batch.notes ?: "", color = Color(0xFFC9D1D9), fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val targetBatch = batch
+                        showBatchDetailsDialog = false
+                        selectedBatchForAdditive = targetBatch
+                        showAddBatchAdditiveDialog = true
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3A4B)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.Science, null, tint = Color(0xFF90E0EF), modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("+ Add Additive", color = Color(0xFF90E0EF), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showBatchDetailsDialog = false },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Close", color = Color(0xFF8B949E))
+                }
             }
         )
     }
@@ -2577,7 +3266,7 @@ if (showAddInventoryDialog) {
                                         Text("KSh ${String.format("%.1f", chosenBatch.cost_per_kg)}/kg x ${String.format("%.1f", totalFeedKg)} kg = KSh ${String.format("%.0f", chosenBatch.cost_per_kg * totalFeedKg)}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                                         Text("${String.format("%.1f", chosenBatch.remaining_kg)} kg remaining in batch", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                                         if (!chosenBatch.is_complete_formula) {
-                                            Text("Incomplete mix — some ingredients were skipped", color = MaterialTheme.colorScheme.error, fontSize = 11.sp)
+                                            Text("Incomplete mix  -  some ingredients were skipped", color = MaterialTheme.colorScheme.error, fontSize = 11.sp)
                                         }
                                     }
                                 }

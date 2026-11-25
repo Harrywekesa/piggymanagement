@@ -167,7 +167,7 @@ class PHMSRepository(val db: AppDatabase) {
 
         val name = batchLabel ?: run {
             val sdf = java.text.SimpleDateFormat("dd MMM", java.util.Locale.getDefault())
-            "${formulaName} Mix — ${actualKg.toInt()} kg (${sdf.format(java.util.Date(now))})"
+            "${formulaName} Mix  -  ${actualKg.toInt()} kg (${sdf.format(java.util.Date(now))})"
         }
 
         val batch = MixedBatchEntity(
@@ -234,6 +234,121 @@ class PHMSRepository(val db: AppDatabase) {
 
     suspend fun deleteMixedBatch(batchId: Long) = withContext(Dispatchers.IO) {
         mixedBatchDao.deleteMixedBatch(batchId)
+    }
+
+    suspend fun addAdditiveToMixedBatch(
+        batchId: Long,
+        additiveName: String,
+        addedKg: Double,
+        addedCost: Double,
+        deductIngredientId: Long? = null
+    ) = withContext(Dispatchers.IO) {
+        val batch = mixedBatchDao.getMixedBatchById(batchId) ?: return@withContext
+        val newTotalKg = batch.total_kg + addedKg
+        val newRemainingKg = batch.remaining_kg + addedKg
+        val newTotalCost = batch.total_cost + addedCost
+        val newCostPerKg = if (newTotalKg > 0.0) newTotalCost / newTotalKg else batch.cost_per_kg
+        val now = System.currentTimeMillis()
+
+        val qtyStr = if (addedKg % 1.0 == 0.0) "${addedKg.toInt()}kg" else String.format(java.util.Locale.US, "%.2fkg", addedKg)
+        val noteAddition = "Added $qtyStr $additiveName (+KSh ${addedCost.toInt()})"
+        val updatedNotes = if (batch.notes.isNullOrBlank()) noteAddition else "${batch.notes} • $noteAddition"
+
+        // Update ingredients_used_json to include the additive
+        val costPerKg = if (addedKg > 0.0) addedCost / addedKg else 0.0
+        val escapedName = additiveName.replace("\"", "\\\"")
+        val itemJson = "{\"name\":\"$escapedName (Additive)\",\"kg\":$addedKg,\"cost_per_kg\":$costPerKg}"
+        val curJson = batch.ingredients_used_json.trim()
+        val updatedIngredientsJson = if (curJson.isBlank() || curJson == "[]") {
+            "[$itemJson]"
+        } else if (curJson.endsWith("]")) {
+            curJson.substring(0, curJson.length - 1) + ",$itemJson]"
+        } else {
+            "[$itemJson]"
+        }
+
+        val updatedBatch = batch.copy(
+            total_kg = newTotalKg,
+            remaining_kg = newRemainingKg,
+            total_cost = newTotalCost,
+            cost_per_kg = newCostPerKg,
+            ingredients_used_json = updatedIngredientsJson,
+            notes = updatedNotes
+        )
+        mixedBatchDao.updateMixedBatch(updatedBatch)
+
+        // Deduct inventory if selected
+        if (deductIngredientId != null && deductIngredientId > 0L) {
+            val ing = feedDao.getIngredientById(deductIngredientId)
+            if (ing != null) {
+                val newStock = (ing.stock_kg - addedKg).coerceAtLeast(0.0)
+                feedDao.updateIngredient(ing.copy(stock_kg = newStock))
+            }
+        }
+
+        // Register expense and purchase if cost was incurred
+        if (addedCost > 0.0) {
+            feedDao.insertPurchase(
+                FeedPurchaseEntity(
+                    ingredient_id = deductIngredientId ?: 0L,
+                    date = now,
+                    quantity_kg = addedKg,
+                    total_cost = addedCost
+                )
+            )
+            expenseDao.insertExpense(
+                ExpenseEntity(
+                    category = "Feed",
+                    amount = addedCost,
+                    date = now,
+                    target_scope = "Herd",
+                    payee = "Additive Supplier",
+                    notes = "Additive: $additiveName ($qtyStr) added to ${batch.name}"
+                )
+            )
+        }
+    }
+
+    suspend fun addAdditiveToIngredient(
+        ingredientId: Long,
+        additiveName: String,
+        addedKg: Double,
+        addedCost: Double
+    ) = withContext(Dispatchers.IO) {
+        val ing = feedDao.getIngredientById(ingredientId) ?: return@withContext
+        val newStock = ing.stock_kg + addedKg
+        val currentTotalVal = ing.stock_kg * ing.cost_per_kg
+        val newTotalVal = currentTotalVal + addedCost
+        val newCostPerKg = if (newStock > 0.0) newTotalVal / newStock else ing.cost_per_kg
+        val now = System.currentTimeMillis()
+
+        feedDao.updateIngredient(
+            ing.copy(
+                stock_kg = newStock,
+                cost_per_kg = newCostPerKg
+            )
+        )
+
+        if (addedCost > 0.0) {
+            feedDao.insertPurchase(
+                FeedPurchaseEntity(
+                    ingredient_id = ingredientId,
+                    date = now,
+                    quantity_kg = addedKg,
+                    total_cost = addedCost
+                )
+            )
+            expenseDao.insertExpense(
+                ExpenseEntity(
+                    category = "Feed",
+                    amount = addedCost,
+                    date = now,
+                    target_scope = "Herd",
+                    payee = "Feed Additive",
+                    notes = "Additive: $additiveName added to ${ing.name} (+${addedKg}kg)"
+                )
+            )
+        }
     }
 
     suspend fun getOffspringForSow(sowId: Long) = pigDao.getOffspringForSowSync(sowId)
@@ -385,7 +500,7 @@ class PHMSRepository(val db: AppDatabase) {
                     type = type.uppercase(),
                     priority = "High",
                     related_pig_id = if (targetScope == "Single Pig") targetPigId else null,
-                    message = "🔁 $type due ${dateFmt.format(java.util.Date(dueDate))}: $product ($dosage) for $scopeLabel — due in 7 days",
+                    message = "🔁 $type due ${dateFmt.format(java.util.Date(dueDate))}: $product ($dosage) for $scopeLabel  -  due in 7 days",
                     created_date = alertDate,   // surfaces 7 days before due date
                     status = "Active"
                 )
@@ -515,14 +630,14 @@ class PHMSRepository(val db: AppDatabase) {
 
     // Community Buyers Directory
     fun getCommunityBuyerPresets(): List<BuyerEntity> = listOf(
-        BuyerEntity(name = "Kitale Quality Butchery", phone = "+254712345678", type = "Butchery", county = "Trans Nzoia", sub_county = "Kitale", notes = "Regular buyer of 90kg+ finishers. Mon–Sat.", is_community = true),
+        BuyerEntity(name = "Kitale Quality Butchery", phone = "+254712345678", type = "Butchery", county = "Trans Nzoia", sub_county = "Kitale", notes = "Regular buyer of 90kg+ finishers. Mon-Sat.", is_community = true),
         BuyerEntity(name = "Western Meat Wholesalers", phone = "+254722987654", type = "Wholesaler", county = "Trans Nzoia", sub_county = "Kitale", notes = "Prefers Duroc crossbreds. Bulk orders only.", is_community = true),
         BuyerEntity(name = "Eldoret Pork Centre", phone = "+254733111222", type = "Butchery", county = "Uasin Gishu", sub_county = "Eldoret East", notes = "Accepts live & dressed pigs. Pays cash.", is_community = true),
-        BuyerEntity(name = "Kakamega Pig Farmers Coop", phone = "+254711333444", type = "Cooperative", county = "Kakamega", sub_county = "Kakamega Central", notes = "Group buying — better prices for 5+ pigs.", is_community = true),
+        BuyerEntity(name = "Kakamega Pig Farmers Coop", phone = "+254711333444", type = "Cooperative", county = "Kakamega", sub_county = "Kakamega Central", notes = "Group buying  -  better prices for 5+ pigs.", is_community = true),
         BuyerEntity(name = "Kisumu Pork Traders Ltd", phone = "+254700456789", type = "Wholesaler", county = "Kisumu", sub_county = "Kisumu Central", notes = "Lakeside market. Weekly collection Fridays.", is_community = true),
         BuyerEntity(name = "Bungoma Meat Packers", phone = "+254721567890", type = "Processor", county = "Bungoma", sub_county = "Bungoma", notes = "Processes carcasses. Needs 80kg+ weight.", is_community = true),
-        BuyerEntity(name = "Trans Nzoia Pork Dealers", phone = "+254700678901", type = "Wholesaler", county = "Trans Nzoia", sub_county = "Kiminini", notes = "Serves Kitale–Webuye route. Daily purchases.", is_community = true),
-        BuyerEntity(name = "Nandi Butchery Supplies", phone = "+254722789012", type = "Butchery", county = "Nandi", sub_county = "Nandi Hills", notes = "Retail butchery. Buys 3–5 pigs per week.", is_community = true),
+        BuyerEntity(name = "Trans Nzoia Pork Dealers", phone = "+254700678901", type = "Wholesaler", county = "Trans Nzoia", sub_county = "Kiminini", notes = "Serves Kitale-Webuye route. Daily purchases.", is_community = true),
+        BuyerEntity(name = "Nandi Butchery Supplies", phone = "+254722789012", type = "Butchery", county = "Nandi", sub_county = "Nandi Hills", notes = "Retail butchery. Buys 3-5 pigs per week.", is_community = true),
         BuyerEntity(name = "Siaya Hog Market", phone = "+254733890123", type = "Wholesaler", county = "Siaya", sub_county = "Ugenya", notes = "Saturday market only. Large volumes.", is_community = true),
         BuyerEntity(name = "Webuye Pork House", phone = "+254711901234", type = "Butchery", county = "Bungoma", sub_county = "Webuye West", notes = "Family-run. Good relationship price possible.", is_community = true),
         BuyerEntity(name = "Kitale Hotel & Pork Supplies", phone = "+254700123456", type = "Hotel Buyer", county = "Trans Nzoia", sub_county = "Kitale", notes = "Supplies restaurants. Prefers pork cuts.", is_community = true),
@@ -534,7 +649,7 @@ class PHMSRepository(val db: AppDatabase) {
         BuyerEntity(name = "Webuye Open Market Buyers", phone = "+254722789013", type = "Wholesaler", county = "Bungoma", sub_county = "Webuye East", notes = "Thursday market. Competitive cash price.", is_community = true),
         BuyerEntity(name = "Vihiga Pork Supply Chain", phone = "+254700345678", type = "Wholesaler", county = "Vihiga", sub_county = "Emuhaya", notes = "Connects farms to Kisumu hotels.", is_community = true),
         BuyerEntity(name = "Uasin Gishu Hog Market", phone = "+254733456789", type = "Wholesale Market", county = "Uasin Gishu", sub_county = "Moiben", notes = "Large livestock auction. Monthly events.", is_community = true),
-        BuyerEntity(name = "Nandi Hills Butchery Network", phone = "+254711567890", type = "Butchery", county = "Nandi", sub_county = "Nandi Hills", notes = "Network of 4 butcheries — consolidated orders.", is_community = true)
+        BuyerEntity(name = "Nandi Hills Butchery Network", phone = "+254711567890", type = "Butchery", county = "Nandi", sub_county = "Nandi Hills", notes = "Network of 4 butcheries  -  consolidated orders.", is_community = true)
     )
 
     suspend fun seedCommunityBuyers() {

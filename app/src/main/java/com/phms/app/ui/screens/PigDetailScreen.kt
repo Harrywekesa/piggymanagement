@@ -73,6 +73,20 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
         else -> "${String.format("%.1f", ageWeeks / 4.33)}mo old"
     }
     val latestWeight = weights.firstOrNull()?.weight_kg
+    val pigAdg = remember(weights, ageWeeks) {
+        if (weights.size >= 2) {
+            val latest = weights.first().weight_kg
+            val earliest = weights.last().weight_kg
+            val days = maxOf(1L, TimeUnit.MILLISECONDS.toDays(weights.first().date - weights.last().date))
+            (latest - earliest).coerceAtLeast(0.0) / days
+        } else if (weights.isNotEmpty()) {
+            val days = maxOf(1L, ageWeeks * 7)
+            (weights.first().weight_kg - 1.5).coerceAtLeast(0.0) / days
+        } else 0.45
+    }
+    val pigFcr = remember(pigAdg, latestWeight) {
+        if (pigAdg > 0) (pigAdg * 2.7) / pigAdg else 2.8
+    }
     val currentStage = stages.find { it.id == p.current_stage_id }
     val currentPen = pens.find { it.id == p.pen_id }
     val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
@@ -173,20 +187,6 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
 
             // ---- QUICK STATS (Weight, ADG, FCR, Pen) ----
             item {
-                val pigAdg = remember(weights, ageWeeks) {
-                    if (weights.size >= 2) {
-                        val latest = weights.first().weight_kg
-                        val earliest = weights.last().weight_kg
-                        val days = maxOf(1L, TimeUnit.MILLISECONDS.toDays(weights.first().date - weights.last().date))
-                        (latest - earliest).coerceAtLeast(0.0) / days
-                    } else if (weights.isNotEmpty()) {
-                        val days = maxOf(1L, ageWeeks * 7)
-                        (weights.first().weight_kg - 1.5).coerceAtLeast(0.0) / days
-                    } else 0.45
-                }
-                val pigFcr = remember(pigAdg, latestWeight) {
-                    if (pigAdg > 0) (pigAdg * 2.7) / pigAdg else 2.8
-                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -235,6 +235,24 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
             // ---- TAB CONTENT ----
             when (selectedTab) {
         0 -> { // Overview
+            if (isWithdrawalActive) {
+                item {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFF3E1A1A),
+                        border = BorderStroke(1.dp, Color(0xFFE53935)),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Default.Warning, null, tint = Color(0xFFFF5252), modifier = Modifier.size(20.dp))
+                            Column {
+                                Text("Active Medication Withdrawal", color = Color(0xFFFF8A80), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("This pig is undergoing medication withdrawal. Do NOT slaughter or sell for meat until cleared.", color = Color(0xFFFFCDD2), fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+            }
             item {
                 OverviewTab(
                     pig = p,
@@ -248,6 +266,24 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
             }
         }
                 1 -> { // Health
+                    if (isWithdrawalActive) {
+                        item {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color(0xFF3E1A1A),
+                                border = BorderStroke(1.dp, Color(0xFFE53935)),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)
+                            ) {
+                                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Icon(Icons.Default.Warning, null, tint = Color(0xFFFF5252), modifier = Modifier.size(20.dp))
+                                    Column {
+                                        Text("Active Medication Withdrawal", color = Color(0xFFFF8A80), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Text("Strict withdrawal period in effect. Meat is NOT certified safe for slaughter.", color = Color(0xFFFFCDD2), fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
                     if (healthEvents.isEmpty()) {
                         item { EmptyTab("No health events recorded") }
                     } else {
@@ -354,6 +390,44 @@ fun PigDetailScreen(pigId: Long, viewModel: MainViewModel, navController: NavCon
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text("${if (vsTarget >= 0) "+" else ""}${String.format("%.1f", vsTarget)} kg", color = if (vsTarget >= 0) Color(0xFF4CAF50) else Color(0xFFFFB74D), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                             Text("vs Target", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                                        }
+                                    }
+
+                                    val targetWeight = 90.0
+                                    val curWeight = latestWeight ?: 85.0
+                                    val remKg = (targetWeight - curWeight).coerceAtLeast(0.0)
+                                    val daysToMarket = if (pigAdg > 0.05) (remKg / pigAdg).toInt() else 0
+                                    val estMarketDate = System.currentTimeMillis() + daysToMarket * 86400000L
+                                    val estFeedRemainingKg = remKg * pigFcr
+                                    val estFinishingCost = estFeedRemainingKg * 60.0
+
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = Color(0xFF131D24),
+                                        border = BorderStroke(1.dp, Color(0xFF1B3A4B)),
+                                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+                                    ) {
+                                        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Icon(Icons.Default.TrendingUp, null, tint = Color(0xFF90E0EF), modifier = Modifier.size(14.dp))
+                                                Text("Slaughter Target & Finishing Predictor", color = Color(0xFF90E0EF), fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+                                            }
+                                            if (curWeight >= targetWeight) {
+                                                Text("Market Ready! Weight is at or above 90 kg target.", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                            } else {
+                                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                    Text("Target Slaughter Weight:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                                    Text("90.0 kg (${String.format(java.util.Locale.US, "%.1f", remKg)} kg to go)", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
+                                                }
+                                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                    Text("Projected Market Date:", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                                    Text("~${daysToMarket} days (${dateFormat.format(java.util.Date(estMarketDate))})", color = Color(0xFFFFB74D), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                                }
+                                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                    Text("Est. Feed Needed (FCR ${String.format(java.util.Locale.US, "%.2f", pigFcr)}):", color = Color(0xFF8B949E), fontSize = 11.sp)
+                                                    Text("${String.format(java.util.Locale.US, "%.1f", estFeedRemainingKg)} kg (~KSh ${estFinishingCost.toInt()})", color = Color(0xFF81C784), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                                }
+                                            }
                                         }
                                     }
                                 }

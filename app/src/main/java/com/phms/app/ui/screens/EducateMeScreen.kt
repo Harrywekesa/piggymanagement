@@ -144,9 +144,9 @@ fun IngredientExplainerTab() {
             name = "Whole Ground Maize",
             emoji = "🌽",
             role = "Primary Energy Source",
-            typicalPct = "60–71% of diet",
+            typicalPct = "60-71% of diet",
             whyItMatters = "High starch content drives growth energy. The backbone of every pig ration. Yellow maize also supplies beta-carotene. Grind fine for young pigs, coarse for finishers.",
-            tip = "Never exceed 75% — too much maize dilutes protein and can cause fatty deposits in finishers.",
+            tip = "Never exceed 75%  -  too much maize dilutes protein and can cause fatty deposits in finishers.",
             accentColor = Color(0xFFFFB74D)
         ),
         IngredientInfo(
@@ -155,61 +155,61 @@ fun IngredientExplainerTab() {
             role = "Secondary Energy + Fibre",
             typicalPct = "10% of diet",
             whyItMatters = "Provides fibre for gut health alongside energy. Slightly lower energy than maize but improves stool consistency. Good for sows and growers.",
-            tip = "Keep at 10% — higher levels can cause pasty stools due to water-binding fibre.",
+            tip = "Keep at 10%  -  higher levels can cause pasty stools due to water-binding fibre.",
             accentColor = Color(0xFFD4A373)
         ),
         IngredientInfo(
             name = "Soybean Meal",
             emoji = "🫘",
             role = "Primary Plant Protein",
-            typicalPct = "8–18% of diet",
-            whyItMatters = "Contains 44–48% crude protein with an excellent amino acid profile (lysine, methionine). Heat-processed to destroy anti-nutritional factors (trypsin inhibitors) found in raw soy. Highest value plant protein for pigs.",
-            tip = "Always use meal (processed), never raw whole beans — raw soy reduces feed digestibility by up to 30%.",
+            typicalPct = "8-18% of diet",
+            whyItMatters = "Contains 44-48% crude protein with an excellent amino acid profile (lysine, methionine). Heat-processed to destroy anti-nutritional factors (trypsin inhibitors) found in raw soy. Highest value plant protein for pigs.",
+            tip = "Always use meal (processed), never raw whole beans  -  raw soy reduces feed digestibility by up to 30%.",
             accentColor = Color(0xFF8BC34A)
         ),
         IngredientInfo(
             name = "Sunflower Cake",
             emoji = "🌻",
             role = "Secondary Protein + Fat",
-            typicalPct = "5–7% of diet",
-            whyItMatters = "By-product of oil extraction. Contains ~28–32% crude protein and residual oil for energy. Reduces diet cost compared to soybean meal. Well-suited for grower and finisher rations.",
-            tip = "Use cake (solvent-extracted), not raw seeds or reducing oils — raw sunflower has excess fat that can cause soft carcass fat in finishers.",
+            typicalPct = "5-7% of diet",
+            whyItMatters = "By-product of oil extraction. Contains ~28-32% crude protein and residual oil for energy. Reduces diet cost compared to soybean meal. Well-suited for grower and finisher rations.",
+            tip = "Use cake (solvent-extracted), not raw seeds or reducing oils  -  raw sunflower has excess fat that can cause soft carcass fat in finishers.",
             accentColor = Color(0xFFFFCC02)
         ),
         IngredientInfo(
             name = "Fishmeal / Omena",
             emoji = "🐟",
             role = "Best Animal Protein",
-            typicalPct = "1–3% of diet",
-            whyItMatters = "60–65% crude protein. Richest natural source of lysine, threonine, and B12. Improves piglet immunity and sow milk quality. Lake Victoria omena is the most available locally.",
-            tip = "Reduce to 1% in finishers — high inclusion causes fishy taint in pork. Keep fresh; rancid fishmeal is toxic.",
+            typicalPct = "1-3% of diet",
+            whyItMatters = "60-65% crude protein. Richest natural source of lysine, threonine, and B12. Improves piglet immunity and sow milk quality. Lake Victoria omena is the most available locally.",
+            tip = "Reduce to 1% in finishers  -  high inclusion causes fishy taint in pork. Keep fresh; rancid fishmeal is toxic.",
             accentColor = Color(0xFF4DD0E1)
         ),
         IngredientInfo(
             name = "Vegetable Oil",
             emoji = "🛢️",
             role = "Energy Density Booster",
-            typicalPct = "0.2–1.5% of diet",
+            typicalPct = "0.2-1.5% of diet",
             whyItMatters = "Fat has 2.25× the energy of carbohydrates. Improves palatability, reduces dustiness of feed, and helps fat-soluble vitamin absorption. Critical in starter rations for fast energy.",
-            tip = "Keep below 5% total fat in diet — excess causes greasy stools and poor feed conversion.",
+            tip = "Keep below 5% total fat in diet  -  excess causes greasy stools and poor feed conversion.",
             accentColor = Color(0xFFFFD54F)
         ),
         IngredientInfo(
             name = "Feed Lime (Limestone)",
             emoji = "🪨",
             role = "Calcium Source",
-            typicalPct = "0.3–0.8% of diet",
+            typicalPct = "0.3-0.8% of diet",
             whyItMatters = "Provides calcium for bone mineralisation and sow milk production. Essential for piglet skeletal development. Food-grade limestone (38% Ca) is the cheapest calcium source.",
-            tip = "Do not exceed 1% — excess calcium blocks phosphorus and zinc absorption, causing lameness.",
+            tip = "Do not exceed 1%  -  excess calcium blocks phosphorus and zinc absorption, causing lameness.",
             accentColor = Color(0xFFB0BEC5)
         ),
         IngredientInfo(
             name = "DCP / Bone Meal",
             emoji = "🦴",
             role = "Phosphorus + Calcium Balance",
-            typicalPct = "0.2–0.7% of diet",
+            typicalPct = "0.2-0.7% of diet",
             whyItMatters = "Dicalcium Phosphate (DCP) provides both available phosphorus and calcium in correct ratio. Phosphorus is critical for energy metabolism (ATP) and bone health. Pigs cannot absorb plant phytate-phosphorus without supplements.",
-            tip = "Use alongside lime — DCP alone skews Ca:P ratio. Target 1.2:1 (Ca:P) for growers.",
+            tip = "Use alongside lime  -  DCP alone skews Ca:P ratio. Target 1.2:1 (Ca:P) for growers.",
             accentColor = Color(0xFF90A4AE)
         ),
         IngredientInfo(
@@ -218,16 +218,16 @@ fun IngredientExplainerTab() {
             role = "Vitamins & Trace Minerals",
             typicalPct = "2% of diet (fixed)",
             whyItMatters = "Delivers all fat-soluble vitamins (A, D3, E, K), B-complex (B1, B2, B6, B12, folic acid, pantothenic acid), and essential trace minerals (Zn, Mn, Fe, Cu, I, Se). Prevents deficiency diseases, improves growth rate.",
-            tip = "Never reduce below 2% — trace mineral deficiencies show up 4–6 weeks later as poor growth, skin issues, or reproductive failure.",
+            tip = "Never reduce below 2%  -  trace mineral deficiencies show up 4-6 weeks later as poor growth, skin issues, or reproductive failure.",
             accentColor = Color(0xFFCE93D8)
         ),
         IngredientInfo(
             name = "Stock / Animal Salt",
             emoji = "🧂",
             role = "Electrolyte Balance",
-            typicalPct = "0.1–0.5% of diet",
+            typicalPct = "0.1-0.5% of diet",
             whyItMatters = "Provides sodium and chloride for nerve function, acid-base balance, and water intake regulation. Improves feed palatability. Iodised salt also covers iodine needs if no premix iodine.",
-            tip = "Never exceed 0.5% — salt toxicity causes brain oedema (salt poisoning) especially when water access is restricted.",
+            tip = "Never exceed 0.5%  -  salt toxicity causes brain oedema (salt poisoning) especially when water access is restricted.",
             accentColor = Color(0xFF80DEEA)
         )
     )
@@ -276,7 +276,7 @@ fun IngredientExplainerTab() {
                 border = BorderStroke(1.dp, if (isExpanded) ing.accentColor.copy(alpha = 0.5f) else Color(0xFF30363D))
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    // Header row — always visible
+                    // Header row  -  always visible
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -362,22 +362,22 @@ fun FeedCombinationsTab() {
         FeedStage(
             stage = "Starter / Weaner",
             emoji = "🐷",
-            ageWeight = "4–10 weeks · 7–25 kg",
+            ageWeight = "4-10 weeks · 7-25 kg",
             targetCP = ">18% Crude Protein",
-            energyMj = "13–14 MJ/kg ME",
+            energyMj = "13-14 MJ/kg ME",
             keyIngredients = listOf(
-                "Maize 600 kg" to "60% — primary energy base",
-                "Soybean Meal 180 kg" to "18% — high CP for rapid growth",
-                "Wheat 100 kg" to "10% — gut fibre + energy",
-                "Sunflower Cake 50 kg" to "5% — complementary protein",
-                "Fishmeal 30 kg" to "3% — best lysine source for young pigs",
-                "Oil 15 kg" to "1.5% — energy density for small stomachs",
+                "Maize 600 kg" to "60%  -  primary energy base",
+                "Soybean Meal 180 kg" to "18%  -  high CP for rapid growth",
+                "Wheat 100 kg" to "10%  -  gut fibre + energy",
+                "Sunflower Cake 50 kg" to "5%  -  complementary protein",
+                "Fishmeal 30 kg" to "3%  -  best lysine source for young pigs",
+                "Oil 15 kg" to "1.5%  -  energy density for small stomachs",
                 "Premix 2% + Lime + DCP + Salt" to "micronutrient foundation"
             ),
             substitutions = listOf(
                 "Fishmeal -> blood meal at equal rate if omena is expensive",
                 "Soybean Meal -> field peas (max 15%) if soy unavailable",
-                "Wheat -> sorghum (max 10%) — dehulled preferred"
+                "Wheat -> sorghum (max 10%)  -  dehulled preferred"
             ),
             accentColor = Color(0xFF81C784),
             bgColor = Color(0xFF122316)
@@ -385,16 +385,16 @@ fun FeedCombinationsTab() {
         FeedStage(
             stage = "Grower",
             emoji = "🐖",
-            ageWeight = "10–18 weeks · 25–60 kg",
-            targetCP = "16–18% Crude Protein",
-            energyMj = "12.5–13.5 MJ/kg ME",
+            ageWeight = "10-18 weeks · 25-60 kg",
+            targetCP = "16-18% Crude Protein",
+            energyMj = "12.5-13.5 MJ/kg ME",
             keyIngredients = listOf(
-                "Maize 670 kg" to "67% — increase energy for muscle",
-                "Wheat 100 kg" to "10% — keep constant",
-                "Soybean Meal 120 kg" to "12% — slightly reduced from starter",
-                "Sunflower Cake 70 kg" to "7% — higher than starter for cost saving",
-                "Fishmeal 10 kg" to "1% — reduce to cut cost",
-                "Oil 2 kg" to "0.2% — minimal in grower",
+                "Maize 670 kg" to "67%  -  increase energy for muscle",
+                "Wheat 100 kg" to "10%  -  keep constant",
+                "Soybean Meal 120 kg" to "12%  -  slightly reduced from starter",
+                "Sunflower Cake 70 kg" to "7%  -  higher than starter for cost saving",
+                "Fishmeal 10 kg" to "1%  -  reduce to cut cost",
+                "Oil 2 kg" to "0.2%  -  minimal in grower",
                 "Premix 2% + Lime + DCP + Salt" to "unchanged from starter"
             ),
             substitutions = listOf(
@@ -408,20 +408,20 @@ fun FeedCombinationsTab() {
         FeedStage(
             stage = "Finisher",
             emoji = "🏆",
-            ageWeight = "18–24 weeks · 60–100 kg",
-            targetCP = "14–16% Crude Protein",
-            energyMj = "12–13 MJ/kg ME",
+            ageWeight = "18-24 weeks · 60-100 kg",
+            targetCP = "14-16% Crude Protein",
+            energyMj = "12-13 MJ/kg ME",
             keyIngredients = listOf(
-                "Maize 710 kg" to "71% — maximise energy for weight gain",
-                "Wheat 100 kg" to "10% — constant throughout",
-                "Soybean Meal 80 kg" to "8% — further reduced",
-                "Sunflower Cake 70 kg" to "7% — holds protein level cheaply",
-                "Fishmeal 10 kg" to "1% — keep low to avoid taint",
-                "Oil 2 kg" to "0.2% — minimal",
+                "Maize 710 kg" to "71%  -  maximise energy for weight gain",
+                "Wheat 100 kg" to "10%  -  constant throughout",
+                "Soybean Meal 80 kg" to "8%  -  further reduced",
+                "Sunflower Cake 70 kg" to "7%  -  holds protein level cheaply",
+                "Fishmeal 10 kg" to "1%  -  keep low to avoid taint",
+                "Oil 2 kg" to "0.2%  -  minimal",
                 "Premix 2% + Lime + DCP + Salt" to "unchanged"
             ),
             substitutions = listOf(
-                "Fishmeal must stay <=1% — prevents fishy pork flavour",
+                "Fishmeal must stay <=1%  -  prevents fishy pork flavour",
                 "Molasses -> up to 5% maize replacement, improves palatability",
                 "Palm kernel cake -> up to 10% if available (reduce sunflower cake equally)"
             ),
@@ -431,16 +431,16 @@ fun FeedCombinationsTab() {
         FeedStage(
             stage = "Lactating Sow",
             emoji = "🐷💕",
-            ageWeight = "Farrowing to weaning · 150–250 kg",
+            ageWeight = "Farrowing to weaning · 150-250 kg",
             targetCP = ">17% Crude Protein",
-            energyMj = "13–14 MJ/kg ME",
+            energyMj = "13-14 MJ/kg ME",
             keyIngredients = listOf(
-                "Maize 620 kg" to "62% — high energy for milk production",
-                "Soybean Meal 180 kg" to "18% — protein for milk synthesis",
-                "Wheat 100 kg" to "10% — gut health during stress",
-                "Fishmeal 30 kg" to "3% — extra lysine for piglet immunoglobulins",
-                "Feed Lime ↑ 12 kg" to "1.2% — extra calcium for milk (normal: 0.8%)",
-                "Oil 20 kg" to "2% — energy density without bulk"
+                "Maize 620 kg" to "62%  -  high energy for milk production",
+                "Soybean Meal 180 kg" to "18%  -  protein for milk synthesis",
+                "Wheat 100 kg" to "10%  -  gut health during stress",
+                "Fishmeal 30 kg" to "3%  -  extra lysine for piglet immunoglobulins",
+                "Feed Lime ↑ 12 kg" to "1.2%  -  extra calcium for milk (normal: 0.8%)",
+                "Oil 20 kg" to "2%  -  energy density without bulk"
             ),
             substitutions = listOf(
                 "Add alfalfa (lucerne) meal up to 5% for extra roughage during lactation",
@@ -573,11 +573,11 @@ fun FeedCombinationsTab() {
                         Text("Golden Rules for Feed Efficiency", color = Color(0xFFFFB74D), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                     listOf(
-                        "Target FCR of 2.5–3.0 kg feed per kg live weight gain",
-                        "Always provide clean water — pigs need 2–3 L water per 1 kg feed",
-                        "Weigh your batch size accurately — small errors in micro-ingredients (DCP, salt, premix) have large effects",
-                        "Store mixed feed ≤2 weeks — rancidity destroys fat-soluble vitamins",
-                        "Transition between ration stages gradually over 5–7 days to avoid digestive upset"
+                        "Target FCR of 2.5-3.0 kg feed per kg live weight gain",
+                        "Always provide clean water  -  pigs need 2-3 L water per 1 kg feed",
+                        "Weigh your batch size accurately  -  small errors in micro-ingredients (DCP, salt, premix) have large effects",
+                        "Store mixed feed ≤2 weeks  -  rancidity destroys fat-soluble vitamins",
+                        "Transition between ration stages gradually over 5-7 days to avoid digestive upset"
                     ).forEach { rule ->
                         Text("• $rule", color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, lineHeight = 15.sp)
                     }

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +41,7 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
     val pigs by viewModel.activePigs.collectAsState()
+    val stages by viewModel.stages.collectAsState()
     val allPigs by viewModel.allPigs.collectAsState()
     val healthEvents by viewModel.allHealthEvents.collectAsState()
     val alerts by viewModel.activeAlerts.collectAsState()
@@ -268,6 +270,159 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                                     Text("$marketReadyCount pig(s) ready for market (90kg+)", color = Color(0xFFFFD54F), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                 }
                                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFFFFB74D), modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── DAILY CHORE CHECKLIST ──────────────────────────────────────────
+        item {
+            var completedChoreIds by rememberSaveable { mutableStateOf(setOf<String>()) }
+            val nowTime = System.currentTimeMillis()
+            val withdrawalCount = healthEvents.count { it.withdrawal_days > 0 && nowTime < (it.date + it.withdrawal_days * 86400000L) }
+            val hasPiglets = pigs.any { p -> stages.find { it.id == p.current_stage_id }?.name?.contains("Piglet", ignoreCase = true) == true || p.current_stage_id == 1L }
+            val fedToday = todayFeedingStatus?.isLoggedToday == true
+            val lowStockCount = feedIngredients.count { it.stock_kg <= it.reorder_level }
+            val soonestFarrow = activePregnancies
+                .minByOrNull { it.expected_farrowing_date }
+                ?.let { preg ->
+                    val days = ((preg.expected_farrowing_date - System.currentTimeMillis()) / (1000 * 60 * 60 * 24)).coerceAtLeast(0L)
+                    days
+                }
+
+            val chores = remember(fedToday, lowStockCount, soonestFarrow, withdrawalCount, hasPiglets) {
+                val list = mutableListOf<FarmChoreItem>()
+                if (!fedToday) {
+                    list.add(FarmChoreItem("feed_daily", "Feed Herd Daily Ration", "Morning feeding not logged yet", "Nutrition", isUrgent = true, route = "feed"))
+                }
+                if (lowStockCount > 0) {
+                    list.add(FarmChoreItem("restock_feed", "Restock Feed Ingredients", "$lowStockCount ingredient(s) low or depleted", "Nutrition", isUrgent = lowStockCount > 1, route = "feed"))
+                }
+                if (soonestFarrow != null && soonestFarrow <= 7) {
+                    list.add(FarmChoreItem("prep_farrow", "Prepare Farrowing Pen", "Sow farrowing expected in $soonestFarrow days", "Breeding", isUrgent = soonestFarrow <= 3, route = "breeding"))
+                }
+                if (withdrawalCount > 0) {
+                    list.add(FarmChoreItem("check_withdrawal", "Withdrawal Safety Watch", "$withdrawalCount pig(s) under slaughter withdrawal", "Health", isUrgent = false, route = "health"))
+                }
+                if (hasPiglets) {
+                    list.add(FarmChoreItem("piglet_vitality", "Piglet & Creep Care", "Check creep heat & verify litter vigor", "Health", isUrgent = false, route = "pigs"))
+                }
+                list.add(FarmChoreItem("water_bedding", "Inspect Waterers & Pen Bedding", "Verify clean flow & refresh damp bedding", "Routine", isUrgent = false, route = null))
+                list
+            }
+
+            val completedCount = chores.count { it.id in completedChoreIds }
+            val progressFrac = if (chores.isNotEmpty()) (completedCount.toFloat() / chores.size.toFloat()).coerceIn(0f, 1f) else 1f
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, if (completedCount == chores.size && chores.isNotEmpty()) Color(0xFF2E7D32) else MaterialTheme.colorScheme.outline)
+            ) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.Checklist, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
+                            Text("Daily Farm Chores & Routine", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.5.sp)
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (completedCount == chores.size && chores.isNotEmpty()) Color(0xFF1B5E20) else Color(0xFF21262D)
+                        ) {
+                            Text(
+                                "$completedCount/${chores.size} Done",
+                                color = if (completedCount == chores.size && chores.isNotEmpty()) Color(0xFF81C784) else Color(0xFF90E0EF),
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    LinearProgressIndicator(
+                        progress = { progressFrac },
+                        modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
+                        color = Color(0xFF4CAF50),
+                        trackColor = Color(0xFF21262D)
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        chores.forEach { chore ->
+                            val isDone = chore.id in completedChoreIds
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isDone) Color(0xFF121915) else Color(0xFF161B22),
+                                border = BorderStroke(1.dp, if (isDone) Color(0xFF1E3A24) else Color(0xFF30363D)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            if (chore.route != null) navController.navigate(chore.route)
+                                        }
+                                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Checkbox(
+                                        checked = isDone,
+                                        onCheckedChange = { checked ->
+                                            completedChoreIds = if (checked) completedChoreIds + chore.id else completedChoreIds - chore.id
+                                        },
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = Color(0xFF4CAF50),
+                                            uncheckedColor = if (chore.isUrgent) Color(0xFFFF5252) else Color(0xFF6E7681)
+                                        ),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Column(Modifier.weight(1f)) {
+                                        Text(
+                                            chore.title,
+                                            color = if (isDone) Color(0xFF8B949E) else Color.White,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 12.5.sp,
+                                            style = if (isDone) androidx.compose.ui.text.TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough) else androidx.compose.ui.text.TextStyle()
+                                        )
+                                        Text(
+                                            chore.subtitle,
+                                            color = if (chore.isUrgent && !isDone) Color(0xFFFFB74D) else Color(0xFF6E7681),
+                                            fontSize = 10.5.sp
+                                        )
+                                    }
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = when (chore.category) {
+                                            "Nutrition" -> Color(0xFF2E2415)
+                                            "Breeding" -> Color(0xFF2E1A2E)
+                                            "Health" -> Color(0xFF1A263E)
+                                            else -> Color(0xFF1B2E1B)
+                                        }
+                                    ) {
+                                        Text(
+                                            chore.category,
+                                            color = when (chore.category) {
+                                                "Nutrition" -> Color(0xFFFFB74D)
+                                                "Breeding" -> Color(0xFFCE93D8)
+                                                "Health" -> Color(0xFF90CAF9)
+                                                else -> Color(0xFF81C784)
+                                            },
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+                                        )
+                                    }
+                                    if (chore.route != null) {
+                                        Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF6E7681), modifier = Modifier.size(14.dp))
+                                    }
+                                }
                             }
                         }
                     }
@@ -581,6 +736,15 @@ fun DashQuickAction(
         }
     }
 }
+
+data class FarmChoreItem(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val category: String,
+    val isUrgent: Boolean = false,
+    val route: String? = null
+)
 
 @Composable
 fun CompactPigRow(pig: PigEntity, onClick: () -> Unit) {

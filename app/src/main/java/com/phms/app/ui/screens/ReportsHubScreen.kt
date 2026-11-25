@@ -34,6 +34,8 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
     val report by viewModel.comprehensiveReport.collectAsState()
     val sales by viewModel.sales.collectAsState()
     val buyers by viewModel.buyers.collectAsState()
+    val farmSettings by viewModel.farmSettings.collectAsState()
+    val farmName = farmSettings?.farmName?.ifBlank { "Harry's Pig Farm" } ?: "Harry's Pig Farm"
     val context = LocalContext.current
 
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -119,15 +121,63 @@ fun ReportsHubScreen(viewModel: MainViewModel) {
                 }
             )
 
-            // Date Range Display Badge
-            Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.surface) {
-                Text(
-                    text = "Active Period: ${if (startMs == 0L) "All Time Records" else "${dateFormat.format(Date(startMs))}  →  ${dateFormat.format(Date(endMs))}"}",
-                    color = Color(0xFF4CAF50),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                )
+            // Date Range Display Badge & Export Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.surface) {
+                    Text(
+                        text = "Period: ${if (startMs == 0L) "All Time Records" else "${dateFormat.format(Date(startMs))} - ${dateFormat.format(Date(endMs))}"}",
+                        color = Color(0xFF4CAF50),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                    )
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Button(
+                        onClick = {
+                            com.phms.app.domain.report.PdfReportGenerator.shareTextSummary(
+                                context = context,
+                                farmName = farmName,
+                                report = report,
+                                periodLabel = selectedRange,
+                                startDateMs = startMs,
+                                endDateMs = endMs
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Icon(Icons.Default.Share, null, tint = Color.White, modifier = Modifier.size(13.dp))
+                        Spacer(Modifier.width(3.dp))
+                        Text("Share", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = {
+                            com.phms.app.domain.report.PdfReportGenerator.generateAndShareReport(
+                                context = context,
+                                farmName = farmName,
+                                report = report,
+                                periodLabel = selectedRange,
+                                startDateMs = startMs,
+                                endDateMs = endMs
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Icon(Icons.Default.PictureAsPdf, null, tint = Color.White, modifier = Modifier.size(13.dp))
+                        Spacer(Modifier.width(3.dp))
+                        Text("PDF", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
 

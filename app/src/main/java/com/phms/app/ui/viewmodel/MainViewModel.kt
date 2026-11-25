@@ -17,6 +17,7 @@ import com.phms.app.domain.engine.WithdrawalTracker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 class MainViewModel(
@@ -510,6 +511,39 @@ class MainViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             repository.deleteMixedBatch(batchId)
             loadPnL()
+        }
+    }
+
+    fun addAdditiveToMixedBatch(
+        batchId: Long,
+        additiveName: String,
+        addedKg: Double,
+        addedCost: Double,
+        deductIngredientId: Long? = null,
+        onComplete: () -> Unit = {}
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.addAdditiveToMixedBatch(batchId, additiveName, addedKg, addedCost, deductIngredientId)
+            loadPnL()
+            withContext(Dispatchers.Main) {
+                onComplete()
+            }
+        }
+    }
+
+    fun addAdditiveToIngredient(
+        ingredientId: Long,
+        additiveName: String,
+        addedKg: Double,
+        addedCost: Double,
+        onComplete: () -> Unit = {}
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.addAdditiveToIngredient(ingredientId, additiveName, addedKg, addedCost)
+            loadPnL()
+            withContext(Dispatchers.Main) {
+                onComplete()
+            }
         }
     }
 

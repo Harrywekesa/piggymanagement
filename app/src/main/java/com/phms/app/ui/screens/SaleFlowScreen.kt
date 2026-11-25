@@ -36,7 +36,10 @@ enum class SaleStep { SELECT_PIGS, SET_PRICE, BUYER_DETAILS, CONFIRM }
 @Composable
 fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
     val allPigs by viewModel.activePigs.collectAsState()
+    val stages by viewModel.stages.collectAsState()
     val buyers by viewModel.buyers.collectAsState()
+    val healthEvents by viewModel.repository.allHealthEvents.collectAsState(initial = emptyList())
+    val feedingLogs by viewModel.repository.allFeedingLogs.collectAsState(initial = emptyList())
     val marketReadyPigs = allPigs.filter { it.status == "Active" }
 
     var currentStep by remember { mutableStateOf(SaleStep.SELECT_PIGS) }
@@ -46,6 +49,19 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
     var selectionMode by remember { mutableStateOf("individual") } // "individual" or "quantity"
     var selectedBuyerId by remember { mutableStateOf<Long?>(null) }
     var paymentStatus by remember { mutableStateOf("Paid") }
+    var confirmNonSlaughterTransfer by remember { mutableStateOf(false) }
+
+    val now = System.currentTimeMillis()
+    fun getWithdrawalForPig(pig: PigEntity): com.phms.app.data.local.entity.HealthEventEntity? {
+        val pigStageName = stages.find { it.id == pig.current_stage_id }?.name
+        return healthEvents.firstOrNull { event ->
+            (event.pig_id == pig.id ||
+             event.target_scope == "Herd" ||
+             (event.target_scope == "Category" && event.target_category.equals(pigStageName, ignoreCase = true))) &&
+            event.withdrawal_days > 0 &&
+            now < (event.date + event.withdrawal_days * 86400000L)
+        }
+    }
 
     // New buyer form
     var showNewBuyerForm by remember { mutableStateOf(false) }
@@ -85,6 +101,19 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
     val totalWeight = selectedPigs.sumOf { effectiveWeight(it.id) }
     val price = pricePerKg.toDoubleOrNull() ?: 0.0
     val totalAmount = totalWeight * price
+
+    val selectedWithWithdrawal = selectedPigs.mapNotNull { pig -> getWithdrawalForPig(pig)?.let { pig to it } }
+
+    val directFeedCost = selectedPigs.sumOf { pig ->
+        feedingLogs.filter { it.pig_id == pig.id }.sumOf { it.quantity_kg * 60.0 }
+    }
+    val totalFeedCost = if (directFeedCost > 500.0) directFeedCost else (totalWeight * 2.8 * 55.0)
+    val totalMedCost = selectedPigs.sumOf { pig -> healthEvents.filter { it.pig_id == pig.id }.sumOf { it.cost } }
+    val totalBaseCost = selectedPigs.sumOf { pig -> if ((pig.purchase_price ?: 0.0) > 0.0) pig.purchase_price!! else 2500.0 }
+    val totalLifetimeInvestment = totalFeedCost + totalMedCost + totalBaseCost
+    val breakEvenPricePerKg = if (totalWeight > 0.0) totalLifetimeInvestment / totalWeight else 0.0
+    val projectedProfit = totalAmount - totalLifetimeInvestment
+    val profitMarginPct = if (totalAmount > 0.0) (projectedProfit / totalAmount) * 100.0 else 0.0
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -135,6 +164,43 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                                 }
                             }
                         }
+
+                        if (selectedWithWithdrawal.isNotEmpty()) {
+                            item {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color(0xFF3E1A1A),
+                                    border = BorderStroke(1.dp, Color(0xFFE53935)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Icon(Icons.Default.Warning, null, tint = Color(0xFFFF5252), modifier = Modifier.size(18.dp))
+                                            Text("Slaughter Safety Lock: Withdrawal Active", color = Color(0xFFFF8A80), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        }
+                                        Text(
+                                            "${selectedWithWithdrawal.size} selected pig(s) are currently under medication withdrawal. Meat cannot be sold for human slaughter until withdrawal periods expire.",
+                                            color = Color(0xFFFFCDD2),
+                                            fontSize = 11.5.sp
+                                        )
+                                        selectedWithWithdrawal.forEach { (p, ev) ->
+                                            val daysLeft = Math.ceil(((ev.date + ev.withdrawal_days * 86400000L) - System.currentTimeMillis()) / 86400000.0).toInt().coerceAtLeast(1)
+                                            Text("• Pig #${p.tag_number}: Treated with ${ev.product} ($daysLeft days remaining)", color = Color.White, fontSize = 11.sp)
+                                        }
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Checkbox(
+                                                checked = confirmNonSlaughterTransfer,
+                                                onCheckedChange = { confirmNonSlaughterTransfer = it },
+                                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF4CAF50), uncheckedColor = Color(0xFFFF8A80))
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Confirm live transfer / breeding only (NOT for immediate slaughter)", color = Color.White, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         if (selectionMode == "quantity") {
                             item {
                                 Card(
@@ -173,9 +239,14 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                             }
                         } else {
                             items(marketReadyPigs) { pig ->
-                                SalePigCard(pig = pig, isSelected = pig.id in selectedPigIds, onToggle = {
-                                    if (pig.id in selectedPigIds) selectedPigIds.remove(pig.id) else selectedPigIds.add(pig.id)
-                                })
+                                SalePigCard(
+                                    pig = pig,
+                                    isSelected = pig.id in selectedPigIds,
+                                    withdrawalEvent = getWithdrawalForPig(pig),
+                                    onToggle = {
+                                        if (pig.id in selectedPigIds) selectedPigIds.remove(pig.id) else selectedPigIds.add(pig.id)
+                                    }
+                                )
                             }
                             if (marketReadyPigs.isEmpty()) {
                                 item { EmptyTab("No active pigs available for sale") }
@@ -256,6 +327,56 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text("Total Amount", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                             Text("KSh ${String.format("%,.0f", totalAmount)}", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (totalWeight > 0.0) {
+                            item {
+                                Card(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF131D24)),
+                                    border = BorderStroke(1.dp, Color(0xFF1B3A4B)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Icon(Icons.Default.MonetizationOn, null, tint = Color(0xFFFFB74D), modifier = Modifier.size(16.dp))
+                                            Text("Break-Even & Margin Analysis", color = Color(0xFFFFB74D), fontWeight = FontWeight.Bold, fontSize = 13.5.sp)
+                                        }
+                                        HorizontalDivider(color = Color(0xFF1E3A4B))
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Est. Lifetime Cost (${selectedPigIds.size} pigs)", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                            Text("KSh ${totalLifetimeInvestment.toInt()}", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                                        }
+                                        Text(
+                                            "Feed: KSh ${totalFeedCost.toInt()} • Meds: KSh ${totalMedCost.toInt()} • Piglet: KSh ${totalBaseCost.toInt()}",
+                                            color = Color(0xFF6E7681),
+                                            fontSize = 10.5.sp
+                                        )
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Break-Even Selling Price", color = Color(0xFF8B949E), fontSize = 12.sp)
+                                            Text("KSh ${String.format(java.util.Locale.US, "%.1f", breakEvenPricePerKg)} / kg", color = Color(0xFF90E0EF), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        }
+                                        if (price > 0) {
+                                            HorizontalDivider(color = Color(0xFF1E3A4B))
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                                Text("Projected Net Profit", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                Surface(
+                                                    shape = RoundedCornerShape(6.dp),
+                                                    color = if (projectedProfit >= 0) Color(0xFF1B3A1B) else Color(0xFF3E1A1A)
+                                                ) {
+                                                    Text(
+                                                        "${if (projectedProfit >= 0) "+KSh " else "-KSh "}${Math.abs(projectedProfit.toInt())} (${String.format(java.util.Locale.US, "%.1f", profitMarginPct)}%)",
+                                                        color = if (projectedProfit >= 0) Color(0xFF81C784) else Color(0xFFFF5252),
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 12.sp,
+                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -391,6 +512,15 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                                     if (displayBuyerPhone.isNotBlank() && displayBuyerPhone != "N/A") {
                                         ConfirmRow("Phone", displayBuyerPhone)
                                     }
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                    ConfirmRow(
+                                        "Est. Net Profit",
+                                        "${if (projectedProfit >= 0) "+KSh " else "-KSh "}${Math.abs(projectedProfit.toInt())} (${String.format(java.util.Locale.US, "%.1f", profitMarginPct)}%)",
+                                        highlight = projectedProfit >= 0
+                                    )
+                                    if (selectedWithWithdrawal.isNotEmpty()) {
+                                        ConfirmRow("Slaughter Status", "⚠️ Live transfer only (Withdrawal Active)")
+                                    }
                                 }
                             }
                         }
@@ -468,7 +598,7 @@ fun SaleFlowScreen(viewModel: MainViewModel, navController: NavController) {
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                         enabled = when (currentStep) {
-                            SaleStep.SELECT_PIGS -> selectedPigIds.isNotEmpty()
+                            SaleStep.SELECT_PIGS -> selectedPigIds.isNotEmpty() && (selectedWithWithdrawal.isEmpty() || confirmNonSlaughterTransfer)
                             SaleStep.SET_PRICE -> pricePerKg.toDoubleOrNull() != null && pricePerKg.toDouble() > 0
                             else -> true
                         }
@@ -529,7 +659,12 @@ fun SaleStepIndicator(currentStep: SaleStep) {
 }
 
 @Composable
-fun SalePigCard(pig: PigEntity, isSelected: Boolean, onToggle: () -> Unit) {
+fun SalePigCard(
+    pig: PigEntity,
+    isSelected: Boolean,
+    withdrawalEvent: com.phms.app.data.local.entity.HealthEventEntity? = null,
+    onToggle: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -556,7 +691,21 @@ fun SalePigCard(pig: PigEntity, isSelected: Boolean, onToggle: () -> Unit) {
                 }
             }
             Column(Modifier.weight(1f)) {
-                Text("#${pig.tag_number}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("#${pig.tag_number}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                    if (withdrawalEvent != null) {
+                        val daysLeft = Math.ceil(((withdrawalEvent.date + withdrawalEvent.withdrawal_days * 86400000L) - System.currentTimeMillis()) / 86400000.0).toInt().coerceAtLeast(1)
+                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF3E1A1A)) {
+                            Text(
+                                "⛔ $daysLeft d left (${withdrawalEvent.product})",
+                                color = Color(0xFFFF5252),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
+                }
                 Text("${pig.breed} • ${if (pig.sex == "M") "Boar" else "Sow"}", color = Color(0xFF8B949E), fontSize = 12.sp)
             }
             Checkbox(

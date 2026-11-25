@@ -280,6 +280,9 @@ interface MixedBatchDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMixedBatch(batch: MixedBatchEntity): Long
 
+    @Update
+    suspend fun updateMixedBatch(batch: MixedBatchEntity)
+
     @Query("UPDATE mixed_batches SET remaining_kg = MAX(0.0, remaining_kg - :usedKg) WHERE id = :batchId")
     suspend fun deductFromBatch(batchId: Long, usedKg: Double)
 
